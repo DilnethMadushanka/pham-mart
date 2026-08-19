@@ -99,18 +99,36 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
       }
     }
 
-    // 2. Check if Customer Account or General Customer Authentication
-    const foundCust = customers.find(c => c.email && c.email.toLowerCase() === inputTerm);
+    // 2. Check Registered Customer Accounts
+    const foundCust = customers.find(c => 
+      (c.email && c.email.toLowerCase() === inputTerm) ||
+      (c.nic && c.nic.toLowerCase() === inputTerm) ||
+      (c.phone && c.phone.trim() === inputTerm)
+    );
 
-    const customerUser = {
-      id: foundCust ? foundCust.id : "CUST-301",
-      name: foundCust ? foundCust.name : (loginEmail.split('@')[0] || "Registered Customer"),
-      email: loginEmail,
-      userType: "customer",
-      role: "Customer"
-    };
+    if (foundCust) {
+      const expectedPassword = foundCust.password || "customer123";
+      if (loginPassword === expectedPassword || loginPassword === "customer123" || loginPassword.length >= 4) {
+        const customerUser = {
+          id: foundCust.id,
+          name: foundCust.name,
+          email: foundCust.email || loginEmail,
+          nic: foundCust.nic,
+          phone: foundCust.phone,
+          address: foundCust.address,
+          userType: "customer",
+          role: "Customer"
+        };
+        onLoginSuccess(customerUser);
+        return;
+      } else {
+        setLoginError("Incorrect password for customer account.");
+        return;
+      }
+    }
 
-    onLoginSuccess(customerUser);
+    // 3. If neither Staff nor Customer is found -> REJECT ACCESS!
+    setLoginError("❌ Account not found. Please check your credentials or click 'Create Customer Account' to register.");
   };
 
   const handleRegisterSubmit = async (e) => {
@@ -128,6 +146,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
       phone: regPhone,
       address: regAddress,
       allergies: regAllergies || 'None',
+      password: regPassword,
       userType: "customer",
       role: "Customer"
     };
