@@ -2,105 +2,200 @@ import { supabase } from '../lib/supabaseClient';
 import { 
   INITIAL_STAFF, 
   INITIAL_MEDICINES, 
-  INITIAL_SUPPLIERS, 
-  INITIAL_PURCHASE_ORDERS, 
   INITIAL_CUSTOMERS, 
   INITIAL_PRESCRIPTIONS, 
   INITIAL_TRANSACTIONS, 
   INITIAL_AUDIT_LOGS 
 } from '../data/initialData';
 
-// Fetch Staff Accounts
+// ==========================================
+// 1. STAFF ACCOUNTS
+// ==========================================
 export async function fetchStaffList() {
   try {
-    const { data, error } = await supabase.from('staff').select('*');
-    if (error || !data || data.length === 0) {
-      return INITIAL_STAFF;
-    }
+    const { data, error } = await supabase.from('staff').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_STAFF;
     return data;
   } catch (err) {
-    console.warn("Supabase fetchStaffList fallback to local data:", err);
+    console.warn("Supabase fetchStaffList fallback:", err);
     return INITIAL_STAFF;
   }
 }
 
-// Fetch Medicines Inventory
-export async function fetchMedicines() {
+export async function createStaff(staffMember) {
   try {
-    const { data, error } = await supabase.from('medicines').select('*');
-    if (error || !data || data.length === 0) {
-      return INITIAL_MEDICINES;
-    }
+    const { data, error } = await supabase.from('staff').insert([staffMember]).select();
+    if (error) console.error("Error creating staff:", error.message);
     return data;
   } catch (err) {
-    console.warn("Supabase fetchMedicines fallback to local data:", err);
+    console.error("createStaff exception:", err);
+  }
+}
+
+// ==========================================
+// 2. CUSTOMERS
+// ==========================================
+export async function fetchCustomers() {
+  try {
+    const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_CUSTOMERS;
+    return data;
+  } catch (err) {
+    console.warn("Supabase fetchCustomers fallback:", err);
+    return INITIAL_CUSTOMERS;
+  }
+}
+
+export async function createCustomer(customerData) {
+  try {
+    const { data, error } = await supabase.from('customers').insert([customerData]).select();
+    if (error) console.error("Error creating customer:", error.message);
+    return data;
+  } catch (err) {
+    console.error("createCustomer exception:", err);
+  }
+}
+
+// ==========================================
+// 3. MEDICINES INVENTORY
+// ==========================================
+export async function fetchMedicines() {
+  try {
+    const { data, error } = await supabase.from('medicines').select('*').order('name', { ascending: true });
+    if (error || !data || data.length === 0) return INITIAL_MEDICINES;
+    return data;
+  } catch (err) {
+    console.warn("Supabase fetchMedicines fallback:", err);
     return INITIAL_MEDICINES;
   }
 }
 
-// Fetch Prescriptions
-export async function fetchPrescriptions() {
+export async function createMedicine(medicineData) {
   try {
-    const { data, error } = await supabase.from('prescriptions').select('*');
-    if (error || !data || data.length === 0) {
-      return INITIAL_PRESCRIPTIONS;
-    }
+    const { data, error } = await supabase.from('medicines').insert([medicineData]).select();
+    if (error) console.error("Error creating medicine:", error.message);
     return data;
   } catch (err) {
-    console.warn("Supabase fetchPrescriptions fallback to local data:", err);
+    console.error("createMedicine exception:", err);
+  }
+}
+
+export async function updateMedicineStock(id, newStock) {
+  try {
+    const { data, error } = await supabase.from('medicines').update({ stock: newStock }).eq('id', id);
+    if (error) console.error("Error updating medicine stock:", error.message);
+    return data;
+  } catch (err) {
+    console.error("updateMedicineStock exception:", err);
+  }
+}
+
+// ==========================================
+// 4. PRESCRIPTIONS
+// ==========================================
+export async function fetchPrescriptions() {
+  try {
+    const { data, error } = await supabase.from('prescriptions').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_PRESCRIPTIONS;
+    return data;
+  } catch (err) {
+    console.warn("Supabase fetchPrescriptions fallback:", err);
     return INITIAL_PRESCRIPTIONS;
   }
 }
 
-// Fetch Transactions
-export async function fetchTransactions() {
+export async function createPrescription(prescriptionData) {
   try {
-    const { data, error } = await supabase.from('transactions').select('*');
-    if (error || !data || data.length === 0) {
-      return INITIAL_TRANSACTIONS;
-    }
+    const { data, error } = await supabase.from('prescriptions').insert([prescriptionData]).select();
+    if (error) console.error("Error creating prescription:", error.message);
     return data;
   } catch (err) {
-    console.warn("Supabase fetchTransactions fallback to local data:", err);
+    console.error("createPrescription exception:", err);
+  }
+}
+
+export async function updatePrescriptionStatus(id, status, rejectionReason = null) {
+  try {
+    const updateObj = { status };
+    if (rejectionReason) updateObj.rejection_reason = rejectionReason;
+    
+    const { data, error } = await supabase.from('prescriptions').update(updateObj).eq('id', id);
+    if (error) console.error("Error updating prescription status:", error.message);
+    return data;
+  } catch (err) {
+    console.error("updatePrescriptionStatus exception:", err);
+  }
+}
+
+// ==========================================
+// 5. POS TRANSACTIONS
+// ==========================================
+export async function fetchTransactions() {
+  try {
+    const { data, error } = await supabase.from('transactions').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_TRANSACTIONS;
+    return data;
+  } catch (err) {
+    console.warn("Supabase fetchTransactions fallback:", err);
     return INITIAL_TRANSACTIONS;
   }
 }
 
-// Add Audit Log Entry to Supabase
+export async function createTransaction(txData) {
+  try {
+    const { data, error } = await supabase.from('transactions').insert([txData]).select();
+    if (error) console.error("Error creating transaction:", error.message);
+    return data;
+  } catch (err) {
+    console.error("createTransaction exception:", err);
+  }
+}
+
+// ==========================================
+// 6. AUDIT LOGS
+// ==========================================
+export async function fetchAuditLogs() {
+  try {
+    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_AUDIT_LOGS;
+    return data;
+  } catch (err) {
+    console.warn("Supabase fetchAuditLogs fallback:", err);
+    return INITIAL_AUDIT_LOGS;
+  }
+}
+
 export async function saveAuditLog(logEntry) {
   try {
     const { data, error } = await supabase.from('audit_logs').insert([logEntry]);
-    if (error) {
-      console.warn("Supabase audit log insert note:", error.message);
-    }
+    if (error) console.warn("Supabase audit log insert note:", error.message);
     return data;
   } catch (err) {
-    console.warn("Supabase saveAuditLog error:", err);
+    console.warn("saveAuditLog exception:", err);
   }
 }
 
-// Save New Customer to Supabase
-export async function saveCustomer(customerData) {
+// ==========================================
+// 7. REAL-TIME DATABASE LISTENER SUBSCRIPTIONS
+// ==========================================
+export function subscribeToRealtimeChanges(tableName, onInsertOrUpdate) {
   try {
-    const { data, error } = await supabase.from('customers').insert([customerData]);
-    if (error) {
-      console.warn("Supabase saveCustomer error:", error.message);
-    }
-    return data;
-  } catch (err) {
-    console.warn("Supabase saveCustomer exception:", err);
-  }
-}
+    const channel = supabase
+      .channel(`public:${tableName}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: tableName },
+        (payload) => {
+          if (onInsertOrUpdate) onInsertOrUpdate(payload);
+        }
+      )
+      .subscribe();
 
-// Save New Prescription to Supabase
-export async function savePrescription(prescriptionData) {
-  try {
-    const { data, error } = await supabase.from('prescriptions').insert([prescriptionData]);
-    if (error) {
-      console.warn("Supabase savePrescription error:", error.message);
-    }
-    return data;
+    return () => {
+      supabase.removeChannel(channel);
+    };
   } catch (err) {
-    console.warn("Supabase savePrescription exception:", err);
+    console.warn(`Realtime subscription setup note for ${tableName}:`, err);
+    return () => {};
   }
 }

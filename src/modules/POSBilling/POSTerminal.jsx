@@ -105,7 +105,7 @@ export default function POSTerminal({
 
   const changeDue = Math.max(0, (parseFloat(tenderedCash) || 0) - grandTotal);
 
-  const handleCheckout = (e) => {
+  const handleCheckout = async (e) => {
     e.preventDefault();
     if (cart.length === 0) {
       alert("Cart is empty.");
@@ -119,10 +119,13 @@ export default function POSTerminal({
 
     const newTxn = {
       id: `TXN-${Math.floor(8800 + Math.random() * 1000)}`,
+      invoice_no: `INV-2026-${Math.floor(8800 + Math.random() * 1000)}`,
       invoiceNo: `INV-2026-${Math.floor(8800 + Math.random() * 1000)}`,
       date: new Date().toLocaleString(),
       customerName: activeCustomer.name,
+      customer_name: activeCustomer.name,
       cashierName: currentRole === "Cashier" ? "Pathiraja M.M.S" : currentRole === "Pharmacist" ? "Mendis M.M.N" : "Ms. Chathurangika",
+      cashier_name: currentRole === "Cashier" ? "Pathiraja M.M.S" : currentRole === "Pharmacist" ? "Mendis M.M.N" : "Ms. Chathurangika",
       items: cart.map(item => ({
         name: item.name,
         qty: item.qty,
@@ -136,15 +139,27 @@ export default function POSTerminal({
       taxAmt: taxAmt,
       total: grandTotal,
       paymentMethod: paymentMethod,
+      payment_method: paymentMethod,
       paidAmount: paymentMethod === "Cash" ? parseFloat(tenderedCash) : grandTotal,
       changeAmount: paymentMethod === "Cash" ? changeDue : 0,
       status: "Completed"
     };
 
-    // 1. Save Transaction
+    // 1. Save Transaction to Supabase DB in real-time
+    await createTransaction(newTxn);
+
+    // 2. AUTOMATIC INVENTORY DEDUCTION (Real-time Supabase Update!)
+    for (const item of cart) {
+      const med = medicines.find(m => m.id === item.id);
+      if (med) {
+        const updatedStock = Math.max(0, med.stock - item.qty);
+        await updateMedicineStock(med.id, updatedStock);
+      }
+    }
+
+    // 3. Update local state
     setTransactions(prev => [newTxn, ...prev]);
 
-    // 2. AUTOMATIC INVENTORY DEDUCTION (Epic 2 & 4 Integration!)
     setMedicines(prev => prev.map(m => {
       const cartItem = cart.find(c => c.id === m.id);
       if (cartItem) {

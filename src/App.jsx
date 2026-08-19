@@ -30,13 +30,15 @@ import AnalyticsDashboard from './modules/AnalyticsReporting/AnalyticsDashboard'
 import BaselineKPITable from './modules/AnalyticsReporting/BaselineKPITable';
 import ArchitectureAssessment from './modules/AnalyticsReporting/ArchitectureAssessment';
 
-import { useEffect } from 'react';
 import { 
   fetchStaffList, 
+  fetchCustomers,
   fetchMedicines, 
   fetchPrescriptions, 
   fetchTransactions, 
-  saveAuditLog 
+  fetchAuditLogs,
+  saveAuditLog,
+  subscribeToRealtimeChanges 
 } from './services/supabaseService';
 
 export default function App() {
@@ -69,12 +71,15 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
 
-  // Sync Supabase Database on App Load
+  // Sync & Realtime Supabase Database Listeners
   useEffect(() => {
     async function loadSupabaseData() {
       try {
         const staffData = await fetchStaffList();
         if (staffData && staffData.length > 0) setStaffList(staffData);
+
+        const custData = await fetchCustomers();
+        if (custData && custData.length > 0) setCustomers(custData);
 
         const medData = await fetchMedicines();
         if (medData && medData.length > 0) setMedicines(medData);
@@ -84,11 +89,32 @@ export default function App() {
 
         const txData = await fetchTransactions();
         if (txData && txData.length > 0) setTransactions(txData);
+
+        const logData = await fetchAuditLogs();
+        if (logData && logData.length > 0) setAuditLogs(logData);
       } catch (err) {
         console.warn("Supabase database initial load note:", err);
       }
     }
+
     loadSupabaseData();
+
+    // Subscribe to Realtime Postgres Table Changes
+    const unsubStaff = subscribeToRealtimeChanges('staff', () => fetchStaffList().then(res => res && setStaffList(res)));
+    const unsubCust = subscribeToRealtimeChanges('customers', () => fetchCustomers().then(res => res && setCustomers(res)));
+    const unsubMeds = subscribeToRealtimeChanges('medicines', () => fetchMedicines().then(res => res && setMedicines(res)));
+    const unsubRx = subscribeToRealtimeChanges('prescriptions', () => fetchPrescriptions().then(res => res && setPrescriptions(res)));
+    const unsubTx = subscribeToRealtimeChanges('transactions', () => fetchTransactions().then(res => res && setTransactions(res)));
+    const unsubLogs = subscribeToRealtimeChanges('audit_logs', () => fetchAuditLogs().then(res => res && setAuditLogs(res)));
+
+    return () => {
+      unsubStaff();
+      unsubCust();
+      unsubMeds();
+      unsubRx();
+      unsubTx();
+      unsubLogs();
+    };
   }, []);
 
   // Audit Logger Utility

@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, Image, ArrowRight, User, Phone, MapPin } from 'lucide-react';
+import { createPrescription } from '../../services/supabaseService';
 
 export default function CustomerRxUpload({ 
   customers, 
@@ -17,7 +16,7 @@ export default function CustomerRxUpload({
   const [uploadedFileName, setUploadedFileName] = useState("my_prescription_photo.jpg");
   const [isFileAttached, setIsFileAttached] = useState(true);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!patientName || !phone) {
       alert("Please enter patient name and contact number.");
@@ -50,6 +49,9 @@ export default function CustomerRxUpload({
       verifiedAt: null,
       notes: `Patient Upload (${uploadedFileName}). Address: ${deliveryAddress}. Notes: ${patientNotes || 'None'}`
     };
+
+    // Save to Supabase DB
+    await createPrescription(newRx);
 
     setPrescriptions(prev => [newRx, ...prev]);
     addAuditLog("Customer Rx Uploaded", `Customer ${patientName} submitted prescription ${newRx.rxNumber} for Pharmacist verification`, "info");

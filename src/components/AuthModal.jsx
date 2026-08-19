@@ -19,6 +19,8 @@ import {
   Info
 } from 'lucide-react';
 
+import { createCustomer } from '../services/supabaseService';
+
 export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList = [], customers = [] }) {
   const [authMode, setAuthMode] = useState("login"); // "login" | "register"
   const [userType, setUserType] = useState("customer"); // "customer" | "staff"
@@ -116,7 +118,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
     }
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     if (!regName || !regNic || !regEmail || !regPassword) {
       alert("Please fill in all mandatory fields.");
@@ -130,10 +132,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
       email: regEmail,
       phone: regPhone,
       address: regAddress,
-      allergies: regAllergies,
+      allergies: regAllergies || 'None',
       userType: "customer",
       role: "Customer"
     };
+
+    // Save to Supabase DB in real-time
+    await createCustomer(newCustomer);
 
     alert(`Account created successfully! Welcome to PHARMART Pharmacy, ${regName}.`);
     onLoginSuccess(newCustomer);
