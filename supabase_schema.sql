@@ -24,11 +24,12 @@ CREATE TABLE staff (
 CREATE TABLE customers (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  nic TEXT UNIQUE,
+  nic TEXT,
   email TEXT,
   phone TEXT,
   address TEXT,
   allergies TEXT DEFAULT 'None',
+  password TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

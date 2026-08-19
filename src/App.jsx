@@ -148,7 +148,10 @@ export default function App() {
     setCurrentUser(userData);
     setIsAuthModalOpen(false);
     
-    if (userData.userType === "staff" || userData.role !== "Customer") {
+    if (userData.userType === "customer" || userData.role === "Customer") {
+      setCustomers(prev => [userData, ...prev.filter(c => c.id !== userData.id && c.email !== userData.email)]);
+      setViewMode("website");
+    } else if (userData.userType === "staff" || userData.role !== "Customer") {
       setCurrentRole(userData.role);
       setViewMode("enterprise");
       // Auto-set initial allowed tab for role
@@ -159,8 +162,6 @@ export default function App() {
       } else {
         setActiveTab("analytics");
       }
-    } else {
-      setViewMode("website");
     }
 
     addAuditLog("User Login", `Authenticated successfully as ${userData.name} (${userData.role})`, "success");
