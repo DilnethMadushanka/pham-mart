@@ -239,32 +239,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
                 <LogIn className="w-4 h-4" />
                 <span>Sign In to Account</span>
               </button>
-
-              {/* Reference Info Box */}
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[11px]">
-                <div className="font-bold text-slate-800 flex items-center text-xs">
-                  <Info className="w-3.5 h-3.5 text-[#00A86B] mr-1.5" />
-                  Automatic Role Redirect:
-                </div>
-                <p className="text-slate-500 font-normal leading-relaxed">
-                  Enter your credentials. Staff members (Admin, Pharmacist, Cashier) will automatically redirect to their assigned workstation upon Sign In.
-                </p>
-                <div className="pt-1 space-y-1 text-slate-600 font-mono text-[10px] border-t border-slate-200">
-                  <div className="flex justify-between">
-                    <span>👑 Admin: <strong>owner@pharmart.lk</strong></span>
-                    <span>Pass: admin123</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>🩺 Pharmacist: <strong>mendis@pharmart.lk</strong></span>
-                    <span>Pass: pharm123</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>💳 Cashier: <strong>pathiraja@pharmart.lk</strong></span>
-                    <span>Pass: cashier123</span>
-                  </div>
-                </div>
-              </div>
-
             </form>
           ) : (
             /* REGISTER FORM FOR CUSTOMERS */
