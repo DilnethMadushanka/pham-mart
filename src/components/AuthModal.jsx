@@ -4,18 +4,9 @@ import {
   LogIn, 
   UserPlus, 
   Pill, 
-  ShieldCheck, 
   Mail, 
   Lock, 
-  User, 
-  Phone, 
-  MapPin, 
   AlertCircle,
-  Key,
-  CheckCircle2,
-  Sparkles,
-  Stethoscope,
-  UserCheck,
   Info
 } from 'lucide-react';
 
@@ -23,7 +14,6 @@ import { createCustomer } from '../services/supabaseService';
 
 export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList = [], customers = [] }) {
   const [authMode, setAuthMode] = useState("login"); // "login" | "register"
-  const [userType, setUserType] = useState("customer"); // "customer" | "staff"
   
   // Login Form State
   const [loginEmail, setLoginEmail] = useState("");
@@ -52,29 +42,29 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
 
     const inputTerm = loginEmail.trim().toLowerCase();
 
-    if (userType === "staff") {
-      // Find staff in database matching email or username
-      const foundStaff = staffList.find(s => 
-        (s.email && s.email.toLowerCase() === inputTerm) || 
-        (s.username && s.username.toLowerCase() === inputTerm)
-      );
+    // 1. Check if the credentials belong to any PHARMART Staff Member
+    const foundStaff = staffList.find(s => 
+      (s.email && s.email.toLowerCase() === inputTerm) || 
+      (s.username && s.username.toLowerCase() === inputTerm)
+    );
 
-      // Known passwords mapping for pre-configured staff
-      const validPasswords = {
-        "owner@pharmart.lk": "admin123",
-        "admin_chathurangika": "admin123",
-        "mendis@pharmart.lk": "pharm123",
-        "pharmacist_mendis": "pharm123",
-        "pathiraja@pharmart.lk": "cashier123",
-        "cashier_pathiraja": "cashier123",
-        "madushanka@pharmart.lk": "pharm123",
-        "heshan@pharmart.lk": "cashier123"
-      };
+    // Passwords mapping for pre-configured staff accounts
+    const validStaffPasswords = {
+      "owner@pharmart.lk": "admin123",
+      "admin_chathurangika": "admin123",
+      "mendis@pharmart.lk": "pharm123",
+      "pharmacist_mendis": "pharm123",
+      "pathiraja@pharmart.lk": "cashier123",
+      "cashier_pathiraja": "cashier123",
+      "madushanka@pharmart.lk": "pharm123",
+      "heshan@pharmart.lk": "cashier123"
+    };
 
-      const expectedPassword = foundStaff ? (validPasswords[foundStaff.email] || validPasswords[foundStaff.username] || "staff123") : "admin123";
-
-      if (foundStaff && loginPassword === expectedPassword) {
-        const userData = {
+    // If Staff Account Found
+    if (foundStaff) {
+      const expectedPassword = validStaffPasswords[foundStaff.email] || validStaffPasswords[foundStaff.username] || "staff123";
+      if (loginPassword === expectedPassword) {
+        const staffUser = {
           id: foundStaff.id,
           name: foundStaff.name,
           username: foundStaff.username,
@@ -83,39 +73,44 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
           role: foundStaff.role, // "Owner/Admin" | "Pharmacist" | "Cashier"
           permissions: foundStaff.permissions || []
         };
-        onLoginSuccess(userData);
-      } else if (inputTerm === "owner@pharmart.lk" || inputTerm === "admin" || inputTerm === "admin@pharmart.lk") {
-        // Fallback for Admin
-        if (loginPassword === "admin123" || loginPassword === "admin") {
-          onLoginSuccess({
-            id: "STF-001",
-            name: "Ms. Chathurangika Kahandawaarachchi",
-            username: "admin_chathurangika",
-            email: "owner@pharmart.lk",
-            userType: "staff",
-            role: "Owner/Admin"
-          });
-        } else {
-          setLoginError("Invalid password for Admin account. Try 'admin123'.");
-        }
+        onLoginSuccess(staffUser);
+        return;
       } else {
-        setLoginError("Invalid staff credentials or role not assigned by Admin. Access Denied.");
+        setLoginError("Invalid password for staff account.");
+        return;
       }
-
-    } else {
-      // Customer authentication
-      const foundCust = customers.find(c => c.email && c.email.toLowerCase() === inputTerm);
-
-      const customerUser = {
-        id: foundCust ? foundCust.id : "CUST-301",
-        name: foundCust ? foundCust.name : (loginEmail.split('@')[0] || "Registered Customer"),
-        email: loginEmail,
-        userType: "customer",
-        role: "Customer"
-      };
-
-      onLoginSuccess(customerUser);
     }
+
+    // Admin Fallback Check
+    if (inputTerm === "owner@pharmart.lk" || inputTerm === "admin" || inputTerm === "admin@pharmart.lk") {
+      if (loginPassword === "admin123" || loginPassword === "admin") {
+        onLoginSuccess({
+          id: "STF-001",
+          name: "Ms. Chathurangika Kahandawaarachchi",
+          username: "admin_chathurangika",
+          email: "owner@pharmart.lk",
+          userType: "staff",
+          role: "Owner/Admin"
+        });
+        return;
+      } else {
+        setLoginError("Invalid password for Admin account.");
+        return;
+      }
+    }
+
+    // 2. Check if Customer Account or General Customer Authentication
+    const foundCust = customers.find(c => c.email && c.email.toLowerCase() === inputTerm);
+
+    const customerUser = {
+      id: foundCust ? foundCust.id : "CUST-301",
+      name: foundCust ? foundCust.name : (loginEmail.split('@')[0] || "Registered Customer"),
+      email: loginEmail,
+      userType: "customer",
+      role: "Customer"
+    };
+
+    onLoginSuccess(customerUser);
   };
 
   const handleRegisterSubmit = async (e) => {
@@ -163,7 +158,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight font-heading">PHARMART Portal</h2>
-              <p className="text-xs text-emerald-100 font-medium">Secure Role-Based Authentication</p>
+              <p className="text-xs text-emerald-100 font-medium">Unified Sign In & Account Portal</p>
             </div>
           </div>
 
@@ -194,31 +189,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
         {/* Modal Form Body */}
         <div className="p-6 space-y-5 flex-1 overflow-y-auto">
           
-          {/* User Type Switcher (Customer vs Pharmacy Staff) */}
-          {authMode === "login" && (
-            <div className="flex items-center justify-between p-1 bg-slate-100 rounded-xl text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => { setUserType("customer"); setLoginError(""); }}
-                className={`flex-1 py-2 rounded-lg transition-all ${
-                  userType === "customer" ? "bg-[#00A86B] text-white font-bold shadow-xs" : "text-slate-600"
-                }`}
-              >
-                Customer Portal
-              </button>
-              <button
-                type="button"
-                onClick={() => { setUserType("staff"); setLoginError(""); }}
-                className={`flex-1 py-2 rounded-lg transition-all ${
-                  userType === "staff" ? "bg-[#00A86B] text-white font-bold shadow-xs" : "text-slate-600"
-                }`}
-              >
-                Pharmacy Staff Login
-              </button>
-            </div>
-          )}
-
-          {/* LOGIN FORM */}
+          {/* UNIFIED SINGLE LOGIN FORM */}
           {authMode === "login" ? (
             <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
               
@@ -231,14 +202,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
 
               <div>
                 <label className="block font-bold text-slate-700 mb-1">
-                  {userType === "customer" ? "Customer Email or Phone" : "Staff Email or Username"}
+                  Email or Username
                 </label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input 
                     type="text"
                     required
-                    placeholder={userType === "customer" ? "sunil.s@gmail.com" : "owner@pharmart.lk"}
+                    placeholder="Enter email or username..."
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     className="w-full pl-9 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00A86B] outline-hidden"
@@ -266,32 +237,33 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, staffList =
                 className="w-full py-3 bg-[#00A86B] hover:bg-[#00925d] text-white font-bold rounded-xl shadow-md shadow-[#00A86B]/20 text-xs transition-all flex items-center justify-center space-x-2"
               >
                 <LogIn className="w-4 h-4" />
-                <span>Authenticate Account</span>
+                <span>Sign In to Account</span>
               </button>
 
-              {/* Staff Credentials Reference Guide */}
-              {userType === "staff" && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[11px]">
-                  <div className="font-bold text-slate-800 flex items-center text-xs">
-                    <Info className="w-3.5 h-3.5 text-[#00A86B] mr-1.5" />
-                    Authorized Staff Credentials Reference:
+              {/* Reference Info Box */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[11px]">
+                <div className="font-bold text-slate-800 flex items-center text-xs">
+                  <Info className="w-3.5 h-3.5 text-[#00A86B] mr-1.5" />
+                  Automatic Role Redirect:
+                </div>
+                <p className="text-slate-500 font-normal leading-relaxed">
+                  Enter your credentials. Staff members (Admin, Pharmacist, Cashier) will automatically redirect to their assigned workstation upon Sign In.
+                </p>
+                <div className="pt-1 space-y-1 text-slate-600 font-mono text-[10px] border-t border-slate-200">
+                  <div className="flex justify-between">
+                    <span>👑 Admin: <strong>owner@pharmart.lk</strong></span>
+                    <span>Pass: admin123</span>
                   </div>
-                  <div className="space-y-1 text-slate-600 font-mono">
-                    <div className="flex justify-between">
-                      <span>👑 Owner/Admin: <strong className="text-slate-900">owner@pharmart.lk</strong></span>
-                      <span className="text-slate-500">Pass: admin123</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>🩺 Pharmacist: <strong className="text-slate-900">mendis@pharmart.lk</strong></span>
-                      <span className="text-slate-500">Pass: pharm123</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>💳 Cashier: <strong className="text-slate-900">pathiraja@pharmart.lk</strong></span>
-                      <span className="text-slate-500">Pass: cashier123</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>🩺 Pharmacist: <strong>mendis@pharmart.lk</strong></span>
+                    <span>Pass: pharm123</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>💳 Cashier: <strong>pathiraja@pharmart.lk</strong></span>
+                    <span>Pass: cashier123</span>
                   </div>
                 </div>
-              )}
+              </div>
 
             </form>
           ) : (
