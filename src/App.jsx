@@ -30,6 +30,15 @@ import AnalyticsDashboard from './modules/AnalyticsReporting/AnalyticsDashboard'
 import BaselineKPITable from './modules/AnalyticsReporting/BaselineKPITable';
 import ArchitectureAssessment from './modules/AnalyticsReporting/ArchitectureAssessment';
 
+import { useEffect } from 'react';
+import { 
+  fetchStaffList, 
+  fetchMedicines, 
+  fetchPrescriptions, 
+  fetchTransactions, 
+  saveAuditLog 
+} from './services/supabaseService';
+
 export default function App() {
   // Navigation & View Mode
   const [viewMode, setViewMode] = useState("website"); // "website" | "enterprise"
@@ -60,6 +69,28 @@ export default function App() {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
 
+  // Sync Supabase Database on App Load
+  useEffect(() => {
+    async function loadSupabaseData() {
+      try {
+        const staffData = await fetchStaffList();
+        if (staffData && staffData.length > 0) setStaffList(staffData);
+
+        const medData = await fetchMedicines();
+        if (medData && medData.length > 0) setMedicines(medData);
+
+        const rxData = await fetchPrescriptions();
+        if (rxData && rxData.length > 0) setPrescriptions(rxData);
+
+        const txData = await fetchTransactions();
+        if (txData && txData.length > 0) setTransactions(txData);
+      } catch (err) {
+        console.warn("Supabase database initial load note:", err);
+      }
+    }
+    loadSupabaseData();
+  }, []);
+
   // Audit Logger Utility
   const addAuditLog = (action, details, severity = "info") => {
     const newLog = {
@@ -72,6 +103,7 @@ export default function App() {
       severity: severity
     };
     setAuditLogs(prev => [newLog, ...prev]);
+    saveAuditLog(newLog);
   };
 
   const handleViewModeChange = (targetMode) => {
