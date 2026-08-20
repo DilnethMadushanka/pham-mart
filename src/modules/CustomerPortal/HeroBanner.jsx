@@ -198,12 +198,12 @@ export default function HeroBanner({
             </div>
 
             {/* Ratings & Verification */}
-            <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-white font-semibold">
+            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-white font-semibold">
               <button 
                 onClick={onOpenGoogleFeedback}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/15 transition-all cursor-pointer"
+                className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 backdrop-blur-md border border-amber-400/40 text-amber-300 transition-all cursor-pointer shadow-sm hover:scale-105"
               >
-                <span className="text-amber-400 font-bold">Google 4.8 ★</span>
+                <span className="font-bold text-amber-400">Google 4.8 ★</span>
                 <div className="flex items-center text-amber-400">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="w-3 h-3 fill-amber-400 stroke-amber-400" />
@@ -213,10 +213,10 @@ export default function HeroBanner({
 
               <button 
                 onClick={onOpenGoogleFeedback}
-                className="flex items-center space-x-1.5 text-emerald-300 hover:text-white font-bold transition-all cursor-pointer"
+                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 hover:text-white font-extrabold border border-emerald-400/40 backdrop-blur-md transition-all cursor-pointer hover:scale-105"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Verified Patient Reviews</span>
+                <span>⭐ Write Patient Review & Feedback</span>
               </button>
             </div>
 

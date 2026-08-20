@@ -49,13 +49,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("analytics");
 
   // User Auth State
-  const [currentUser, setCurrentUser] = useState({
-    id: "CUST-301",
-    name: "K. A. Sunil Shantha",
-    nic: "781290348V",
-    email: "sunil.s@gmail.com",
-    role: "Customer"
-  });
+  const [currentUser, setCurrentUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Application Data States
