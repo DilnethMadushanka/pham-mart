@@ -100,6 +100,7 @@ export default function AuthModal({
           email: payload.email,
           phone: "+94 77 999 8888",
           address: "Google OAuth Registered Address",
+          avatar: payload.picture || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(payload.name || payload.email)}`,
           allergies: "None",
           userType: "customer",
           role: "Customer"
@@ -127,6 +128,7 @@ export default function AuthModal({
       email: accountEmail,
       phone: "+94 77 444 8888",
       address: "Google Sign-In Account, Sri Lanka",
+      avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(accountName)}`,
       allergies: "None",
       userType: "customer",
       role: "Customer"

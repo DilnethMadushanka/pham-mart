@@ -169,8 +169,23 @@ export default function Navbar({
             {/* Auth Account Button / Logged In User Pill */}
             {currentUser ? (
               <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-                <div className="w-8 h-8 rounded-full bg-[#e6f7f0] border border-[#00A86B]/30 flex items-center justify-center text-[#00A86B] font-bold text-xs shrink-0">
-                  {currentUser.name.substring(0, 2).toUpperCase()}
+                {currentUser.avatar ? (
+                  <img 
+                    src={currentUser.avatar} 
+                    alt={currentUser.name} 
+                    className="w-8 h-8 rounded-full border-2 border-[#00A86B] object-cover shadow-xs shrink-0"
+                    onError={(e) => {
+                      e.target.onerror = null; 
+                      e.target.style.display = 'none';
+                      e.target.nextElementSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                <div 
+                  className="w-8 h-8 rounded-full bg-[#e6f7f0] border border-[#00A86B]/30 flex items-center justify-center text-[#00A86B] font-bold text-xs shrink-0"
+                  style={{ display: currentUser.avatar ? 'none' : 'flex' }}
+                >
+                  {currentUser.name ? currentUser.name.substring(0, 2).toUpperCase() : "US"}
                 </div>
                 <div className="hidden md:block text-left">
                   <div className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</div>
