@@ -48,8 +48,15 @@ export default function App() {
   const [currentRole, setCurrentRole] = useState("Owner/Admin");
   const [activeTab, setActiveTab] = useState("analytics");
 
-  // User Auth State
-  const [currentUser, setCurrentUser] = useState(null);
+  // User Auth State with LocalStorage Persistence
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem("pharmart_current_user");
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Application Data States
@@ -146,6 +153,12 @@ export default function App() {
 
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
+    try {
+      localStorage.setItem("pharmart_current_user", JSON.stringify(userData));
+    } catch (e) {
+      console.warn("Could not save user session:", e);
+    }
+
     setIsAuthModalOpen(false);
     showToast("Signed In Successfully", `Welcome to PHARMART Pharmacy, ${userData.name}!`, "success");
     
@@ -171,6 +184,11 @@ export default function App() {
   const handleLogout = () => {
     addAuditLog("User Logout", `Signed out user session: ${currentUser?.name}`, "info");
     setCurrentUser(null);
+    try {
+      localStorage.removeItem("pharmart_current_user");
+    } catch (e) {
+      console.warn("Could not clear user session:", e);
+    }
     setViewMode("website");
   };
 
