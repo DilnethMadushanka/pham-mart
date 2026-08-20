@@ -22,6 +22,7 @@ import PatientTestimonialsSection from './PatientTestimonialsSection';
 import LocationContactModal from './LocationContactModal';
 import CustomerRxUpload from './CustomerRxUpload';
 import MyOrders from './MyOrders';
+import GoogleFeedbackModal from '../../components/GoogleFeedbackModal';
 
 export default function CustomerStorefront({ 
   medicines, 
@@ -39,6 +40,7 @@ export default function CustomerStorefront({
   const [cart, setCart] = useState([]);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
+  const [isGoogleFeedbackOpen, setIsGoogleFeedbackOpen] = useState(false);
 
   // Filter products: Show Consumer/OTC items on Storefront
   const consumerProducts = medicines.filter(m => m.isConsumerProduct || !m.prescriptionRequired);
@@ -98,6 +100,7 @@ export default function CustomerStorefront({
           if (el) el.scrollIntoView({ behavior: 'smooth' });
         }}
         onOpenLocation={() => setIsLocationOpen(true)}
+        onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)}
       />
 
       {/* Portal Secondary Navigation Bar */}
@@ -257,6 +260,14 @@ export default function CustomerStorefront({
       <LocationContactModal 
         isOpen={isLocationOpen}
         onClose={() => setIsLocationOpen(false)}
+      />
+
+      {/* Google Reviews & Feedback Submission Modal */}
+      <GoogleFeedbackModal 
+        isOpen={isGoogleFeedbackOpen}
+        onClose={() => setIsGoogleFeedbackOpen(false)}
+        currentUser={currentUser}
+        addAuditLog={addAuditLog}
       />
 
     </div>

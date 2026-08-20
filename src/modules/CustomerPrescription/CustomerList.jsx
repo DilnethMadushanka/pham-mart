@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { User, Phone, Mail, MapPin, AlertCircle, FileText, Plus, Search } from 'lucide-react';
+import { createCustomer } from '../../services/supabaseService';
 
 export default function CustomerList({ customers, setCustomers, prescriptions, addAuditLog }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -12,7 +13,7 @@ export default function CustomerList({ customers, setCustomers, prescriptions, a
     c.phone.includes(searchTerm)
   );
 
-  const handleAddCustomer = (e) => {
+  const handleAddCustomer = async (e) => {
     e.preventDefault();
     if (!newCust.name || !newCust.nic) {
       alert("Please fill in customer name and NIC.");
@@ -25,6 +26,7 @@ export default function CustomerList({ customers, setCustomers, prescriptions, a
       lastVisit: "Today"
     };
     setCustomers(prev => [created, ...prev]);
+    await createCustomer(created);
     addAuditLog("New Customer Registered", `Created digital customer profile for ${created.name} (${created.nic})`, "success");
     setIsAddModalOpen(false);
     setNewCust({ name: '', nic: '', phone: '', email: '', address: '', allergies: '' });

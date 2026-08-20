@@ -14,6 +14,7 @@ import {
   Plus
 } from 'lucide-react';
 import NewPrescriptionModal from './NewPrescriptionModal';
+import { createPrescription, updatePrescriptionStatus } from '../../services/supabaseService';
 
 export default function PrescriptionVerification({ 
   prescriptions, 
@@ -23,20 +24,18 @@ export default function PrescriptionVerification({
   currentRole,
   addAuditLog 
 }) {
-  const [activeTab, setActiveTab] = useState("all"); // "all" | "pending" | "approved" | "rejected"
   const [selectedRx, setSelectedRx] = useState(null);
-  const [rejectionReason, setRejectionReason] = useState("");
   const [pharmacistNotes, setPharmacistNotes] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [activeFilter, setActiveFilter] = useState("Pending"); // "Pending" | "Approved" | "Rejected" | "ALL"
   const [isNewRxModalOpen, setIsNewRxModalOpen] = useState(false);
 
   const filteredRx = prescriptions.filter(p => {
-    if (activeTab === "pending") return p.status === "Pending";
-    if (activeTab === "approved") return p.status === "Approved";
-    if (activeTab === "rejected") return p.status === "Rejected";
-    return true;
+    if (activeFilter === "ALL") return true;
+    return p.status === activeFilter;
   });
 
-  const handleApprove = (rxId) => {
+  const handleApprove = async (rxId) => {
     setPrescriptions(prev => prev.map(p => {
       if (p.id === rxId) {
         const updated = {
@@ -51,11 +50,12 @@ export default function PrescriptionVerification({
       }
       return p;
     }));
+    await updatePrescriptionStatus(rxId, "Approved");
     setSelectedRx(null);
     setPharmacistNotes("");
   };
 
-  const handleReject = (rxId) => {
+  const handleReject = async (rxId) => {
     if (!rejectionReason) {
       alert("Please provide a reason for rejecting the prescription.");
       return;
@@ -74,12 +74,14 @@ export default function PrescriptionVerification({
       }
       return p;
     }));
+    await updatePrescriptionStatus(rxId, "Rejected", rejectionReason);
     setSelectedRx(null);
     setRejectionReason("");
   };
 
-  const handleAddPrescription = (newRxData) => {
+  const handleAddPrescription = async (newRxData) => {
     setPrescriptions(prev => [newRxData, ...prev]);
+    await createPrescription(newRxData);
     addAuditLog("New Prescription Uploaded", `Registered prescription ${newRxData.rxNumber} for customer ${newRxData.customerName}`, "info");
     setIsNewRxModalOpen(false);
   };

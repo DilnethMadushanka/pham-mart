@@ -36,7 +36,7 @@ export default function ReceiptModal({ txn, onClose }) {
               <span>PRAGUE PHARMACY</span>
             </div>
             <p className="text-[11px] text-slate-500 font-sans mt-0.5">
-              Main Street Healthcare Hub, City Center • Tel: 555-0192
+              Main Street Healthcare Hub, City Center • Tel: 055-222-8292
             </p>
             <p className="text-[10px] text-slate-400 font-sans">
               Healthcare & E-Pharmacy Management System

@@ -16,6 +16,7 @@ import {
   Phone
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
+import { createStaff, updateStaff } from '../../services/supabaseService';
 
 export default function StaffList({ staffList, setStaffList, addAuditLog }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,19 +32,17 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     return matchesSearch && matchesRole;
   });
 
-  const toggleStaffStatus = (id) => {
-    setStaffList(prev => prev.map(s => {
-      if (s.id === id) {
-        const newStatus = s.status === "Active" ? "Inactive" : "Active";
-        addAuditLog(
-          `Staff Account ${newStatus === "Active" ? "Activated" : "Deactivated"}`,
-          `Account for ${s.name} (${s.username}) was set to ${newStatus}`,
-          newStatus === "Active" ? "success" : "warning"
-        );
-        return { ...s, status: newStatus };
-      }
-      return s;
-    }));
+  const toggleStaffStatus = async (id) => {
+    const targetStaff = staffList.find(s => s.id === id);
+    if (!targetStaff) return;
+    const newStatus = targetStaff.status === "Active" ? "Inactive" : "Active";
+    setStaffList(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
+    await updateStaff(id, { status: newStatus });
+    addAuditLog(
+      `Staff Account ${newStatus === "Active" ? "Activated" : "Deactivated"}`,
+      `Account for ${targetStaff.name} (${targetStaff.username}) was set to ${newStatus}`,
+      newStatus === "Active" ? "success" : "warning"
+    );
   };
 
   const handleResetPassword = (staff) => {
@@ -55,9 +54,10 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     );
   };
 
-  const handleSaveStaff = (staffData) => {
+  const handleSaveStaff = async (staffData) => {
     if (editingStaff) {
       setStaffList(prev => prev.map(s => s.id === staffData.id ? staffData : s));
+      await updateStaff(staffData.id, staffData);
       addAuditLog("Staff Account Updated", `Updated roles and permissions for ${staffData.name}`, "info");
     } else {
       const newStaff = {
@@ -67,6 +67,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
         lastActive: "Never"
       };
       setStaffList(prev => [newStaff, ...prev]);
+      await createStaff(newStaff);
       addAuditLog("New Staff Account Created", `Created new ${newStaff.role} account for ${newStaff.name}`, "success");
     }
     setIsAddModalOpen(false);

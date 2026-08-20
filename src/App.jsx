@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import NotificationDrawer from './components/NotificationDrawer';
 import AuditLogModal from './components/AuditLogModal';
 import AuthModal from './components/AuthModal';
+import ToastNotification from './components/ToastNotification';
 
 // Initial Datasets
 import { 
@@ -136,7 +137,7 @@ export default function App() {
     if (targetMode === "enterprise") {
       const isStaff = currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer");
       if (!isStaff) {
-        alert("🔒 Access Restricted: The Enterprise Console is reserved for authorized PHARMART staff members (Admin, Pharmacist, Cashier). Please sign in with staff credentials.");
+        showToast("Access Restricted", "The Enterprise Console is reserved for authorized staff. Please sign in with staff credentials.", "error");
         setIsAuthModalOpen(true);
         return;
       }
@@ -147,6 +148,7 @@ export default function App() {
   const handleLoginSuccess = (userData) => {
     setCurrentUser(userData);
     setIsAuthModalOpen(false);
+    showToast("Signed In Successfully", `Welcome to PHARMART Pharmacy, ${userData.name}!`, "success");
     
     if (userData.userType === "customer" || userData.role === "Customer") {
       setCustomers(prev => [userData, ...prev.filter(c => c.id !== userData.id && c.email !== userData.email)]);
@@ -326,6 +328,12 @@ export default function App() {
         isOpen={isAuditLogsOpen}
         onClose={() => setIsAuditLogsOpen(false)}
         logs={auditLogs}
+      />
+
+      {/* Floating Modern Toast Notification */}
+      <ToastNotification 
+        toast={toast}
+        onClose={() => setToast(null)}
       />
 
     </div>
