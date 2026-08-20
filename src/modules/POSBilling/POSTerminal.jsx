@@ -276,7 +276,7 @@ export default function POSTerminal({
 
                     <div className="text-right">
                       <span className="text-base font-black text-slate-900">
-                        Rs. {med.unitPrice.toFixed(2)}
+                        Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -319,7 +319,7 @@ export default function POSTerminal({
                   <div className="flex-1 pr-2">
                     <div className="font-bold text-slate-900">{item.name}</div>
                     <div className="text-[11px] text-emerald-700 font-semibold">
-                      Rs. {item.unitPrice.toFixed(2)} × {item.qty} = Rs. {(item.unitPrice * item.qty).toFixed(2)}
+                      Rs. {(Number(item.unitPrice || item.unit_price || 0)).toFixed(2)} × {item.qty} = Rs. {((Number(item.unitPrice || item.unit_price || 0)) * item.qty).toFixed(2)}
                     </div>
                   </div>
 

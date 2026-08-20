@@ -286,7 +286,7 @@ export default function MedicineList({
 
                         {/* Price */}
                         <td className="py-3.5 px-4 font-bold text-slate-900">
-                          Rs. {med.unitPrice.toFixed(2)}
+                          Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                         </td>
 
                         {/* Batch & Expiry */}
