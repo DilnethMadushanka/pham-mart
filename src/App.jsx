@@ -71,6 +71,11 @@ export default function App() {
   // Drawers & Modals
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (title, message, type = "success") => {
+    setToast({ title, message, type, duration: 3500 });
+  };
 
   // Sync & Realtime Supabase Database Listeners
   useEffect(() => {
