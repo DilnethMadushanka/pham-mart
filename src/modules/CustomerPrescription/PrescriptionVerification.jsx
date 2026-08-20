@@ -117,28 +117,28 @@ export default function PrescriptionVerification({
       {/* Tabs */}
       <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl w-fit">
         <button
-          onClick={() => setActiveTab("all")}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-            activeTab === "all" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600"
+          onClick={() => setActiveFilter("ALL")}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeFilter === "ALL" ? "bg-white text-emerald-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           All Prescriptions ({prescriptions.length})
         </button>
         <button
-          onClick={() => setActiveTab("pending")}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
-            activeTab === "pending" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600"
+          onClick={() => setActiveFilter("Pending")}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+            activeFilter === "Pending" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           <span>Pending Verification</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-white text-emerald-800 text-[10px]">
+          <span className="px-1.5 py-0.2 rounded-full bg-white text-emerald-800 text-[10px] font-black">
             {prescriptions.filter(p => p.status === "Pending").length}
           </span>
         </button>
         <button
-          onClick={() => setActiveTab("approved")}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-            activeTab === "approved" ? "bg-white text-emerald-800 shadow-xs" : "text-slate-600"
+          onClick={() => setActiveFilter("Approved")}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            activeFilter === "Approved" ? "bg-white text-emerald-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           Approved ({prescriptions.filter(p => p.status === "Approved").length})
