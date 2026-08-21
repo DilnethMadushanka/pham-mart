@@ -60,12 +60,12 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-emerald-100 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-sky-100 overflow-hidden">
         
         {/* Header */}
-        <div className="p-4 border-b border-emerald-100 bg-emerald-50/70 flex justify-between items-center">
+        <div className="p-4 border-b border-sky-100 bg-sky-50/70 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-emerald-600 text-white">
+            <div className="p-2 rounded-xl bg-sky-600 text-white">
               <Package className="w-5 h-5" />
             </div>
             <div>
@@ -77,7 +77,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,7 +94,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin 500mg Capsules"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
             />
           </div>
 
@@ -105,7 +105,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin Trihydrate"
               value={formData.genericName}
               onChange={(e) => setFormData({...formData, genericName: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
               >
                 <option value="Antibiotics">Antibiotics</option>
                 <option value="Analgesics">Analgesics</option>
@@ -135,7 +135,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.unitPrice}
                 onChange={(e) => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-emerald-800 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-sky-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
 
@@ -159,7 +159,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.reorderLevel}
                 onChange={(e) => setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.batchNo}
                 onChange={(e) => setFormData({...formData, batchNo: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
 
@@ -183,7 +183,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
             <select
               value={formData.supplierId}
               onChange={handleSupplierChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
             >
               {suppliers.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead)</option>
@@ -208,7 +208,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 type="checkbox"
                 checked={formData.prescriptionRequired}
                 onChange={(e) => setFormData({...formData, prescriptionRequired: e.target.checked})}
-                className="rounded-md border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                className="rounded-md border-slate-300 text-sky-600 focus:ring-sky-500"
               />
               <span className="font-bold text-slate-800">Requires Doctor Prescription for Dispensing</span>
             </label>
@@ -229,13 +229,13 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs"
+              className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               {medicineToEdit ? "Update Medicine" : "Add to Inventory"}
             </button>

@@ -21,14 +21,14 @@ export default function ToastNotification({
     <div className="fixed top-5 right-5 z-[100] max-w-md w-full animate-slide-down font-sans px-4">
       <div className={`p-4 rounded-2xl shadow-2xl border flex items-center justify-between space-x-3 backdrop-blur-xl transition-all ${
         isSuccess 
-          ? "bg-slate-900/90 text-white border-emerald-500/40 ring-2 ring-emerald-500/20"
+          ? "bg-slate-900/90 text-white border-sky-500/40 ring-2 ring-sky-500/20"
           : isError
           ? "bg-rose-900/90 text-white border-rose-500/40 ring-2 ring-rose-500/20"
-          : "bg-slate-900/90 text-white border-blue-500/40"
+          : "bg-slate-900/90 text-white border-sky-500/40"
       }`}>
         <div className="flex items-center space-x-3 min-w-0">
           {isSuccess ? (
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shrink-0">
               <CheckCircle2 className="w-5 h-5" />
             </div>
           ) : isError ? (
@@ -36,7 +36,7 @@ export default function ToastNotification({
               <AlertCircle className="w-5 h-5" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-400/40 flex items-center justify-center text-blue-400 shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400 shrink-0">
               <Info className="w-5 h-5" />
             </div>
           )}

@@ -78,10 +78,10 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     <div className="space-y-6 animate-fade-in">
       
       {/* Epic Header & Metrics */}
-      <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Epic 1 Requirement
             </span>
             <h2 className="text-xl font-black text-slate-900">
@@ -95,7 +95,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-md shadow-emerald-600/20 transition-all"
+          className="flex items-center space-x-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold text-xs shadow-md shadow-sky-600/20 transition-all cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add Staff Member</span>
@@ -107,12 +107,12 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-xs text-slate-500 font-semibold">Total Staff Accounts</span>
           <div className="text-2xl font-black text-slate-900 mt-1">{staffList.length}</div>
-          <span className="text-[11px] text-emerald-700 font-bold">100% Centralized</span>
+          <span className="text-[11px] text-sky-700 font-bold">100% Centralized</span>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-xs text-slate-500 font-semibold">Active Staff Accounts</span>
-          <div className="text-2xl font-black text-emerald-700 mt-1">
+          <div className="text-2xl font-black text-sky-700 mt-1">
             {staffList.filter(s => s.status === "Active").length}
           </div>
           <span className="text-[11px] text-slate-500">Ready for duty</span>
@@ -121,7 +121,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
           <span className="text-xs text-slate-500 font-semibold">Average Creation KPI</span>
           <div className="text-2xl font-black text-slate-900 mt-1">1.5 mins</div>
-          <span className="text-[11px] text-emerald-700 font-bold">Target: &lt; 2 mins (Passed)</span>
+          <span className="text-[11px] text-sky-700 font-bold">Target: &lt; 2 mins (Passed)</span>
         </div>
       </div>
 
@@ -134,7 +134,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
             placeholder="Search staff by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-hidden"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-hidden"
           />
         </div>
 
@@ -144,7 +144,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
           >
             <option value="ALL">All Roles</option>
             <option value="Owner/Admin">Owner / Admin</option>
@@ -175,7 +175,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   {/* Name & ID */}
                   <td className="py-3.5 px-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold flex items-center justify-center text-xs">
+                      <div className="w-9 h-9 rounded-full bg-sky-100 border border-sky-300 text-sky-900 font-bold flex items-center justify-center text-xs">
                         {staff.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
@@ -191,7 +191,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                       staff.role === "Owner/Admin" 
                         ? "bg-purple-50 text-purple-800 border-purple-200"
                         : staff.role === "Pharmacist"
-                        ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        ? "bg-sky-50 text-sky-800 border-sky-200"
                         : "bg-blue-50 text-blue-800 border-blue-200"
                     }`}>
                       <ShieldCheck className="w-3 h-3 mr-1" />
@@ -215,13 +215,13 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   <td className="py-3.5 px-4">
                     <button
                       onClick={() => toggleStaffStatus(staff.id)}
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${
                         staff.status === "Active" 
-                          ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-rose-100 hover:text-rose-800 hover:border-rose-300"
-                          : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-emerald-100 hover:text-emerald-800"
+                          ? "bg-sky-100 text-sky-800 border-sky-300 hover:bg-rose-100 hover:text-rose-800 hover:border-rose-300"
+                          : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-sky-100 hover:text-sky-800"
                       }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${staff.status === "Active" ? "bg-emerald-600" : "bg-slate-400"}`}></span>
+                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${staff.status === "Active" ? "bg-sky-600" : "bg-slate-400"}`}></span>
                       {staff.status}
                     </button>
                   </td>
@@ -240,14 +240,14 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                       <button
                         onClick={() => handleResetPassword(staff)}
                         title="Reset Password"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
                       >
                         <Key className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => { setEditingStaff(staff); setIsAddModalOpen(true); }}
                         title="Edit Role & Permissions"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
                       >
                         <Edit className="w-4 h-4" />
                       </button>

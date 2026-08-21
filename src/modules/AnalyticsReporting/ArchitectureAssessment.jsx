@@ -19,19 +19,19 @@ export default function ArchitectureAssessment() {
     <div className="space-y-6 animate-fade-in">
       
       {/* Report Header Card */}
-      <div className="bg-emerald-gradient text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-sky-950 via-blue-900 to-slate-900 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden border border-sky-800/40">
         <div className="relative z-10 space-y-2">
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-bold border border-white/30">
               {REPORT_INFO.module}
             </span>
-            <span className="text-emerald-200 text-xs font-semibold">
+            <span className="text-sky-200 text-xs font-semibold">
               Group: {REPORT_INFO.group}
             </span>
           </div>
 
           <h2 className="text-2xl font-black tracking-tight">{REPORT_INFO.title}</h2>
-          <p className="text-xs text-emerald-100 max-w-3xl leading-relaxed">
+          <p className="text-xs text-sky-100 max-w-3xl leading-relaxed">
             Client Organization: <strong className="text-white">{REPORT_INFO.client}</strong> • Submitted to: <strong className="text-white">{REPORT_INFO.lecturer}</strong> ({REPORT_INFO.submissionDate})
           </p>
 
@@ -56,9 +56,9 @@ export default function ArchitectureAssessment() {
           <button
             key={tab.id}
             onClick={() => setActiveSection(tab.id)}
-            className={`px-4 py-2 rounded-lg transition-all ${
+            className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
               activeSection === tab.id
-                ? "bg-white text-emerald-800 shadow-xs"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -72,7 +72,7 @@ export default function ArchitectureAssessment() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <h3 className="font-extrabold text-slate-900 text-base flex items-center">
-              <BookOpen className="w-5 h-5 mr-2 text-emerald-600" />
+              <BookOpen className="w-5 h-5 mr-2 text-sky-600" />
               Executive Summary & Context
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
@@ -85,7 +85,7 @@ export default function ArchitectureAssessment() {
 
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
             <h3 className="font-extrabold text-slate-900 text-base flex items-center">
-              <Award className="w-5 h-5 mr-2 text-emerald-600" />
+              <Award className="w-5 h-5 mr-2 text-sky-600" />
               Organizational Blueprint
             </h3>
             <div className="space-y-2 text-xs">
@@ -99,7 +99,7 @@ export default function ArchitectureAssessment() {
               </div>
               <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between">
                 <span className="font-semibold text-slate-500">Core Epics Covered:</span>
-                <span className="font-bold text-emerald-700">All 4 Epics Digitized</span>
+                <span className="font-bold text-sky-700">All 4 Epics Digitized</span>
               </div>
             </div>
           </div>
@@ -127,7 +127,7 @@ export default function ArchitectureAssessment() {
                   <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-extrabold">Bottleneck</span>
                 </div>
                 <p className="text-slate-600 text-[11px]"><strong>As-Is Evidence:</strong> {p.evidence}</p>
-                <p className="text-emerald-800 text-[11px]"><strong>Business Impact:</strong> {p.impact}</p>
+                <p className="text-sky-800 text-[11px]"><strong>Business Impact:</strong> {p.impact}</p>
               </div>
             ))}
           </div>
@@ -137,7 +137,7 @@ export default function ArchitectureAssessment() {
       {activeSection === "stakeholders" && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <h3 className="text-base font-extrabold text-slate-900 flex items-center">
-            <Users className="w-5 h-5 mr-2 text-emerald-600" />
+            <Users className="w-5 h-5 mr-2 text-sky-600" />
             Stakeholder Classification & Engagement Strategy
           </h3>
 
@@ -147,7 +147,7 @@ export default function ArchitectureAssessment() {
                 <div className="flex justify-between items-center">
                   <span className="font-bold text-slate-900">{s.name}</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    s.type === "Internal" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
+                    s.type === "Internal" ? "bg-sky-100 text-sky-800" : "bg-blue-100 text-blue-800"
                   }`}>
                     {s.type}
                   </span>
@@ -167,7 +167,7 @@ export default function ArchitectureAssessment() {
       {activeSection === "swimlanes" && (
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4">
           <h3 className="text-base font-extrabold text-slate-900 flex items-center">
-            <GitBranch className="w-5 h-5 mr-2 text-emerald-600" />
+            <GitBranch className="w-5 h-5 mr-2 text-sky-600" />
             Swimlane Responsibilities Across System Epics
           </h3>
 
@@ -180,7 +180,7 @@ export default function ArchitectureAssessment() {
             ].map((sw, idx) => (
               <div key={idx} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex justify-between items-center">
                 <span className="font-bold text-slate-900">{sw.epic}</span>
-                <span className="text-emerald-700 font-semibold">{sw.roles}</span>
+                <span className="text-sky-700 font-semibold">{sw.roles}</span>
               </div>
             ))}
           </div>

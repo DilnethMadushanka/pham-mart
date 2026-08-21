@@ -82,10 +82,10 @@ export default function MedicineList({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Header */}
-      <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Epic 2 Requirement
             </span>
             <h2 className="text-xl font-black text-slate-900">
@@ -101,9 +101,9 @@ export default function MedicineList({
         <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl">
           <button
             onClick={() => setActiveSubTab("catalogue")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeSubTab === "catalogue"
-                ? "bg-white text-emerald-800 shadow-xs"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -112,9 +112,9 @@ export default function MedicineList({
 
           <button
             onClick={() => setActiveSubTab("purchase_orders")}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 ${
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeSubTab === "purchase_orders"
-                ? "bg-white text-emerald-800 shadow-xs"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -140,7 +140,7 @@ export default function MedicineList({
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
               <span className="text-xs text-slate-500 font-semibold">Total Catalogue Items</span>
               <div className="text-2xl font-black text-slate-900 mt-1">{medicines.length}</div>
-              <span className="text-[11px] text-emerald-700 font-bold">100% Digital Tracking</span>
+              <span className="text-[11px] text-sky-700 font-bold">100% Digital Tracking</span>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/20 shadow-xs">
@@ -161,12 +161,12 @@ export default function MedicineList({
               <span className="text-[11px] text-rose-800 font-semibold">Flagged for inspection</span>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-emerald-200 bg-emerald-50/20 shadow-xs">
-              <span className="text-xs text-emerald-800 font-semibold">Controlled Drugs</span>
-              <div className="text-2xl font-black text-emerald-800 mt-1">
+            <div className="bg-white p-4 rounded-xl border border-sky-200 bg-sky-50/20 shadow-xs">
+              <span className="text-xs text-sky-800 font-semibold">Controlled Drugs</span>
+              <div className="text-2xl font-black text-sky-800 mt-1">
                 {medicines.filter(m => m.controlledDrug).length}
               </div>
-              <span className="text-[11px] text-emerald-700 font-bold">Strict Verification</span>
+              <span className="text-[11px] text-sky-700 font-bold">Strict Verification</span>
             </div>
           </div>
 
@@ -180,7 +180,7 @@ export default function MedicineList({
                 placeholder="Search medicine name, code or batch..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-hidden"
               />
             </div>
 
@@ -189,7 +189,7 @@ export default function MedicineList({
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -200,7 +200,7 @@ export default function MedicineList({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="LOW_STOCK">Low Stock Only</option>
@@ -210,7 +210,7 @@ export default function MedicineList({
 
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs"
+                className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
@@ -273,7 +273,7 @@ export default function MedicineList({
                         {/* Stock Level */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center space-x-2">
-                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-emerald-700"}`}>
+                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-sky-700"}`}>
                               {med.stock} units
                             </span>
                             {isLowStock && (
@@ -309,14 +309,14 @@ export default function MedicineList({
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteMedicine(med.id, med.name)}
                               title="Discontinue Product"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

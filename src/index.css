@@ -2,10 +2,10 @@
 
 @layer base {
   :root {
-    --primary-green: #00A86B;
-    --primary-dark: #007047;
-    --primary-light: #10b981;
-    --primary-subtle: #e6f7f0;
+    --primary-blue: #0284c7;
+    --primary-dark: #0369a1;
+    --primary-light: #38bdf8;
+    --primary-subtle: #f0f9ff;
     --bg-page: #f8fafc;
     --card-bg: #ffffff;
     --border-color: #e2e8f0;
@@ -35,8 +35,8 @@
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
 }
 
 .animate-slide-up {
@@ -56,6 +56,6 @@
   background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #059669;
+  background: #0284c7;
   border-radius: 9999px;
 }

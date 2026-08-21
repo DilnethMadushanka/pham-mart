@@ -33,12 +33,12 @@ export default function FaqAccordion() {
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-6 gap-4">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#00875A] text-white flex items-center justify-center shadow-md shadow-[#00875A]/20">
+          <div className="w-12 h-12 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center shadow-md shadow-[#0284c7]/20">
             <HelpCircle className="w-6 h-6" />
           </div>
           <div>
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Frequently Asked Questions (FAQs)<span className="text-[#00875A]">.</span>
+              Frequently Asked Questions (FAQs)<span className="text-[#0284c7]">.</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
               Prescription fulfillment, pharmacy services & direct delivery guidelines
@@ -46,7 +46,7 @@ export default function FaqAccordion() {
           </div>
         </div>
 
-        <div className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-[#00875A] text-xs font-black border border-emerald-200">
+        <div className="px-3.5 py-1.5 rounded-full bg-sky-100 text-[#0284c7] text-xs font-black border border-sky-200">
           PHARMART Help Center
         </div>
       </div>
@@ -61,8 +61,8 @@ export default function FaqAccordion() {
               key={idx}
               className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
                 isOpen 
-                  ? "border-[#00875A] bg-white shadow-md ring-1 ring-[#00875A]/30" 
-                  : "border-slate-200 bg-white hover:border-emerald-300 hover:shadow-xs"
+                  ? "border-[#0284c7] bg-white shadow-md ring-1 ring-[#0284c7]/30" 
+                  : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-xs"
               }`}
             >
               <button
@@ -70,10 +70,10 @@ export default function FaqAccordion() {
                 className="w-full p-5 sm:p-6 text-left font-extrabold text-slate-900 text-sm sm:text-base flex justify-between items-center space-x-4 group"
               >
                 <span className="flex items-center space-x-3">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${isOpen ? "bg-[#00875A]" : "bg-slate-300 group-hover:bg-emerald-500"}`}></span>
-                  <span className={isOpen ? "text-[#00875A]" : "text-slate-900"}>{faq.q}</span>
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${isOpen ? "bg-[#0284c7]" : "bg-slate-300 group-hover:bg-sky-500"}`}></span>
+                  <span className={isOpen ? "text-[#0284c7]" : "text-slate-900"}>{faq.q}</span>
                 </span>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${isOpen ? "bg-emerald-50 text-[#00875A]" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"}`}>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${isOpen ? "bg-sky-50 text-[#0284c7]" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"}`}>
                   <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? "transform rotate-180" : ""}`} />
                 </div>
               </button>

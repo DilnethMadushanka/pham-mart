@@ -90,10 +90,10 @@ export default function PrescriptionVerification({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Epic 3 Requirement
             </span>
             <h2 className="text-xl font-black text-slate-900">
@@ -107,7 +107,7 @@ export default function PrescriptionVerification({
 
         <button
           onClick={() => setIsNewRxModalOpen(true)}
-          className="flex items-center space-x-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20"
+          className="flex items-center space-x-1.5 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-600/20 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Upload / Register Prescription</span>
@@ -119,7 +119,7 @@ export default function PrescriptionVerification({
         <button
           onClick={() => setActiveFilter("ALL")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            activeFilter === "ALL" ? "bg-white text-emerald-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
+            activeFilter === "ALL" ? "bg-white text-sky-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           All Prescriptions ({prescriptions.length})
@@ -127,18 +127,18 @@ export default function PrescriptionVerification({
         <button
           onClick={() => setActiveFilter("Pending")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
-            activeFilter === "Pending" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
+            activeFilter === "Pending" ? "bg-sky-600 text-white shadow-xs" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           <span>Pending Verification</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-white text-emerald-800 text-[10px] font-black">
+          <span className="px-1.5 py-0.2 rounded-full bg-white text-sky-800 text-[10px] font-black">
             {prescriptions.filter(p => p.status === "Pending").length}
           </span>
         </button>
         <button
           onClick={() => setActiveFilter("Approved")}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            activeFilter === "Approved" ? "bg-white text-emerald-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
+            activeFilter === "Approved" ? "bg-white text-sky-800 shadow-xs font-extrabold" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           Approved ({prescriptions.filter(p => p.status === "Approved").length})
@@ -161,8 +161,8 @@ export default function PrescriptionVerification({
                 onClick={() => setSelectedRx(rx)}
                 className={`p-5 rounded-2xl border transition-all cursor-pointer bg-white ${
                   isSelected 
-                    ? "border-emerald-500 ring-2 ring-emerald-500/20 shadow-md" 
-                    : "border-slate-200 hover:border-emerald-300 shadow-xs"
+                    ? "border-sky-500 ring-2 ring-sky-500/20 shadow-md" 
+                    : "border-slate-200 hover:border-sky-300 shadow-xs"
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -185,7 +185,7 @@ export default function PrescriptionVerification({
                     isPending 
                       ? "bg-amber-100 text-amber-800 border-amber-300"
                       : isApproved 
-                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      ? "bg-sky-100 text-sky-800 border-sky-300"
                       : "bg-rose-100 text-rose-800 border-rose-300"
                   }`}>
                     {rx.status}
@@ -195,7 +195,7 @@ export default function PrescriptionVerification({
                 {/* Doctor details */}
                 <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-600 flex justify-between items-center">
                   <div className="flex items-center">
-                    <Stethoscope className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                    <Stethoscope className="w-3.5 h-3.5 mr-1 text-sky-600" />
                     <span>{rx.doctorName} ({rx.doctorSlmcNo})</span>
                   </div>
                   <span className="text-[11px] text-slate-400">{rx.uploadDate}</span>
@@ -208,18 +208,18 @@ export default function PrescriptionVerification({
         {/* Selected Prescription Review Workstation */}
         <div className="lg:col-span-6">
           {selectedRx ? (
-            <div className="bg-white p-6 rounded-2xl border border-emerald-200 shadow-lg space-y-5 sticky top-20">
+            <div className="bg-white p-6 rounded-2xl border border-sky-200 shadow-lg space-y-5 sticky top-20">
               
               <div className="flex justify-between items-start border-b border-slate-100 pb-3">
                 <div>
-                  <span className="text-xs font-bold uppercase text-emerald-600 tracking-wider">
+                  <span className="text-xs font-bold uppercase text-sky-600 tracking-wider">
                     Pharmacist Verification Console
                   </span>
                   <h3 className="text-lg font-black text-slate-900 mt-0.5">{selectedRx.rxNumber}</h3>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                   selectedRx.status === "Approved" 
-                    ? "bg-emerald-100 text-emerald-800 border-emerald-300" 
+                    ? "bg-sky-100 text-sky-800 border-sky-300" 
                     : selectedRx.status === "Pending"
                     ? "bg-amber-100 text-amber-800 border-amber-300"
                     : "bg-rose-100 text-rose-800 border-rose-300"
@@ -237,7 +237,7 @@ export default function PrescriptionVerification({
                 <div>
                   <span className="text-slate-400 font-semibold block">Prescribing Physician</span>
                   <span className="font-bold text-slate-900">{selectedRx.doctorName}</span>
-                  <span className="text-[10px] text-emerald-700 block font-mono">Reg: {selectedRx.doctorSlmcNo}</span>
+                  <span className="text-[10px] text-sky-700 block font-mono">Reg: {selectedRx.doctorSlmcNo}</span>
                 </div>
               </div>
 
@@ -282,14 +282,14 @@ export default function PrescriptionVerification({
                       placeholder="Enter verification remarks or SLMC checks..."
                       value={pharmacistNotes}
                       onChange={(e) => setPharmacistNotes(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-hidden"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-hidden"
                     />
                   </div>
 
                   <div className="flex space-x-3">
                     <button
                       onClick={() => handleApprove(selectedRx.id)}
-                      className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5"
+                      className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Approve Prescription</span>
@@ -303,7 +303,7 @@ export default function PrescriptionVerification({
                           handleReject(selectedRx.id);
                         }
                       }}
-                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1"
+                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer"
                     >
                       <XCircle className="w-4 h-4" />
                       <span>Reject</span>
@@ -314,13 +314,13 @@ export default function PrescriptionVerification({
 
               {/* Approved status view */}
               {selectedRx.status === "Approved" && (
-                <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900">
+                <div className="p-3.5 bg-sky-50 rounded-xl border border-sky-200 text-xs text-sky-900">
                   <div className="font-bold flex items-center">
-                    <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
+                    <CheckCircle2 className="w-4 h-4 mr-1 text-sky-600" />
                     Prescription Verified & Linked to Customer Record
                   </div>
-                  <p className="text-[11px] text-emerald-800 mt-1">Verified by: {selectedRx.verifiedBy}</p>
-                  <p className="text-[11px] text-emerald-700">Remarks: {selectedRx.notes}</p>
+                  <p className="text-[11px] text-sky-800 mt-1">Verified by: {selectedRx.verifiedBy}</p>
+                  <p className="text-[11px] text-sky-700">Remarks: {selectedRx.notes}</p>
                 </div>
               )}
 

@@ -100,13 +100,13 @@ export default function GoogleFeedbackModal({
       onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/65 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-sans"
     >
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-emerald-100/80 overflow-hidden flex flex-col my-6 relative transform transition-all">
+      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-sky-100/80 overflow-hidden flex flex-col my-6 relative transform transition-all">
         
         {/* Premium Google Themed Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-emerald-950 to-teal-900 p-6 text-white relative overflow-hidden">
+        <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-blue-900 p-6 text-white relative overflow-hidden">
           {/* Ambient Decorative Blur Rings */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-teal-500/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
 
           <button 
             type="button"
@@ -130,11 +130,11 @@ export default function GoogleFeedbackModal({
             <div>
               <div className="flex items-center space-x-2">
                 <h3 className="text-lg font-black tracking-tight text-white font-heading">Google Patient Reviews</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/25 text-emerald-300 text-[10px] font-extrabold border border-emerald-400/40 backdrop-blur-md shadow-xs">
+                <span className="px-2.5 py-0.5 rounded-full bg-sky-500/25 text-sky-300 text-[10px] font-extrabold border border-sky-400/40 backdrop-blur-md shadow-xs">
                   Official 4.8 ★
                 </span>
               </div>
-              <p className="text-xs text-emerald-100/90 font-medium mt-0.5">PHARMART Pharmacy Verified Patient Ratings</p>
+              <p className="text-xs text-sky-100/90 font-medium mt-0.5">PHARMART Pharmacy Verified Patient Ratings</p>
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function GoogleFeedbackModal({
           
           {isSubmitted ? (
             <div className="text-center py-8 space-y-4 animate-fade-in">
-              <div className="w-20 h-20 rounded-3xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto border-2 border-emerald-200 shadow-xl shadow-emerald-500/10">
+              <div className="w-20 h-20 rounded-3xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto border-2 border-sky-200 shadow-xl shadow-sky-500/10">
                 <CheckCircle2 className="w-12 h-12" />
               </div>
               <div className="space-y-1">
@@ -155,7 +155,7 @@ export default function GoogleFeedbackModal({
               </div>
               <button
                 onClick={handleReset}
-                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-500/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                className="px-6 py-3 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-sky-500/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
               >
                 Write Another Review
               </button>
@@ -165,7 +165,7 @@ export default function GoogleFeedbackModal({
             <form onSubmit={handleSubmitReview} className="space-y-4 text-xs">
               
               {/* Star Selector Pill Box */}
-              <div className="bg-gradient-to-br from-slate-50 to-emerald-50/40 p-4.5 rounded-2xl border border-slate-200/80 text-center space-y-2 shadow-xs">
+              <div className="bg-gradient-to-br from-slate-50 to-sky-50/40 p-4.5 rounded-2xl border border-slate-200/80 text-center space-y-2 shadow-xs">
                 <span className="font-extrabold text-slate-800 text-xs tracking-wide block">Tap to Rate Your Healthcare Experience</span>
                 
                 <div className="flex items-center justify-center space-x-2 py-1">
@@ -206,7 +206,7 @@ export default function GoogleFeedbackModal({
                     placeholder="e.g. K. A. Sunil Shantha"
                     value={reviewerName}
                     onChange={(e) => setReviewerName(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A86B] focus:bg-white outline-hidden transition-all text-xs"
+                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#0284c7] focus:bg-white outline-hidden transition-all text-xs"
                   />
                 </div>
               </div>
@@ -220,7 +220,7 @@ export default function GoogleFeedbackModal({
                     placeholder="sunil.s@gmail.com"
                     value={reviewerEmail}
                     onChange={(e) => setReviewerEmail(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A86B] focus:bg-white outline-hidden transition-all text-xs"
+                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#0284c7] focus:bg-white outline-hidden transition-all text-xs"
                   />
                 </div>
               </div>
@@ -235,14 +235,14 @@ export default function GoogleFeedbackModal({
                     placeholder="Share your experience with PHARMART Pharmacy's medicines, prescription clearance, or fast home delivery..."
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A86B] focus:bg-white outline-hidden transition-all text-xs"
+                    className="w-full pl-10 pr-3.5 py-3 bg-slate-50/80 border border-slate-200 rounded-2xl font-semibold text-slate-800 focus:ring-2 focus:ring-[#0284c7] focus:bg-white outline-hidden transition-all text-xs"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-[#00A86B] to-emerald-600 hover:from-[#00925d] hover:to-emerald-700 text-white font-extrabold rounded-2xl shadow-lg shadow-emerald-500/25 text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                className="w-full py-3.5 bg-gradient-to-r from-[#0284c7] to-sky-600 hover:from-[#0369a1] hover:to-sky-700 text-white font-extrabold rounded-2xl shadow-lg shadow-sky-500/25 text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Feedback to Google Reviews</span>
@@ -254,7 +254,7 @@ export default function GoogleFeedbackModal({
           <div className="space-y-3.5 pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-slate-900 text-xs flex items-center space-x-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <ShieldCheck className="w-4 h-4 text-sky-600" />
                 <span>Verified Google Patient Reviews ({reviewsList.length})</span>
               </h4>
               <span className="text-amber-500 font-black text-xs bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
@@ -267,13 +267,13 @@ export default function GoogleFeedbackModal({
                 <div key={rev.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/80 text-xs space-y-2 transition-all shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-8 h-8 rounded-full bg-sky-600 text-white font-black flex items-center justify-center text-xs shadow-sm">
                         {rev.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
                         <span className="font-extrabold text-slate-900 block text-xs">{rev.name}</span>
-                        <span className="text-[10px] text-emerald-700 font-bold flex items-center space-x-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600 inline" />
+                        <span className="text-[10px] text-sky-700 font-bold flex items-center space-x-1">
+                          <CheckCircle2 className="w-3 h-3 text-sky-600 inline" />
                           <span>Verified Patient</span>
                         </span>
                       </div>

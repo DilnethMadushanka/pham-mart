@@ -254,10 +254,10 @@ export default function AuthModal({
       onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in font-sans"
     >
-      <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[85vh] shadow-2xl border border-emerald-100 overflow-hidden flex flex-col my-auto relative">
+      <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[85vh] shadow-2xl border border-sky-100 overflow-hidden flex flex-col my-auto relative">
         
         {/* Top Header Banner */}
-        <div className="bg-[#00A86B] p-4 sm:p-6 text-white relative shrink-0">
+        <div className="bg-[#0284c7] p-4 sm:p-6 text-white relative shrink-0">
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); if (onClose) onClose(); }}
@@ -273,7 +273,7 @@ export default function AuthModal({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-bold tracking-tight font-heading">PHARMART Portal</h2>
-              <p className="text-[11px] sm:text-xs text-emerald-100 font-medium">Unified Sign In & Account Portal</p>
+              <p className="text-[11px] sm:text-xs text-sky-100 font-medium">Unified Sign In & Account Portal</p>
             </div>
           </div>
 
@@ -282,7 +282,7 @@ export default function AuthModal({
             <button
               onClick={() => { setAuthMode("login"); setIsGooglePickerOpen(false); setLoginError(""); }}
               className={`flex-1 py-2 sm:py-2.5 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer min-h-[40px] ${
-                authMode === "login" && !isGooglePickerOpen ? "bg-white text-emerald-900 shadow-xs font-bold" : "text-emerald-100 hover:text-white"
+                authMode === "login" && !isGooglePickerOpen ? "bg-white text-sky-900 shadow-xs font-bold" : "text-sky-100 hover:text-white"
               }`}
             >
               <LogIn className="w-3.5 h-3.5" />
@@ -292,7 +292,7 @@ export default function AuthModal({
             <button
               onClick={() => { setAuthMode("register"); setIsGooglePickerOpen(false); setLoginError(""); }}
               className={`flex-1 py-2 sm:py-2.5 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer min-h-[40px] ${
-                authMode === "register" && !isGooglePickerOpen ? "bg-white text-emerald-900 shadow-xs font-bold" : "text-emerald-100 hover:text-white"
+                authMode === "register" && !isGooglePickerOpen ? "bg-white text-sky-900 shadow-xs font-bold" : "text-sky-100 hover:text-white"
               }`}
             >
               <UserPlus className="w-3.5 h-3.5" />
@@ -308,7 +308,7 @@ export default function AuthModal({
           {isGooglePickerOpen ? (
             <div className="space-y-4 animate-fade-in">
               <div className="text-center space-y-1">
-                <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                <div className="w-12 h-12 mx-auto rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-center">
                   <svg className="w-6 h-6" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -322,7 +322,7 @@ export default function AuthModal({
 
               {googleSigningIn ? (
                 <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center space-y-2">
-                  <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin mx-auto" />
+                  <RefreshCw className="w-6 h-6 text-sky-600 animate-spin mx-auto" />
                   <p className="text-xs font-bold text-slate-700">Signing in with Google Account...</p>
                 </div>
               ) : (
@@ -331,48 +331,48 @@ export default function AuthModal({
                   <button
                     type="button"
                     onClick={() => handleSelectGoogleAccount("Gaming Mads (Google)", "gamingmads0103@gmail.com")}
-                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
+                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-sky-50/70 border border-slate-200 hover:border-sky-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
                   >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-rose-600 text-white font-black flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
                       G
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-extrabold text-slate-900 group-hover:text-emerald-800 truncate text-xs">Gaming Mads</div>
+                      <div className="font-extrabold text-slate-900 group-hover:text-sky-800 truncate text-xs">Gaming Mads</div>
                       <div className="text-slate-500 text-[11px] truncate font-medium">gamingmads0103@gmail.com</div>
                     </div>
-                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <UserCheck className="w-4 h-4 text-sky-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
 
                   {/* Account Option 2: techreveiw9@gmail.com */}
                   <button
                     type="button"
                     onClick={() => handleSelectGoogleAccount("Dilneth Madushanka", "techreveiw9@gmail.com")}
-                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
+                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-sky-50/70 border border-slate-200 hover:border-sky-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
                   >
                     <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
                       D
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-extrabold text-slate-900 group-hover:text-emerald-800 truncate text-xs">Dilneth Madushanka</div>
+                      <div className="font-extrabold text-slate-900 group-hover:text-sky-800 truncate text-xs">Dilneth Madushanka</div>
                       <div className="text-slate-500 text-[11px] truncate font-medium">techreveiw9@gmail.com</div>
                     </div>
-                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <UserCheck className="w-4 h-4 text-sky-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
 
                   {/* Account Option 3: dilnethmadushanka@gmail.com */}
                   <button
                     type="button"
                     onClick={() => handleSelectGoogleAccount("Dilneth Madushanka (Personal)", "dilnethmadushanka@gmail.com")}
-                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-emerald-50/70 border border-slate-200 hover:border-emerald-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
+                    className="w-full p-3 sm:p-3.5 rounded-2xl bg-white hover:bg-sky-50/70 border border-slate-200 hover:border-sky-400 flex items-center space-x-3 transition-all cursor-pointer text-left shadow-xs hover:shadow-md group min-h-[48px]"
                   >
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-emerald-600 text-white font-black flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-sky-600 text-white font-black flex items-center justify-center text-xs sm:text-sm shadow-md shrink-0">
                       M
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-extrabold text-slate-900 group-hover:text-emerald-800 truncate text-xs">Dilneth Madushanka (Personal)</div>
+                      <div className="font-extrabold text-slate-900 group-hover:text-sky-800 truncate text-xs">Dilneth Madushanka (Personal)</div>
                       <div className="text-slate-500 text-[11px] truncate font-medium">dilnethmadushanka@gmail.com</div>
                     </div>
-                    <UserCheck className="w-4 h-4 text-emerald-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <UserCheck className="w-4 h-4 text-sky-600 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
 
                   {/* Custom Email Input Toggle */}
@@ -396,7 +396,7 @@ export default function AuthModal({
                           const nameFromEmail = customGoogleEmail.split("@")[0].replace(".", " ");
                           handleSelectGoogleAccount(nameFromEmail, customGoogleEmail);
                         }}
-                        className="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-xs cursor-pointer min-h-[44px]"
+                        className="w-full py-2.5 bg-sky-600 text-white font-bold rounded-xl text-xs cursor-pointer min-h-[44px]"
                       >
                         Continue with Custom Email
                       </button>
@@ -405,7 +405,7 @@ export default function AuthModal({
                     <button
                       type="button"
                       onClick={() => setIsCustomEmailMode(true)}
-                      className="w-full py-2 text-slate-600 font-bold text-xs hover:text-emerald-700 flex items-center justify-center space-x-1 cursor-pointer min-h-[44px]"
+                      className="w-full py-2 text-slate-600 font-bold text-xs hover:text-sky-700 flex items-center justify-center space-x-1 cursor-pointer min-h-[44px]"
                     >
                       <span>Use another Google account</span>
                     </button>
@@ -458,7 +458,7 @@ export default function AuthModal({
                         placeholder="Enter email or username..."
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00A86B] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -473,14 +473,14 @@ export default function AuthModal({
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00A86B] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-[#00A86B] hover:bg-[#00925d] active:scale-[0.99] text-white font-bold rounded-xl shadow-md shadow-[#00A86B]/20 text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
+                    className="w-full py-3.5 bg-[#0284c7] hover:bg-[#0369a1] active:scale-[0.99] text-white font-bold rounded-xl shadow-md shadow-[#0284c7]/20 text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Sign In to Account</span>
@@ -499,7 +499,7 @@ export default function AuthModal({
                         placeholder="e.g. K. A. Sunil Shantha"
                         value={regName}
                         onChange={(e) => setRegName(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#00A86B] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -589,7 +589,7 @@ export default function AuthModal({
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-[#00A86B] hover:bg-[#00925d] active:scale-[0.99] text-white font-extrabold rounded-xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
+                    className="w-full py-3.5 bg-[#0284c7] hover:bg-[#0369a1] active:scale-[0.99] text-white font-extrabold rounded-xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>Create Customer Account & Sign In</span>

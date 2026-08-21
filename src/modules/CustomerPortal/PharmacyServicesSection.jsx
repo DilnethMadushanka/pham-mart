@@ -26,11 +26,11 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
       {/* 3-Column Features / Services Section */}
       <div className="space-y-8">
         <div className="text-center max-w-2xl mx-auto space-y-3">
-          <span className="px-3.5 py-1 bg-emerald-100 text-[#00875A] text-xs font-extrabold rounded-full border border-emerald-200 inline-block uppercase tracking-wider">
+          <span className="px-3.5 py-1 bg-sky-100 text-[#0284c7] text-xs font-extrabold rounded-full border border-sky-200 inline-block uppercase tracking-wider">
             Healthcare Services
           </span>
           <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
-            PHARMART Pharmacy<span className="text-[#00875A]">.</span>
+            PHARMART Pharmacy<span className="text-[#0284c7]">.</span>
           </h2>
           <p className="text-sm text-slate-500 font-medium">
             Providing reliable pharmaceutical care, expert consultation, and custom formulations for your total wellbeing.
@@ -43,10 +43,10 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
             return (
               <div 
                 key={idx} 
-                className="bg-white p-7 rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg hover:border-emerald-300 transition-all space-y-4 flex flex-col justify-between"
+                className="bg-white p-7 rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg hover:border-sky-300 transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-[#00875A] flex items-center justify-center border border-emerald-200 shadow-xs">
+                  <div className="w-14 h-14 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center border border-sky-200 shadow-xs">
                     <Icon className="w-7 h-7" />
                   </div>
                   <h3 className="font-extrabold text-slate-900 text-lg leading-snug">
@@ -81,7 +81,7 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
         {/* Right Column: Text Content & Bullet List */}
         <div className="md:col-span-7 space-y-5">
           <div className="space-y-2">
-            <span className="text-xs font-extrabold text-[#00875A] tracking-wider uppercase">Comprehensive Inventory</span>
+            <span className="text-xs font-extrabold text-[#0284c7] tracking-wider uppercase">Comprehensive Inventory</span>
             <h3 className="text-3xl font-black text-slate-900">Wide Selection</h3>
           </div>
 
@@ -92,21 +92,21 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
           {/* Bullet List with Checkmarks */}
           <div className="space-y-3 pt-1">
             <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#00875A] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center shrink-0">
                 <Check className="w-4 h-4 stroke-[3]" />
               </div>
               <span>Homeopathic medicine</span>
             </div>
 
             <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#00875A] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center shrink-0">
                 <Check className="w-4 h-4 stroke-[3]" />
               </div>
               <span>Allergy medication</span>
             </div>
 
             <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#00875A] flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center shrink-0">
                 <Check className="w-4 h-4 stroke-[3]" />
               </div>
               <span>Glucometers</span>
@@ -117,7 +117,7 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
           <div className="pt-3">
             <button
               onClick={onOpenLocation}
-              className="px-7 py-3.5 bg-[#00875A] hover:bg-[#00704a] text-white font-extrabold text-xs sm:text-sm rounded-full shadow-md hover:shadow-lg flex items-center space-x-2 transition-all transform hover:-translate-y-0.5"
+              className="px-7 py-3.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs sm:text-sm rounded-full shadow-md hover:shadow-lg flex items-center space-x-2 transition-all transform hover:-translate-y-0.5"
             >
               <MapPin className="w-4 h-4" />
               <span>Where to find us?</span>

@@ -17,10 +17,10 @@ export default function BaselineKPITable() {
     <div className="space-y-6 animate-fade-in">
       
       {/* Header */}
-      <div className="bg-white p-6 rounded-2xl border border-emerald-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-xs font-bold border border-emerald-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Report Section 13
             </span>
             <h2 className="text-xl font-black text-slate-900">
@@ -32,8 +32,8 @@ export default function BaselineKPITable() {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 bg-emerald-50 px-3 py-2 rounded-xl border border-emerald-200 text-xs font-bold text-emerald-800">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="flex items-center space-x-2 bg-sky-50 px-3 py-2 rounded-xl border border-sky-200 text-xs font-bold text-sky-800">
+          <CheckCircle2 className="w-4 h-4 text-sky-600" />
           <span>All 13 Metrics Validated & Improved</span>
         </div>
       </div>
@@ -47,7 +47,7 @@ export default function BaselineKPITable() {
             placeholder="Search baseline indicator or KPI name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-hidden"
+            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-hidden"
           />
         </div>
 
@@ -57,7 +57,7 @@ export default function BaselineKPITable() {
           <select
             value={epicFilter}
             onChange={(e) => setEpicFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-hidden"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
           >
             <option value="ALL">All Epics (1 to 4)</option>
             <option value="Epic 1">Epic 1: User & Auth</option>
@@ -104,7 +104,7 @@ export default function BaselineKPITable() {
                   </td>
 
                   {/* Target */}
-                  <td className="py-3.5 px-4 text-emerald-700 font-black bg-emerald-50/40">
+                  <td className="py-3.5 px-4 text-sky-700 font-black bg-sky-50/40">
                     {item.target}
                   </td>
 
@@ -115,8 +115,8 @@ export default function BaselineKPITable() {
 
                   {/* Status Badge */}
                   <td className="py-3.5 px-4 text-right">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      <CheckCircle2 className="w-3 h-3 mr-1 text-emerald-600" />
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-300">
+                      <CheckCircle2 className="w-3 h-3 mr-1 text-sky-600" />
                       {item.status}
                     </span>
                   </td>

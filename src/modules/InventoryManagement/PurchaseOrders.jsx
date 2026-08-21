@@ -75,7 +75,7 @@ export default function PurchaseOrders({
       <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
         <div>
           <h3 className="text-base font-bold text-slate-900 flex items-center">
-            <Truck className="w-5 h-5 mr-2 text-emerald-600" />
+            <Truck className="w-5 h-5 mr-2 text-sky-600" />
             Supplier Purchase Orders & Delivery Processing
           </h3>
           <p className="text-xs text-slate-500">Automated stock sync upon Goods Receipt (Report Epic 2)</p>
@@ -83,7 +83,7 @@ export default function PurchaseOrders({
 
         <button
           onClick={() => setIsCreatePOOpen(true)}
-          className="flex items-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs"
+          className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>New Purchase Order</span>
@@ -98,14 +98,14 @@ export default function PurchaseOrders({
           return (
             <div 
               key={po.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-emerald-300 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-sky-300 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
             >
               <div>
                 <div className="flex items-center space-x-3">
                   <span className="font-mono font-bold text-slate-900 text-sm">{po.poNumber}</span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                     isReceived 
-                      ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                      ? "bg-sky-100 text-sky-800 border-sky-300"
                       : "bg-amber-100 text-amber-800 border-amber-300"
                   }`}>
                     {po.status}
@@ -129,19 +129,19 @@ export default function PurchaseOrders({
               <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-end">
                 <div className="text-right">
                   <div className="text-xs text-slate-400">Total Valuation</div>
-                  <div className="text-base font-black text-emerald-700">Rs. {po.totalAmount.toFixed(2)}</div>
+                  <div className="text-base font-black text-sky-700">Rs. {po.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {!isReceived ? (
                   <button
                     onClick={() => setSelectedPOForReceipt(po)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs"
+                    className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
                   >
                     Receive Goods
                   </button>
                 ) : (
-                  <div className="flex items-center text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-                    <CheckCircle2 className="w-4 h-4 mr-1 text-emerald-600" />
+                  <div className="flex items-center text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
+                    <CheckCircle2 className="w-4 h-4 mr-1 text-sky-600" />
                     Stock Updated
                   </div>
                 )}
@@ -201,13 +201,13 @@ export default function PurchaseOrders({
                 <button
                   type="button"
                   onClick={() => setIsCreatePOOpen(false)}
-                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl"
+                  className="px-4 py-2 bg-slate-100 font-bold rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl shadow-xs"
+                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
                 >
                   Issue Order
                 </button>

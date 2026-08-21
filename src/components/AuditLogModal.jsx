@@ -6,12 +6,12 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-emerald-100 overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-sky-100 overflow-hidden flex flex-col max-h-[85vh]">
         
         {/* Header */}
-        <div className="p-4 border-b border-emerald-100 bg-emerald-50/60 flex justify-between items-center">
+        <div className="p-4 border-b border-sky-100 bg-sky-50/60 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-emerald-600 text-white">
+            <div className="p-2 rounded-xl bg-sky-600 text-white">
               <History className="w-5 h-5" />
             </div>
             <div>
@@ -21,7 +21,7 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
           </div>
           <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -40,7 +40,7 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
                   isDanger 
                     ? "bg-rose-50/70 border-rose-200 text-rose-900" 
                     : isSuccess 
-                    ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" 
+                    ? "bg-sky-50/70 border-sky-200 text-sky-900" 
                     : "bg-slate-50 border-slate-200 text-slate-800"
                 }`}
               >
@@ -49,7 +49,7 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
                     {isDanger ? (
                       <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
                     ) : isSuccess ? (
-                      <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-sky-600 shrink-0" />
                     ) : (
                       <Info className="w-4 h-4 text-slate-500 shrink-0" />
                     )}
@@ -78,7 +78,7 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
           <span>Immutable audit record enforced by system architecture</span>
           <button 
             onClick={onClose}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs hover:bg-emerald-700 transition-colors shadow-xs"
+            className="px-4 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
           >
             Close Audit View
           </button>
