@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ReceiptModal from './ReceiptModal';
-import { createCustomer } from '../../services/supabaseService';
+import { createCustomer, createTransaction, updateMedicineStock } from '../../services/supabaseService';
 
 export default function POSTerminal({ 
   medicines, 
