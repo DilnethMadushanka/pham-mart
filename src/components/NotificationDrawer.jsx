@@ -11,7 +11,8 @@ export default function NotificationDrawer({
   if (!isOpen) return null;
 
   const lowStock = medicines.filter(m => m.stock <= m.reorderLevel);
-  const nearExpiry = medicines.filter(m => new Date(m.expiryDate) <= new Date("2026-09-30"));
+  const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
+  const nearExpiry = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow);
   const pendingRx = prescriptions.filter(p => p.status === "Pending");
 
   return (

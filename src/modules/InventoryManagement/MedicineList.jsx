@@ -48,9 +48,10 @@ export default function MedicineList({
     const matchesCategory = categoryFilter === "ALL" || m.category === categoryFilter;
     
     let matchesStatus = true;
+    const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
     if (statusFilter === "LOW_STOCK") matchesStatus = m.stock <= m.reorderLevel;
     if (statusFilter === "CONTROLLED") matchesStatus = m.controlledDrug;
-    if (statusFilter === "EXPIRED") matchesStatus = new Date(m.expiryDate) <= new Date("2026-09-30");
+    if (statusFilter === "EXPIRED") matchesStatus = m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow;
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -101,7 +102,8 @@ export default function MedicineList({
   };
 
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
-  const expiredCount = medicines.filter(m => new Date(m.expiryDate) <= new Date("2026-09-30")).length;
+  const ninetyDaysThreshold = new Date(Date.now() + 90 * 86400000);
+  const expiredCount = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysThreshold).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -286,7 +288,7 @@ export default function MedicineList({
                 <tbody className="divide-y divide-slate-100">
                   {filteredMedicines.map((med) => {
                     const isLowStock = med.stock <= med.reorderLevel;
-                    const isNearExpiry = new Date(med.expiryDate) <= new Date("2026-09-30");
+                    const isNearExpiry = med.expiryDate && new Date(med.expiryDate) <= ninetyDaysThreshold;
 
                     return (
                       <tr key={med.id} className="hover:bg-slate-50/80 transition-colors">

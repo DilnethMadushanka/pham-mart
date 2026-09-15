@@ -241,7 +241,8 @@ export default function App() {
 
   // Notification Counts
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
-  const expiredCount = medicines.filter(m => new Date(m.expiryDate) <= new Date("2026-09-30")).length;
+  const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
+  const expiredCount = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow).length;
   const pendingRxCount = prescriptions.filter(p => p.status === "Pending").length;
   const unreadCount = lowStockCount + expiredCount + pendingRxCount;
 
