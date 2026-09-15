@@ -90,28 +90,27 @@ export default function PrescriptionVerification({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10">
-          <div className="flex items-center space-x-2 mb-2">
-            <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-200 text-xs font-black tracking-wide border border-sky-400/30 uppercase">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center space-x-2 mb-1.5">
+            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Clinical Workstation
             </span>
-            <span className="text-sky-300 text-xs font-bold">
+            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
               {prescriptions.filter(p => p.status === "Pending").length} Pending RX
             </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             Prescription Verification & Pharmacist Console
           </h2>
-          <p className="text-xs sm:text-sm text-sky-100/90 mt-1 max-w-3xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
             Structured drug interaction checks, dosage validation, SLMC physician record linking & controlled drug clearance.
           </p>
         </div>
 
         <button
           onClick={() => setIsNewRxModalOpen(true)}
-          className="relative z-10 flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/25 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Upload / Register Prescription</span>

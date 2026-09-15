@@ -90,32 +90,29 @@ export default function SupplierList({
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Header Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-sky-500/10 to-transparent pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-bold border border-sky-400/30 flex items-center">
-                <ShieldCheck className="w-3.5 h-3.5 mr-1" />
-                Enterprise Supply Chain
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Suppliers & Distributors
-            </h2>
-            <p className="text-xs sm:text-sm text-sky-100/80 mt-1 max-w-2xl leading-relaxed font-medium">
-              Manage pharmaceutical manufacturers, lead-time SLAs, order fulfillment contacts, and wholesale contracts.
-            </p>
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <div className="flex items-center space-x-2 mb-1.5">
+            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200 flex items-center">
+              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-sky-600" />
+              Enterprise Supply Chain
+            </span>
           </div>
-
-          <button
-            onClick={() => { setEditingSupplier(null); setIsAddModalOpen(true); }}
-            className="flex items-center space-x-2 px-6 py-3.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg shadow-sky-500/30 hover:shadow-sky-500/50 transition-all transform hover:-translate-y-0.5 cursor-pointer shrink-0"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Register New Supplier</span>
-          </button>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+            Suppliers & Distributors
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed font-medium">
+            Manage pharmaceutical manufacturers, lead-time SLAs, order fulfillment contacts, and wholesale contracts.
+          </p>
         </div>
+
+        <button
+          onClick={() => { setEditingSupplier(null); setIsAddModalOpen(true); }}
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
+        >
+          <Plus className="w-4.5 h-4.5" />
+          <span>Register New Supplier</span>
+        </button>
       </div>
 
       {/* Top Stat Metric Cards */}
