@@ -13,21 +13,56 @@ import {
   PackageCheck
 } from 'lucide-react';
 
+function toYYYYMMDD(dateVal) {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {}
+
+  const str = String(dateVal);
+  if (str.includes('-')) {
+    const parts = str.split('T')[0].split(' ')[0].split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
+    }
+  }
+  if (str.includes('/')) {
+    const parts = str.split(',')[0].split(' ')[0].split('/');
+    if (parts.length === 3) {
+      const year = parts[2];
+      const month = parts[0].padStart(2, '0');
+      const day = parts[1].padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+  return str;
+}
+
 export default function DailySalesReportModal({ isOpen, onClose, transactions = [], medicines = [] }) {
   if (!isOpen) return null;
 
-  // Selected date (defaults to 'ALL' to show all recorded transactions by default)
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Selected date (local timezone YYYY-MM-DD format, defaults to 'ALL')
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const [selectedDate, setSelectedDate] = useState('ALL');
 
   // Filter transactions for the selected date
   const filteredTxns = useMemo(() => {
     if (selectedDate === 'ALL') return transactions;
+    const targetDate = toYYYYMMDD(selectedDate);
+
     return transactions.filter(t => {
       if (!t) return false;
-      const tDateStr = t.date || t.created_at;
-      if (!tDateStr) return false;
-      return tDateStr.includes(selectedDate);
+      const rawDate = t.created_at || t.date;
+      if (!rawDate) return false;
+      const tFormatted = toYYYYMMDD(rawDate);
+      return tFormatted === targetDate || String(rawDate).includes(selectedDate);
     });
   }, [transactions, selectedDate]);
 
