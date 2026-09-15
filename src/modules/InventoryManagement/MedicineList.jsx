@@ -90,8 +90,12 @@ export default function MedicineList({
 
   const handleDeleteMedicine = async (id, name, code) => {
     if (window.confirm(`Are you sure you want to discontinue ${name}?`)) {
-      setMedicines(prev => prev.filter(m => m.id !== id && m.code !== code));
-      await deleteMedicine(id, code);
+      setMedicines(prev => prev.filter(m => 
+        String(m.id).toLowerCase() !== String(id).toLowerCase() && 
+        (!code || String(m.code).toLowerCase() !== String(code).toLowerCase()) &&
+        (!name || String(m.name).toLowerCase() !== String(name).toLowerCase())
+      ));
+      await deleteMedicine(id, code, name);
       addAuditLog("Medicine Discontinued", `Discontinued medication record: ${name}`, "warning");
     }
   };

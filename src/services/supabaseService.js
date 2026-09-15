@@ -207,7 +207,14 @@ export async function fetchMedicines() {
       return INITIAL_MEDICINES;
     }
 
-    const dbMeds = (data || []).map(dbMed => {
+    const deletedList = JSON.parse(localStorage.getItem('pharmart_deleted_medicines') || '[]').map(d => String(d).toLowerCase().trim());
+
+    const dbMeds = (data || []).filter(dbMed => {
+      const medId = String(dbMed.id || '').toLowerCase().trim();
+      const medCode = String(dbMed.code || '').toLowerCase().trim();
+      const medName = String(dbMed.name || '').toLowerCase().trim();
+      return !deletedList.includes(medId) && !deletedList.includes(medCode) && !deletedList.includes(medName);
+    }).map(dbMed => {
       const initialMatch = INITIAL_MEDICINES.find(m => m.id === dbMed.id || m.code === dbMed.code);
       const isCtrl = dbMed.controlledDrug ?? dbMed.is_controlled ?? initialMatch?.controlledDrug ?? false;
       const isRx = dbMed.prescriptionRequired ?? dbMed.is_prescription ?? initialMatch?.prescriptionRequired ?? false;
@@ -218,14 +225,14 @@ export async function fetchMedicines() {
         id: dbMed.id,
         code: dbMed.code || initialMatch?.code || `MED-${String(dbMed.id).toUpperCase()}`,
         name: dbMed.name || initialMatch?.name || 'Medicine Item',
+        genericName: dbMed.genericName || dbMed.generic_name || dbMed.dosage || initialMatch?.genericName || '',
         supplierId: dbMed.supplierId || dbMed.supplier_id || initialMatch?.supplierId || 'SUP-01',
         supplierName: dbMed.supplierName || dbMed.supplier_name || initialMatch?.supplierName || 'GlaxoSmithKline Pharmaceuticals',
         unitPrice: Number(dbMed.unitPrice || dbMed.price || initialMatch?.unitPrice || 50),
-        genericName: dbMed.genericName || dbMed.dosage || initialMatch?.genericName || '',
         stock: Number(dbMed.stock ?? initialMatch?.stock ?? 0),
         reorderLevel: Number(dbMed.reorderLevel || dbMed.reorder_level || initialMatch?.reorderLevel || 10),
         expiryDate: dbMed.expiryDate || dbMed.expiry_date || initialMatch?.expiryDate || '2027-12-31',
-        batchNo: dbMed.batchNo || initialMatch?.batchNo || 'BATCH-2026',
+        batchNo: dbMed.batchNo || dbMed.batch_no || initialMatch?.batchNo || 'BATCH-2026',
         controlledDrug: isCtrl,
         is_controlled: isCtrl,
         prescriptionRequired: isRx,
@@ -233,10 +240,16 @@ export async function fetchMedicines() {
       };
     });
 
-    const deletedList = JSON.parse(localStorage.getItem('pharmart_deleted_medicines') || '[]');
     const combined = [...dbMeds];
     INITIAL_MEDICINES.forEach(initM => {
-      if (!deletedList.includes(initM.id) && !deletedList.includes(initM.code) && !combined.some(x => String(x.id).toLowerCase() === String(initM.id).toLowerCase() || (initM.code && String(x.code).toLowerCase() === String(initM.code).toLowerCase()))) {
+      const initId = String(initM.id || '').toLowerCase().trim();
+      const initCode = String(initM.code || '').toLowerCase().trim();
+      const initName = String(initM.name || '').toLowerCase().trim();
+
+      if (!deletedList.includes(initId) && 
+          !deletedList.includes(initCode) && 
+          !deletedList.includes(initName) && 
+          !combined.some(x => String(x.id).toLowerCase() === initId || (x.code && String(x.code).toLowerCase() === initCode))) {
         combined.push(initM);
       }
     });
@@ -255,7 +268,7 @@ export async function createMedicine(medicineData) {
       code: medicineData.code || `MED-${(medicineData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`,
       name: medicineData.name || 'New Medicine',
       category: medicineData.category || 'Analgesic',
-      dosage: medicineData.dosage || medicineData.genericName || 'Standard',
+      dosage: medicineData.genericName || medicineData.dosage || 'Standard',
       price: Number(medicineData.unitPrice || medicineData.price || 50),
       stock: Number(medicineData.stock || 0),
       reorder_level: Number(medicineData.reorderLevel || medicineData.reorder_level || 10),
@@ -264,7 +277,17 @@ export async function createMedicine(medicineData) {
       expiry_date: medicineData.expiryDate || medicineData.expiry_date || null
     };
 
-    const { data, error } = await supabase.from('medicines').insert([dbPayload]).select();
+    let { data, error } = await supabase.from('medicines').insert([dbPayload]).select();
+    if (error && error.message && error.message.includes('Could not find column')) {
+      delete dbPayload.dosage;
+      delete dbPayload.reorder_level;
+      delete dbPayload.is_prescription;
+      delete dbPayload.is_controlled;
+      const retry = await supabase.from('medicines').insert([dbPayload]).select();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) {
       console.error("Error creating medicine in Supabase:", error.message);
       return { data: null, error };
@@ -283,7 +306,7 @@ export async function updateMedicine(id, updateData) {
       code: updateData.code || `MED-${(updateData.name || 'DRG').substring(0,3).toUpperCase()}`,
       name: updateData.name,
       category: updateData.category || 'Analgesic',
-      dosage: updateData.dosage || updateData.genericName || 'Standard',
+      dosage: updateData.genericName || updateData.dosage || 'Standard',
       price: Number(updateData.unitPrice || updateData.price || 50),
       stock: Number(updateData.stock || 0),
       reorder_level: Number(updateData.reorderLevel || updateData.reorder_level || 10),
@@ -295,6 +318,17 @@ export async function updateMedicine(id, updateData) {
     // 1. Try update by exact ID
     let { data, error } = await supabase.from('medicines').update(dbPayload).eq('id', id).select();
 
+    // If column mismatch error occurred, retry with stripped optional fields
+    if (error && error.message && error.message.includes('Could not find column')) {
+      delete dbPayload.dosage;
+      delete dbPayload.reorder_level;
+      delete dbPayload.is_prescription;
+      delete dbPayload.is_controlled;
+      const retry = await supabase.from('medicines').update(dbPayload).eq('id', id).select();
+      data = retry.data;
+      error = retry.error;
+    }
+
     // 2. If no matching ID row found and code exists, try update by code
     if (!error && (!data || data.length === 0) && updateData.code) {
       const byCode = await supabase.from('medicines').update(dbPayload).eq('code', updateData.code).select();
@@ -303,7 +337,15 @@ export async function updateMedicine(id, updateData) {
       }
     }
 
-    // 3. Fallback: UPSERT into Supabase DB!
+    // 3. If no matching row by code and name exists, try update by name
+    if (!error && (!data || data.length === 0) && updateData.name) {
+      const byName = await supabase.from('medicines').update(dbPayload).eq('name', updateData.name).select();
+      if (!byName.error && byName.data && byName.data.length > 0) {
+        return { data: byName.data, error: null };
+      }
+    }
+
+    // 4. Fallback: UPSERT into Supabase DB!
     if (!error && (!data || data.length === 0)) {
       const upsertRes = await supabase.from('medicines').upsert([dbPayload]).select();
       return upsertRes;
@@ -317,18 +359,30 @@ export async function updateMedicine(id, updateData) {
   }
 }
 
-export async function deleteMedicine(id, code = null) {
+export async function deleteMedicine(id, code = null, name = null) {
   try {
     const { error } = await supabase.from('medicines').delete().eq('id', id);
     if (code) {
       await supabase.from('medicines').delete().eq('code', code);
     }
+    if (name) {
+      await supabase.from('medicines').delete().eq('name', name);
+    }
 
     try {
       const deletedList = JSON.parse(localStorage.getItem('pharmart_deleted_medicines') || '[]');
-      if (!deletedList.includes(id)) deletedList.push(id);
-      if (code && !deletedList.includes(code)) deletedList.push(code);
-      localStorage.setItem('pharmart_deleted_medicines', JSON.stringify(deletedList));
+      const itemsToAdd = [id, code, name].filter(Boolean);
+      let updated = false;
+      itemsToAdd.forEach(item => {
+        const itemStr = String(item).toLowerCase().trim();
+        if (!deletedList.some(d => String(d).toLowerCase().trim() === itemStr)) {
+          deletedList.push(itemStr);
+          updated = true;
+        }
+      });
+      if (updated) {
+        localStorage.setItem('pharmart_deleted_medicines', JSON.stringify(deletedList));
+      }
     } catch (e) {}
 
     if (error) console.error("Error deleting medicine in Supabase:", error.message);
