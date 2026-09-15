@@ -34,6 +34,7 @@ import {
   fetchCustomers,
   fetchMedicines, 
   fetchSuppliers,
+  fetchPurchaseOrders,
   createSupplier,
   updateSupplier,
   deleteSupplier,
@@ -96,6 +97,9 @@ export default function App() {
         const supplierData = await fetchSuppliers();
         if (supplierData && supplierData.length > 0) setSuppliers(supplierData);
 
+        const poData = await fetchPurchaseOrders();
+        if (poData && poData.length > 0) setPurchaseOrders(poData);
+
         const rxData = await fetchPrescriptions();
         if (rxData && rxData.length > 0) setPrescriptions(rxData);
 
@@ -116,6 +120,7 @@ export default function App() {
     const unsubCust = subscribeToRealtimeChanges('customers', () => fetchCustomers().then(res => res && setCustomers(res)));
     const unsubMeds = subscribeToRealtimeChanges('medicines', () => fetchMedicines().then(res => res && setMedicines(res)));
     const unsubSuppliers = subscribeToRealtimeChanges('suppliers', () => fetchSuppliers().then(res => res && setSuppliers(res)));
+    const unsubPO = subscribeToRealtimeChanges('purchase_orders', () => fetchPurchaseOrders().then(res => res && setPurchaseOrders(res)));
     const unsubRx = subscribeToRealtimeChanges('prescriptions', () => fetchPrescriptions().then(res => res && setPrescriptions(res)));
     const unsubTx = subscribeToRealtimeChanges('transactions', () => fetchTransactions().then(res => res && setTransactions(res)));
     const unsubLogs = subscribeToRealtimeChanges('audit_logs', () => fetchAuditLogs().then(res => res && setAuditLogs(res)));
@@ -125,6 +130,7 @@ export default function App() {
       unsubCust();
       unsubMeds();
       unsubSuppliers();
+      unsubPO();
       unsubRx();
       unsubTx();
       unsubLogs();

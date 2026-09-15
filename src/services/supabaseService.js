@@ -3,6 +3,7 @@ import {
   INITIAL_STAFF, 
   INITIAL_MEDICINES, 
   INITIAL_SUPPLIERS,
+  INITIAL_PURCHASE_ORDERS,
   INITIAL_CUSTOMERS, 
   INITIAL_PRESCRIPTIONS, 
   INITIAL_TRANSACTIONS, 
@@ -223,6 +224,66 @@ export async function deleteSupplier(id) {
   } catch (err) {
     console.error("deleteSupplier exception:", err);
     return { error: err };
+  }
+}
+
+// ==========================================
+// 3.6. PURCHASE ORDERS
+// ==========================================
+export async function fetchPurchaseOrders() {
+  try {
+    const { data, error } = await supabase.from('purchase_orders').select('*').order('created_at', { ascending: false });
+    if (error || !data || data.length === 0) return INITIAL_PURCHASE_ORDERS;
+    return data.map(po => {
+      let itemsArr = po.items;
+      if (typeof itemsArr === 'string') {
+        try { itemsArr = JSON.parse(itemsArr); } catch (e) { itemsArr = []; }
+      }
+      return {
+        id: po.id,
+        poNumber: po.id,
+        supplierId: po.supplier_id || 'SUP-01',
+        supplierName: po.supplier_name || 'Supplier',
+        orderDate: po.created_at ? new Date(po.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        status: po.status || 'Issued',
+        expectedDelivery: new Date(Date.now() + 3*86400000).toISOString().split('T')[0],
+        items: Array.isArray(itemsArr) ? itemsArr : [],
+        totalAmount: Number(po.total_amount) || 0
+      };
+    });
+  } catch (err) {
+    console.warn("Supabase fetchPurchaseOrders fallback:", err);
+    return INITIAL_PURCHASE_ORDERS;
+  }
+}
+
+export async function createPurchaseOrder(poData) {
+  try {
+    const dbPayload = {
+      id: poData.id || poData.poNumber,
+      supplier_id: poData.supplierId || null,
+      supplier_name: poData.supplierName || 'Supplier',
+      items: poData.items || [],
+      total_amount: poData.totalAmount || 0,
+      status: poData.status || 'Issued'
+    };
+    const { data, error } = await supabase.from('purchase_orders').insert([dbPayload]).select();
+    if (error) console.error("Error creating purchase order:", error.message);
+    return { data, error };
+  } catch (err) {
+    console.error("createPurchaseOrder exception:", err);
+    return { data: null, error: err };
+  }
+}
+
+export async function updatePurchaseOrderStatus(poId, status) {
+  try {
+    const { data, error } = await supabase.from('purchase_orders').update({ status }).eq('id', poId).select();
+    if (error) console.error("Error updating purchase order status:", error.message);
+    return { data, error };
+  } catch (err) {
+    console.error("updatePurchaseOrderStatus exception:", err);
+    return { data: null, error: err };
   }
 }
 

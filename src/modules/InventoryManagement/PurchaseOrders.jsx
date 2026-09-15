@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Truck, Plus, FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import GoodsReceiptModal from './GoodsReceiptModal';
+import { createPurchaseOrder, updatePurchaseOrderStatus, updateMedicineStock } from '../../services/supabaseService';
 
 export default function PurchaseOrders({ 
   purchaseOrders, 
@@ -17,7 +18,7 @@ export default function PurchaseOrders({
   const [newPOMedicineId, setNewPOMedicineId] = useState(medicines[0]?.id || "");
   const [newPOQty, setNewPOQty] = useState(100);
 
-  const handleCreatePO = (e) => {
+  const handleCreatePO = async (e) => {
     e.preventDefault();
     const sup = suppliers.find(s => s.id === newPOSupplierId);
     const med = medicines.find(m => m.id === newPOMedicineId);
@@ -33,7 +34,7 @@ export default function PurchaseOrders({
       supplierName: sup.name,
       orderDate: new Date().toISOString().split('T')[0],
       status: "Issued",
-      expectedDelivery: new Date(Date.now() + sup.leadTimeDays * 86400000).toISOString().split('T')[0],
+      expectedDelivery: new Date(Date.now() + (sup.leadTimeDays || 3) * 86400000).toISOString().split('T')[0],
       items: [
         { medicineId: med.id, name: med.name, quantity: newPOQty, unitCost: unitCost, total: total }
       ],
@@ -41,11 +42,12 @@ export default function PurchaseOrders({
     };
 
     setPurchaseOrders(prev => [newPO, ...prev]);
+    await createPurchaseOrder(newPO);
     addAuditLog("Purchase Order Issued", `Issued ${newPO.poNumber} to ${sup.name} for ${med.name} (${newPOQty} units)`, "info");
     setIsCreatePOOpen(false);
   };
 
-  const handleGoodsReceiptConfirmed = (poId, receivedItems) => {
+  const handleGoodsReceiptConfirmed = async (poId, receivedItems) => {
     // 1. Update PO Status
     setPurchaseOrders(prev => prev.map(po => {
       if (po.id === poId) {
@@ -53,12 +55,15 @@ export default function PurchaseOrders({
       }
       return po;
     }));
+    await updatePurchaseOrderStatus(poId, "Goods Received");
 
     // 2. Update stock level in medicines list automatically!
     receivedItems.forEach(item => {
       setMedicines(prev => prev.map(m => {
         if (m.id === item.medicineId) {
-          return { ...m, stock: m.stock + item.quantity };
+          const newStock = m.stock + item.quantity;
+          updateMedicineStock(m.id, newStock);
+          return { ...m, stock: newStock };
         }
         return m;
       }));
