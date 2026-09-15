@@ -17,7 +17,7 @@ import {
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
-import { createMedicine } from '../../services/supabaseService';
+import { createMedicine, updateMedicine, deleteMedicine } from '../../services/supabaseService';
 
 export default function MedicineList({ 
   medicines, 
@@ -60,6 +60,13 @@ export default function MedicineList({
   const handleSaveMedicine = async (medData) => {
     if (editingMedicine) {
       setMedicines(prev => prev.map(m => m.id === medData.id ? medData : m));
+      const { data, error } = await updateMedicine(medData.id, medData);
+      if (error) {
+        console.error("Error updating medicine in DB:", error);
+      } else if (data && data.length > 0) {
+        const saved = data[0];
+        setMedicines(prev => prev.map(m => m.id === medData.id ? { ...m, ...saved } : m));
+      }
       addAuditLog("Medicine Updated", `Updated record for ${medData.name} (${medData.code})`, "info");
     } else {
       const newMed = {
@@ -68,16 +75,23 @@ export default function MedicineList({
         code: medData.code || `MED-${(medData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`
       };
       setMedicines(prev => [newMed, ...prev]);
-      await createMedicine(newMed);
+      const { data, error } = await createMedicine(newMed);
+      if (error) {
+        console.error("Error creating medicine in DB:", error);
+      } else if (data && data.length > 0) {
+        const saved = data[0];
+        setMedicines(prev => prev.map(m => m.id === newMed.id ? { ...m, id: saved.id || m.id } : m));
+      }
       addAuditLog("New Medicine Added", `Added ${newMed.name} to catalogue`, "success");
     }
     setIsAddMedicineOpen(false);
     setEditingMedicine(null);
   };
 
-  const handleDeleteMedicine = (id, name) => {
+  const handleDeleteMedicine = async (id, name, code) => {
     if (window.confirm(`Are you sure you want to discontinue ${name}?`)) {
-      setMedicines(prev => prev.filter(m => m.id !== id));
+      setMedicines(prev => prev.filter(m => m.id !== id && m.code !== code));
+      await deleteMedicine(id, code);
       addAuditLog("Medicine Discontinued", `Discontinued medication record: ${name}`, "warning");
     }
   };
@@ -344,7 +358,7 @@ export default function MedicineList({
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDeleteMedicine(med.id, med.name)}
+                              onClick={() => handleDeleteMedicine(med.id, med.name, med.code)}
                               title="Discontinue Product"
                               className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
