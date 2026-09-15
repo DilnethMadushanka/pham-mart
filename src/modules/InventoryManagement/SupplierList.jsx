@@ -101,7 +101,7 @@ export default function SupplierList({
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Wholesale Suppliers & Distributors
+              Suppliers & Distributors
             </h2>
             <p className="text-xs sm:text-sm text-sky-100/80 mt-1 max-w-2xl leading-relaxed font-medium">
               Manage pharmaceutical manufacturers, lead-time SLAs, order fulfillment contacts, and wholesale contracts.

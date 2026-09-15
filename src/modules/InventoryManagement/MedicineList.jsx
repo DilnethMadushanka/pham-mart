@@ -136,7 +136,7 @@ export default function MedicineList({
             }`}
           >
             <Building className="w-4 h-4" />
-            <span>Wholesale Suppliers ({suppliers.length})</span>
+            <span>Suppliers ({suppliers.length})</span>
           </button>
         </div>
       </div>
