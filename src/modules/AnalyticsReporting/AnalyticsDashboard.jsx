@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, 
   DollarSign, 
@@ -12,7 +12,8 @@ import {
   Activity,
   Award,
   Zap,
-  BarChart3
+  BarChart3,
+  Printer
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -26,8 +27,11 @@ import {
   Cell 
 } from 'recharts';
 import MetricCard from '../../components/MetricCard';
+import DailySalesReportModal from './DailySalesReportModal';
 
 export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [] }) {
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+
   // Financial metrics
   const totalRevenue = transactions.reduce((acc, t) => acc + (t.total || 0), 0);
   const totalItemsSold = transactions.reduce((acc, t) => acc + (t.items ? t.items.reduce((a, i) => a + (i.qty || 0), 0) : 0), 0);
@@ -81,10 +85,20 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 text-right shrink-0 min-w-[220px]">
-            <div className="text-xs font-extrabold uppercase tracking-wider text-sky-200">Total System Revenue</div>
-            <div className="text-2xl sm:text-3xl font-black text-white font-mono mt-1">
-              LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-sky-500/25 transition-all cursor-pointer border border-sky-400/30"
+            >
+              <Printer className="w-4 h-4" />
+              <span>Daily Sales Report</span>
+            </button>
+
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-right shrink-0 min-w-[180px]">
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200">Total Revenue</div>
+              <div className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">
+                LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
             </div>
           </div>
         </div>
@@ -212,6 +226,14 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         </div>
 
       </div>
+
+      {/* Daily Sales Report Generator Modal */}
+      <DailySalesReportModal 
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        transactions={transactions}
+        medicines={medicines}
+      />
 
     </div>
   );
