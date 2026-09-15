@@ -54,6 +54,42 @@ export default function POSTerminal({
 
   const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { name: "Walk-in Customer", id: null };
 
+  const filterCustomerRecords = (records = [], cust) => {
+    if (!cust) return [];
+    const custId = String(cust.id || "").toLowerCase().trim();
+    const custName = String(cust.name || "").toLowerCase().trim();
+    const custEmail = String(cust.email || "").toLowerCase().trim();
+    const custPhone = String(cust.phone || "").toLowerCase().trim();
+    const custNic = String(cust.nic || "").toLowerCase().trim();
+
+    return records.filter(r => {
+      const rId = String(r.customerId || r.patient_id || r.id || "").toLowerCase().trim();
+      const rName = String(r.customerName || r.patient_name || r.name || "").toLowerCase().trim();
+      const rEmail = String(r.email || r.customer_email || "").toLowerCase().trim();
+      const rPhone = String(r.phone || r.customer_phone || "").toLowerCase().trim();
+      const rNic = String(r.nic || r.customer_nic || r.patient_nic || "").toLowerCase().trim();
+
+      if (custId && rId && rId === custId) return true;
+      if (custNic && rNic && custNic !== "google-oauth" && custNic !== "n/a" && rNic === custNic) return true;
+      if (custEmail && rEmail && rEmail === custEmail) return true;
+      if (custPhone && rPhone && rPhone === custPhone) return true;
+      if (custName && rName && (rName === custName || rName.includes(custName) || custName.includes(rName))) return true;
+      return false;
+    });
+  };
+
+  useEffect(() => {
+    if (isViewHistoryOpen && activeCustomer) {
+      const custTxns = filterCustomerRecords(transactions, activeCustomer);
+      const custRxs = filterCustomerRecords(prescriptions, activeCustomer);
+      if (custTxns.length === 0 && custRxs.length > 0) {
+        setHistoryTab("prescriptions");
+      } else {
+        setHistoryTab("purchases");
+      }
+    }
+  }, [isViewHistoryOpen, selectedCustomerId, transactions, prescriptions]);
+
   const handlePOSAddCustomer = async (e) => {
     e.preventDefault();
     if (!newCust.name.trim() || !newCust.nic.trim()) {
@@ -633,111 +669,124 @@ export default function POSTerminal({
               </div>
             )}
 
-            <div className="flex space-x-2 bg-slate-100 p-1 rounded-2xl shrink-0">
-              <button
-                onClick={() => setHistoryTab("purchases")}
-                className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                  historyTab === "purchases" ? "bg-white text-sky-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <Receipt className="w-4 h-4" />
-                <span>Checkout Purchases ({transactions.filter(t => t.customerName === activeCustomer.name || t.customerId === activeCustomer.id).length})</span>
-              </button>
+            {/* Tabs Selector */}
+            {(() => {
+              const custTxns = filterCustomerRecords(transactions, activeCustomer);
+              const custRxs = filterCustomerRecords(prescriptions, activeCustomer);
 
-              <button
-                onClick={() => setHistoryTab("prescriptions")}
-                className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                  historyTab === "prescriptions" ? "bg-white text-sky-800 shadow-xs" : "text-slate-600 hover:text-slate-900"
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>Prescription Records ({prescriptions.filter(p => p.customerId === activeCustomer.id || p.customerName === activeCustomer.name).length})</span>
-              </button>
-            </div>
+              return (
+                <>
+                  <div className="flex space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0">
+                    <button
+                      onClick={() => setHistoryTab("purchases")}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                        historyTab === "purchases" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <Receipt className="w-4 h-4" />
+                      <span>Checkout Purchases ({custTxns.length})</span>
+                    </button>
 
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
-              {historyTab === "purchases" ? (
-                (() => {
-                  const custTxns = transactions.filter(t => t.customerName === activeCustomer.name || t.customerId === activeCustomer.id);
+                    <button
+                      onClick={() => setHistoryTab("prescriptions")}
+                      className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+                        historyTab === "prescriptions" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      <FileText className="w-4 h-4" />
+                      <span>Prescription Records ({custRxs.length})</span>
+                    </button>
+                  </div>
 
-                  if (custTxns.length === 0) {
-                    return (
-                      <div className="py-12 text-center text-slate-400 font-semibold space-y-2">
-                        <Receipt className="w-10 h-10 mx-auto text-slate-300" />
-                        <div>No checkout purchase invoices recorded for {activeCustomer.name} yet.</div>
-                      </div>
-                    );
-                  }
-
-                  return custTxns.map((txn) => (
-                    <div key={txn.id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="font-mono font-bold text-slate-900 text-xs">{txn.invoiceNo}</div>
-                        <div className="text-[11px] text-slate-500 font-semibold">{txn.date}</div>
-                      </div>
-
-                      <div className="space-y-1 py-1.5 border-y border-slate-200/60">
-                        {txn.items.map((item, idx) => (
-                          <div key={idx} className="flex justify-between text-slate-700">
-                            <span>{item.name} × {item.qty}</span>
-                            <span className="font-semibold">Rs. {Number(item.total).toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="flex justify-between items-center pt-1 font-bold">
-                        <span className="text-slate-600">Total Paid ({txn.paymentMethod || "Cash"}):</span>
-                        <span className="text-sky-700 font-black">Rs. {Number(txn.total).toFixed(2)}</span>
-                      </div>
-                    </div>
-                  ));
-                })()
-              ) : (
-                (() => {
-                  const custRxs = prescriptions.filter(p => p.customerId === activeCustomer.id || p.customerName === activeCustomer.name);
-
-                  if (custRxs.length === 0) {
-                    return (
-                      <div className="py-12 text-center text-slate-400 font-semibold space-y-2">
-                        <FileText className="w-10 h-10 mx-auto text-slate-300" />
-                        <div>No uploaded prescription records found for {activeCustomer.name}.</div>
-                      </div>
-                    );
-                  }
-
-                  return custRxs.map((rx) => (
-                    <div key={rx.id} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div className="font-mono font-bold text-slate-900">{rx.rxNumber || rx.id}</div>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          rx.status === "Approved" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
-                          rx.status === "Rejected" ? "bg-rose-100 text-rose-800 border-rose-300" :
-                          "bg-amber-100 text-amber-800 border-amber-300"
-                        }`}>
-                          {rx.status}
-                        </span>
-                      </div>
-
-                      <div className="text-slate-600 font-medium">
-                        Doctor: <span className="text-slate-900 font-bold">{rx.doctorName}</span> ({rx.doctorSlmcNo})
-                      </div>
-
-                      {rx.medicines && rx.medicines.length > 0 && (
-                        <div className="p-2.5 bg-white rounded-xl border border-slate-200 space-y-1">
-                          <div className="font-bold text-slate-700 text-[11px]">Prescribed Medications:</div>
-                          {rx.medicines.map((m, idx) => (
-                            <div key={idx} className="text-slate-600 flex justify-between">
-                              <span>• {m.name}</span>
-                              <span className="font-semibold text-slate-800">{m.dosage || `${m.quantity} units`}</span>
-                            </div>
-                          ))}
+                  <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs">
+                    {historyTab === "purchases" ? (
+                      custTxns.length === 0 ? (
+                        <div className="py-10 text-center text-slate-500 font-semibold space-y-3 bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80">
+                          <Receipt className="w-10 h-10 mx-auto text-slate-300" />
+                          <div className="text-sm font-bold text-slate-800">No checkout purchase invoices recorded for {activeCustomer.name} yet.</div>
+                          {custRxs.length > 0 && (
+                            <button
+                              onClick={() => setHistoryTab("prescriptions")}
+                              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-2xl font-black text-xs transition-all cursor-pointer border border-sky-300 shadow-xs"
+                            >
+                              <FileText className="w-4 h-4 text-sky-600" />
+                              <span>Click to View {custRxs.length} Prescription Record(s) Uploaded by Patient</span>
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  ));
-                })()
-              )}
-            </div>
+                      ) : (
+                        custTxns.map((txn) => (
+                          <div key={txn.id} className="bg-slate-50/80 p-4 rounded-3xl border border-slate-200/80 space-y-2.5">
+                            <div className="flex justify-between items-center">
+                              <div className="font-mono font-black text-slate-900 text-xs">{txn.invoiceNo}</div>
+                              <div className="text-xs text-slate-500 font-bold">{txn.date}</div>
+                            </div>
+
+                            <div className="space-y-1 py-2 border-y border-slate-200/80">
+                              {txn.items.map((item, idx) => (
+                                <div key={idx} className="flex justify-between text-slate-800 font-semibold">
+                                  <span>{item.name} × {item.qty}</span>
+                                  <span className="font-black">Rs. {Number(item.total).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="flex justify-between items-center pt-1 font-bold">
+                              <span className="text-slate-600">Total Paid ({txn.paymentMethod || "Cash"}):</span>
+                              <span className="text-sky-700 text-sm font-black">Rs. {Number(txn.total).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))
+                      )
+                    ) : (
+                      custRxs.length === 0 ? (
+                        <div className="py-10 text-center text-slate-500 font-semibold space-y-3 bg-slate-50/80 rounded-3xl p-6 border border-slate-200/80">
+                          <FileText className="w-10 h-10 mx-auto text-slate-300" />
+                          <div className="text-sm font-bold text-slate-800">No uploaded prescription records found for {activeCustomer.name}.</div>
+                        </div>
+                      ) : (
+                        custRxs.map((rx) => (
+                          <div key={rx.id} className="bg-slate-50/80 p-4 rounded-3xl border border-slate-200/80 space-y-2.5">
+                            <div className="flex justify-between items-center">
+                              <div className="font-mono font-black text-slate-900">{rx.rxNumber || rx.id}</div>
+                              <span className={`px-3 py-1 rounded-full text-xs font-black border ${
+                                rx.status === "Approved" ? "bg-emerald-100 text-emerald-900 border-emerald-300" :
+                                rx.status === "Rejected" ? "bg-rose-100 text-rose-900 border-rose-300" :
+                                "bg-amber-100 text-amber-900 border-amber-300"
+                              }`}>
+                                {rx.status}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-600 font-semibold">
+                              Doctor/Order: <strong className="text-slate-900">{rx.doctorName}</strong> • {rx.uploadDate}
+                            </div>
+
+                            {rx.medicines && rx.medicines.length > 0 && (
+                              <div className="space-y-1 py-2 border-t border-slate-200/80">
+                                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Items & Dosage:</span>
+                                {rx.medicines.map((m, idx) => (
+                                  <div key={idx} className="flex justify-between text-slate-800 font-bold bg-white p-2 rounded-xl border border-slate-200">
+                                    <span>{m.name} ({m.dosage})</span>
+                                    <span className="text-sky-700 font-black">{m.quantity} units</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {rx.notes && (
+                              <div className="text-[11.5px] text-slate-500 font-medium bg-white p-2.5 rounded-xl border border-slate-200">
+                                {rx.notes}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )
+                    )}
+                  </div>
+                </>
+              );
+            })()}
 
             <div className="pt-3 border-t border-slate-100 flex justify-end shrink-0">
               <button 
