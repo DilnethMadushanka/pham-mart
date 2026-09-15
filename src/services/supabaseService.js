@@ -233,24 +233,42 @@ export async function fetchPrescriptions() {
   try {
     const { data, error } = await supabase.from('prescriptions').select('*').order('created_at', { ascending: false });
     if (error || !data || data.length === 0) return INITIAL_PRESCRIPTIONS;
-    return data.map(rx => ({
-      id: rx.id,
-      rxNumber: rx.rxNumber || rx.id,
-      customerId: rx.patient_id || rx.customerId || 'CUST-301',
-      customerName: rx.patient_name || rx.customerName || 'Patient',
-      doctorName: rx.doctor_name || rx.doctorName || 'Dr. Assigned',
-      doctorSlmcNo: rx.doctor_reg || rx.doctorSlmcNo || 'SLMC-REG',
-      uploadDate: rx.uploadDate || rx.created_at || new Date().toLocaleString(),
-      expiryDate: rx.expiryDate || new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
-      medicines: rx.medications || rx.medicines || [],
-      isControlledDrug: rx.isControlledDrug || false,
-      status: rx.status || 'Pending',
-      verifiedBy: rx.verifiedBy || null,
-      verifiedAt: rx.verifiedAt || null,
-      prescriptionUrl: rx.prescription_url || rx.prescriptionUrl || null,
-      rejectionReason: rx.rejection_reason || rx.rejectionReason || null,
-      notes: rx.notes || ''
-    }));
+    return data.map(rx => {
+      let meds = rx.medications || rx.medicines || [];
+      if (typeof meds === 'string') {
+        try { meds = JSON.parse(meds); } catch (e) { meds = []; }
+      }
+      if (!Array.isArray(meds)) meds = [meds];
+
+      const rawUrl = rx.prescription_url || rx.prescriptionUrl || null;
+      const validUrl = (rawUrl && !rawUrl.includes('pharmart.lk/rx_upload')) ? rawUrl : null;
+      const notesText = rx.notes || rx.rejection_reason || '';
+      const orderTypeLabel = validUrl 
+        ? (meds.length > 0 && meds[0].name !== "Prescribed Medication (See Attached Photo Slip)" ? "Photo Slip + Typed Medicines" : "Doctor Slip Photo Upload")
+        : "Typed Medicine Custom Order";
+
+      const rxNum = rx.rxNumber || rx.id;
+
+      return {
+        id: rx.id,
+        rxNumber: String(rxNum).startsWith('RX-') ? rxNum : `RX-2026-${String(rxNum).replace(/\D/g, '').slice(-4) || '0901'}`,
+        customerId: rx.patient_id || rx.customerId || 'CUST-301',
+        customerName: rx.patient_name || rx.customerName || 'Patient',
+        doctorName: rx.doctor_name || rx.doctorName || 'Patient Direct Order',
+        doctorSlmcNo: rx.doctor_reg || rx.doctorSlmcNo || 'DIRECT-ORDER',
+        uploadDate: rx.uploadDate || (rx.created_at ? new Date(rx.created_at).toLocaleString() : new Date().toLocaleString()),
+        expiryDate: rx.expiryDate || new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+        medicines: meds,
+        isControlledDrug: rx.isControlledDrug || false,
+        status: rx.status || 'Pending',
+        orderType: orderTypeLabel,
+        verifiedBy: rx.verifiedBy || null,
+        verifiedAt: rx.verifiedAt || null,
+        prescriptionUrl: validUrl,
+        rejectionReason: rx.rejection_reason || rx.rejectionReason || null,
+        notes: notesText
+      };
+    });
   } catch (err) {
     console.warn("Supabase fetchPrescriptions fallback:", err);
     return INITIAL_PRESCRIPTIONS;
@@ -259,6 +277,9 @@ export async function fetchPrescriptions() {
 
 export async function createPrescription(prescriptionData) {
   try {
+    const notesContent = prescriptionData.notes || prescriptionData.rejectionReason || null;
+    const urlContent = prescriptionData.prescriptionUrl || prescriptionData.prescription_url || null;
+
     const dbPayload = {
       id: prescriptionData.id || `RX-${Math.floor(950 + Math.random() * 50)}`,
       patient_id: prescriptionData.customerId || prescriptionData.patient_id || null,
@@ -267,8 +288,8 @@ export async function createPrescription(prescriptionData) {
       doctor_reg: prescriptionData.doctorSlmcNo || prescriptionData.doctor_reg || 'SLMC-VERIFY',
       status: prescriptionData.status || 'Pending',
       medications: prescriptionData.medicines || prescriptionData.medications || [],
-      prescription_url: prescriptionData.prescriptionUrl || prescriptionData.prescription_url || 'https://pharmart.lk/rx_upload.png',
-      rejection_reason: prescriptionData.rejectionReason || prescriptionData.rejection_reason || null
+      prescription_url: (urlContent && !urlContent.includes('pharmart.lk/rx_upload')) ? urlContent : null,
+      rejection_reason: notesContent
     };
     const { data, error } = await supabase.from('prescriptions').insert([dbPayload]).select();
     if (error) {

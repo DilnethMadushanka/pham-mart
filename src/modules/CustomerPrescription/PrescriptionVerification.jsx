@@ -172,6 +172,11 @@ export default function PrescriptionVerification({
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono font-black text-slate-900 text-base">{rx.rxNumber}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${
+                        rx.prescriptionUrl ? "bg-sky-50 text-sky-800 border-sky-200" : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                      }`}>
+                        {rx.prescriptionUrl ? "📷 Photo Slip" : "📝 Typed Order"}
+                      </span>
                       {rx.isControlledDrug && (
                         <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 flex items-center">
                           <ShieldAlert className="w-3 h-3 mr-1" /> Controlled Drug
@@ -244,8 +249,20 @@ export default function PrescriptionVerification({
                 </div>
               </div>
 
-              {/* Prescription Slip Photo Preview if available */}
-              {selectedRx.prescriptionUrl && (
+              {/* Patient Notes & Delivery Address if provided */}
+              {selectedRx.notes && (
+                <div className="p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80 text-xs space-y-1">
+                  <span className="text-sky-900 font-extrabold uppercase text-[10.5px] tracking-wider block">
+                    📋 Patient Order Notes & Delivery Address:
+                  </span>
+                  <p className="text-slate-800 font-semibold leading-relaxed whitespace-pre-line">
+                    {selectedRx.notes}
+                  </p>
+                </div>
+              )}
+
+              {/* Prescription Slip Photo Preview OR Typed Order Banner */}
+              {selectedRx.prescriptionUrl ? (
                 <div className="space-y-1.5">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Attached Prescription Photo Slip</span>
                   <div className="relative rounded-2xl overflow-hidden border border-sky-200 max-h-56 shadow-xs">
@@ -259,6 +276,15 @@ export default function PrescriptionVerification({
                       View Full Size Photo
                     </a>
                   </div>
+                </div>
+              ) : (
+                <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs space-y-1">
+                  <span className="text-emerald-900 font-extrabold text-xs block flex items-center">
+                    📝 Typed Medicine Custom Order (Direct Request)
+                  </span>
+                  <p className="text-emerald-800 font-medium">
+                    No doctor paper photo slip was uploaded. Patient typed/selected the requested medicines directly online.
+                  </p>
                 </div>
               )}
 
