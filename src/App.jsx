@@ -298,6 +298,7 @@ export default function App() {
                 medicines={medicines}
                 setMedicines={setMedicines}
                 customers={customers}
+                setCustomers={setCustomers}
                 prescriptions={prescriptions}
                 transactions={transactions}
                 setTransactions={setTransactions}
@@ -328,6 +329,16 @@ export default function App() {
                 customers={customers}
                 medicines={medicines}
                 currentRole={currentRole}
+                addAuditLog={addAuditLog}
+              />
+            )}
+
+            {activeTab === "customers" && (
+              <CustomerList 
+                customers={customers}
+                setCustomers={setCustomers}
+                prescriptions={prescriptions}
+                transactions={transactions}
                 addAuditLog={addAuditLog}
               />
             )}

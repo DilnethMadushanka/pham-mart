@@ -4,6 +4,7 @@ import {
   ShoppingCart, 
   Package, 
   FileText, 
+  UserCheck,
   Users
 } from 'lucide-react';
 
@@ -43,6 +44,12 @@ export default function Sidebar({
       icon: FileText,
       badge: pendingRxCount > 0 ? pendingRxCount : null,
       badgeColor: "bg-sky-100 text-sky-800 border-sky-300"
+    },
+    {
+      id: "customers",
+      label: "Patient & Customer Directory",
+      epic: "Epic 3",
+      icon: UserCheck
     },
     {
       id: "staff",
