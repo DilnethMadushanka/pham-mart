@@ -78,8 +78,31 @@ export async function updateStaff(id, updateData) {
 export async function fetchCustomers() {
   try {
     const { data, error } = await supabase.from('customers').select('*').order('created_at', { ascending: false });
-    if (error || !data || data.length === 0) return INITIAL_CUSTOMERS;
-    return data;
+    if (error) {
+      console.warn("Supabase fetchCustomers note:", error.message);
+      return INITIAL_CUSTOMERS;
+    }
+
+    const dbCusts = (data || []).map(c => ({
+      id: c.id,
+      name: c.name,
+      nic: c.nic || '',
+      phone: c.phone || '',
+      email: c.email || '',
+      address: c.address || '',
+      allergies: c.allergies || 'None',
+      historyCount: c.history_count || 0,
+      lastVisit: c.last_visit || (c.created_at ? new Date(c.created_at).toISOString().split('T')[0] : '2026-09-01')
+    }));
+
+    const combined = [...dbCusts];
+    INITIAL_CUSTOMERS.forEach(initC => {
+      if (!combined.some(x => x.id === initC.id || (initC.nic && x.nic === initC.nic))) {
+        combined.push(initC);
+      }
+    });
+
+    return combined;
   } catch (err) {
     console.warn("Supabase fetchCustomers fallback:", err);
     return INITIAL_CUSTOMERS;
@@ -107,6 +130,36 @@ export async function createCustomer(customerData) {
   } catch (err) {
     console.error("createCustomer exception:", err);
     return { data: null, error: err };
+  }
+}
+
+export async function updateCustomer(id, updateData) {
+  try {
+    const dbPayload = {
+      name: updateData.name,
+      nic: updateData.nic || null,
+      email: updateData.email || null,
+      phone: updateData.phone || null,
+      address: updateData.address || null,
+      allergies: updateData.allergies || 'None'
+    };
+    const { data, error } = await supabase.from('customers').update(dbPayload).eq('id', id).select();
+    if (error) console.error("Error updating customer:", error.message);
+    return { data, error };
+  } catch (err) {
+    console.error("updateCustomer exception:", err);
+    return { data: null, error: err };
+  }
+}
+
+export async function deleteCustomer(id) {
+  try {
+    const { error } = await supabase.from('customers').delete().eq('id', id);
+    if (error) console.error("Error deleting customer:", error.message);
+    return { error };
+  } catch (err) {
+    console.error("deleteCustomer exception:", err);
+    return { error: err };
   }
 }
 

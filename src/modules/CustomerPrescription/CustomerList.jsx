@@ -15,9 +15,11 @@ import {
   CheckCircle2, 
   ShieldAlert, 
   Pill,
-  UserCheck
+  UserCheck,
+  Edit,
+  Trash2
 } from 'lucide-react';
-import { createCustomer } from '../../services/supabaseService';
+import { createCustomer, updateCustomer, deleteCustomer } from '../../services/supabaseService';
 
 export default function CustomerList({ 
   customers, 
@@ -28,6 +30,7 @@ export default function CustomerList({
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedHistoryCustomer, setSelectedHistoryCustomer] = useState(null);
   const [historyTab, setHistoryTab] = useState("purchases"); // "purchases" | "prescriptions"
 
@@ -82,24 +85,66 @@ export default function CustomerList({
     (c.phone && c.phone.includes(searchTerm))
   );
 
-  const handleAddCustomer = async (e) => {
+  const handleOpenAddModal = () => {
+    setEditingCustomer(null);
+    setNewCust({ name: '', nic: '', phone: '', email: '', address: '', allergies: '' });
+    setIsAddModalOpen(true);
+  };
+
+  const handleEditClick = (cust) => {
+    setEditingCustomer(cust);
+    setNewCust({
+      name: cust.name || '',
+      nic: cust.nic || '',
+      phone: cust.phone || '',
+      email: cust.email || '',
+      address: cust.address || '',
+      allergies: cust.allergies || ''
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleDeleteClick = async (id, name) => {
+    if (!window.confirm(`Are you sure you want to delete customer profile for "${name}" (${id})?`)) return;
+
+    setCustomers(prev => prev.filter(c => c.id !== id));
+    await deleteCustomer(id);
+
+    if (addAuditLog) {
+      addAuditLog("Customer Deleted", `Deleted customer profile for ${name} (${id})`, "warning");
+    }
+  };
+
+  const handleSaveCustomer = async (e) => {
     e.preventDefault();
     if (!newCust.name.trim() || !newCust.nic.trim()) {
       alert("Please fill in customer name and NIC.");
       return;
     }
-    const created = {
-      ...newCust,
-      id: `CUST-${Math.floor(300 + Math.random() * 700)}`,
-      historyCount: 0,
-      lastVisit: new Date().toISOString().split('T')[0]
-    };
-    setCustomers(prev => [created, ...prev]);
-    await createCustomer(created);
-    if (addAuditLog) {
-      addAuditLog("New Customer Registered", `Created digital customer profile for ${created.name} (NIC: ${created.nic})`, "success");
+
+    if (editingCustomer) {
+      const updatedObj = { ...editingCustomer, ...newCust };
+      setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? updatedObj : c));
+      await updateCustomer(editingCustomer.id, newCust);
+      if (addAuditLog) {
+        addAuditLog("Customer Updated", `Updated digital customer profile for ${newCust.name} (ID: ${editingCustomer.id})`, "info");
+      }
+    } else {
+      const created = {
+        ...newCust,
+        id: `CUST-${Math.floor(300 + Math.random() * 700)}`,
+        historyCount: 0,
+        lastVisit: new Date().toISOString().split('T')[0]
+      };
+      setCustomers(prev => [created, ...prev]);
+      await createCustomer(created);
+      if (addAuditLog) {
+        addAuditLog("New Customer Registered", `Created digital customer profile for ${created.name} (NIC: ${created.nic})`, "success");
+      }
     }
+
     setIsAddModalOpen(false);
+    setEditingCustomer(null);
     setNewCust({ name: '', nic: '', phone: '', email: '', address: '', allergies: '' });
   };
 
@@ -119,12 +164,12 @@ export default function CustomerList({
             Patient Profiles & Medical Histories
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Register new customers, view allergy flags, past checkout invoices, and prescription records.
+            Register new customers, edit profile details, view allergy flags, past checkout invoices, and prescription records.
           </p>
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
@@ -153,13 +198,13 @@ export default function CustomerList({
       {/* Customer Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredCustomers.map((cust) => {
-          const custRxList = prescriptions.filter(p => p.customerId === cust.id || p.customerName === cust.name);
-          const custTxnList = transactions.filter(t => t.customerName === cust.name || t.customerId === cust.id);
+          const custRxList = filterCustomerRecords(prescriptions, cust);
+          const custTxnList = filterCustomerRecords(transactions, cust);
 
           return (
             <div 
               key={cust.id} 
-              className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+              className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group relative"
             >
               <div>
                 {/* Header info */}
@@ -177,9 +222,26 @@ export default function CustomerList({
                       </div>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-xl text-[10px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200">
-                    {cust.id}
-                  </span>
+
+                  <div className="flex items-center space-x-1.5">
+                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-black bg-slate-100 text-slate-700 border border-slate-200">
+                      {cust.id}
+                    </span>
+                    <button 
+                      onClick={() => handleEditClick(cust)}
+                      title="Edit Customer Profile"
+                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-500 hover:text-sky-700 transition-colors cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteClick(cust.id, cust.name)}
+                      title="Delete Customer Profile"
+                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Contact details */}
@@ -239,7 +301,7 @@ export default function CustomerList({
         })}
       </div>
 
-      {/* Add Customer Modal */}
+      {/* Add / Edit Customer Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 border border-slate-100">
@@ -248,14 +310,16 @@ export default function CustomerList({
                 <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
                   <UserCheck className="w-5 h-5" />
                 </div>
-                <h3 className="text-base font-extrabold text-slate-900">Register Customer Profile</h3>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  {editingCustomer ? "Edit Customer Profile" : "Register Customer Profile"}
+                </h3>
               </div>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1">
+              <button onClick={() => { setIsAddModalOpen(false); setEditingCustomer(null); }} className="text-slate-400 hover:text-slate-600 p-1">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleAddCustomer} className="space-y-3 text-xs">
+            <form onSubmit={handleSaveCustomer} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Customer Full Name <span className="text-rose-500">*</span></label>
                 <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
@@ -283,8 +347,10 @@ export default function CustomerList({
                 <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
               </div>
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
-                <button type="button" onClick={()=>setIsAddModalOpen(false)} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md cursor-pointer">Save Customer Profile</button>
+                <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingCustomer(null); }} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md cursor-pointer">
+                  {editingCustomer ? "Update Customer Profile" : "Save Customer Profile"}
+                </button>
               </div>
             </form>
           </div>
@@ -321,7 +387,7 @@ export default function CustomerList({
             </div>
 
             {/* Allergy Banner */}
-            {selectedHistoryCustomer.allergies && selectedHistoryCustomer.allergies !== "None" && (
+            {selectedHistoryCustomer.allergies && selectedHistoryCustomer.allergies !== "None" && selectedHistoryCustomer.allergies !== "None reported" && (
               <div className="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-xs text-rose-900 font-semibold flex items-center space-x-2 shrink-0">
                 <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span><strong>CRITICAL ALLERGY ALERT:</strong> {selectedHistoryCustomer.allergies}</span>
@@ -377,22 +443,22 @@ export default function CustomerList({
                         custTxns.map((txn) => (
                           <div key={txn.id} className="bg-slate-50/80 p-4 rounded-3xl border border-slate-200/80 space-y-2.5">
                             <div className="flex justify-between items-center">
-                              <div className="font-mono font-black text-slate-900 text-xs">{txn.invoiceNo}</div>
+                              <div className="font-mono font-black text-slate-900 text-xs">{txn.invoiceNo || txn.id}</div>
                               <div className="text-xs text-slate-500 font-bold">{txn.date}</div>
                             </div>
 
                             <div className="space-y-1 py-2 border-y border-slate-200/80">
-                              {txn.items.map((item, idx) => (
+                              {txn.items && txn.items.map((item, idx) => (
                                 <div key={idx} className="flex justify-between text-slate-800 font-semibold">
                                   <span>{item.name} × {item.qty}</span>
-                                  <span className="font-black">Rs. {Number(item.total).toFixed(2)}</span>
+                                  <span className="font-black">Rs. {Number(item.total || 0).toFixed(2)}</span>
                                 </div>
                               ))}
                             </div>
 
                             <div className="flex justify-between items-center pt-1 font-bold">
                               <span className="text-slate-600">Total Paid ({txn.paymentMethod || "Cash"}):</span>
-                              <span className="text-sky-700 text-sm font-black">Rs. {Number(txn.total).toFixed(2)}</span>
+                              <span className="text-sky-700 text-sm font-black">Rs. {Number(txn.total || 0).toFixed(2)}</span>
                             </div>
                           </div>
                         ))
