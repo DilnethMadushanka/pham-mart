@@ -122,13 +122,18 @@ export default function POSTerminal({
   );
 
   const addToCart = (med) => {
-    // Check if controlled drug and if approved rx exists
-    if (med.controlledDrug) {
-      const approvedRx = prescriptions.find(p => p.customerId === selectedCustomerId && p.status === "Approved" && p.isControlledDrug);
+    // Check if controlled dangerous drug and if approved rx exists
+    const isControlled = med.controlledDrug || med.is_controlled || med.isControlledDrug;
+    if (isControlled) {
+      const approvedRx = prescriptions.find(p => 
+        (p.customerId === selectedCustomerId || p.patient_id === selectedCustomerId) && 
+        p.status === "Approved" && 
+        (p.isControlledDrug || p.controlledDrug || p.is_controlled)
+      );
       if (!approvedRx) {
-        const proceed = window.confirm(`WARNING: ${med.name} is a Controlled Dangerous Drug!\n\nNo approved prescription found for ${activeCustomer.name}.\n\nProceed with Pharmacist override?`);
+        const proceed = window.confirm(`⚠️ CONTROLLED DRUG SAFETY WARNING:\n\n"${med.name}" is a Controlled Dangerous Drug!\n\nNo SLMC Pharmacist approved prescription found for ${activeCustomer.name}.\n\nProceed with Pharmacist override / clearance?`);
         if (!proceed) {
-          addAuditLog("POS Dispense Blocked", `Blocked POS addition of ${med.name} for ${activeCustomer.name} (No approved Rx)`, "danger");
+          addAuditLog("Controlled Drug Dispense Blocked", `Blocked POS addition of controlled drug ${med.name} for ${activeCustomer.name} (No approved Rx)`, "danger");
           return;
         }
       }

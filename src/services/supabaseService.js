@@ -120,12 +120,19 @@ export async function fetchMedicines() {
 
     return data.map(dbMed => {
       const initialMatch = INITIAL_MEDICINES.find(m => m.id === dbMed.id || m.code === dbMed.code);
+      const isCtrl = dbMed.controlledDrug ?? dbMed.is_controlled ?? initialMatch?.controlledDrug ?? false;
+      const isRx = dbMed.prescriptionRequired ?? dbMed.is_prescription ?? initialMatch?.prescriptionRequired ?? false;
+
       return {
         ...initialMatch,
         ...dbMed,
         supplierId: dbMed.supplierId || dbMed.supplier_id || initialMatch?.supplierId || 'SUP-01',
         supplierName: dbMed.supplierName || dbMed.supplier_name || initialMatch?.supplierName || 'GlaxoSmithKline Pharmaceuticals',
-        unitPrice: dbMed.unitPrice || dbMed.price || initialMatch?.unitPrice || 50
+        unitPrice: Number(dbMed.unitPrice || dbMed.price || initialMatch?.unitPrice || 50),
+        controlledDrug: isCtrl,
+        is_controlled: isCtrl,
+        prescriptionRequired: isRx,
+        is_prescription: isRx
       };
     });
   } catch (err) {
