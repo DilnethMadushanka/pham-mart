@@ -426,6 +426,8 @@ export async function fetchTransactions() {
         total: Number(t.total) || 0,
         paymentMethod: t.payment_method || 'Cash',
         payment_method: t.payment_method || 'Cash',
+        paidAmount: Number(t.paid_amount || t.total) || 0,
+        changeAmount: Number(t.change_amount) || 0,
         status: 'Completed'
       };
     });
@@ -456,10 +458,18 @@ export async function createTransaction(txData) {
       discount: Number(txData.discountAmt || txData.discount) || 0,
       tax: Number(txData.taxAmt || txData.tax) || 0,
       total: Number(txData.total) || 0,
-      payment_method: txData.payment_method || txData.paymentMethod || 'Cash'
+      payment_method: txData.payment_method || txData.paymentMethod || 'Cash',
+      paid_amount: Number(txData.paidAmount || txData.paid_amount || txData.total) || 0,
+      change_amount: Number(txData.changeAmount || txData.change_amount) || 0
     };
     const { data, error } = await supabase.from('transactions').insert([dbPayload]).select();
     if (error) {
+      if (error.message && (error.message.includes('paid_amount') || error.message.includes('change_amount'))) {
+        delete dbPayload.paid_amount;
+        delete dbPayload.change_amount;
+        const retry = await supabase.from('transactions').insert([dbPayload]).select();
+        return retry;
+      }
       console.error("Error creating transaction in Supabase:", error.message);
       return { data: null, error };
     }

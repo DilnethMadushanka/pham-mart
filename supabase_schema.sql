@@ -97,8 +97,14 @@ CREATE TABLE transactions (
   tax NUMERIC(10,2) DEFAULT 0,
   total NUMERIC(10,2) NOT NULL,
   payment_method TEXT DEFAULT 'Cash',
+  paid_amount NUMERIC(10,2) DEFAULT 0,
+  change_amount NUMERIC(10,2) DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Ensure paid_amount and change_amount exist for existing databases:
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS paid_amount NUMERIC(10,2) DEFAULT 0;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS change_amount NUMERIC(10,2) DEFAULT 0;
 
 -- 8. System Security Audit Trail Logs Table
 CREATE TABLE audit_logs (
