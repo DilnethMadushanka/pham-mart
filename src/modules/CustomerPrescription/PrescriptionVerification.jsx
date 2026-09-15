@@ -238,23 +238,44 @@ export default function PrescriptionVerification({
                   <span className="font-black text-slate-900 text-sm">{selectedRx.customerName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Prescribing Physician</span>
+                  <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Order / Physician Type</span>
                   <span className="font-black text-slate-900 text-sm">{selectedRx.doctorName}</span>
-                  <span className="text-[11px] text-sky-700 block font-mono font-bold">SLMC Reg: {selectedRx.doctorSlmcNo}</span>
+                  <span className="text-[11px] text-sky-700 block font-mono font-bold">{selectedRx.orderType || "SLMC Reg: " + selectedRx.doctorSlmcNo}</span>
                 </div>
               </div>
 
-              {/* Prescribed Medications */}
+              {/* Prescription Slip Photo Preview if available */}
+              {selectedRx.prescriptionUrl && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Attached Prescription Photo Slip</span>
+                  <div className="relative rounded-2xl overflow-hidden border border-sky-200 max-h-56 shadow-xs">
+                    <img src={selectedRx.prescriptionUrl} alt="Doctor slip" className="w-full h-48 object-cover" />
+                    <a 
+                      href={selectedRx.prescriptionUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="absolute bottom-2 right-2 px-3 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full text-[10.5px] font-extrabold backdrop-blur-xs shadow-md"
+                    >
+                      View Full Size Photo
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {/* Prescribed Medications & Typed Custom Items */}
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Prescribed Items & Dosage Instructions
+                  Prescribed / Requested Items & Dosage Instructions
                 </h4>
                 <div className="space-y-2">
-                  {selectedRx.medicines.map((m, idx) => (
-                    <div key={idx} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
-                      <div className="font-bold text-slate-900">{m.name}</div>
-                      <div className="text-slate-600 mt-1 font-semibold">Dosage: {m.dosage}</div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">Quantity: {m.quantity} units ({m.durationDays} days supply)</div>
+                  {selectedRx.medicines && selectedRx.medicines.map((m, idx) => (
+                    <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs">
+                      <div className="font-black text-slate-900 text-sm flex justify-between">
+                        <span>{m.name}</span>
+                        <span className="text-sky-700 font-black">{m.quantity} units</span>
+                      </div>
+                      <div className="text-slate-600 mt-1 font-semibold">Dosage / Instructions: {m.dosage}</div>
+                      {m.durationDays && <div className="text-[11px] text-slate-500 mt-0.5 font-medium">{m.durationDays} days supply</div>}
                     </div>
                   ))}
                 </div>

@@ -71,7 +71,7 @@ CREATE TABLE purchase_orders (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 6. Prescriptions & Doctor Clearances Table
+-- 6. Prescriptions & Custom Patient Medicine Orders Table
 CREATE TABLE prescriptions (
   id TEXT PRIMARY KEY,
   patient_id TEXT,
@@ -79,8 +79,8 @@ CREATE TABLE prescriptions (
   doctor_name TEXT NOT NULL,
   doctor_reg TEXT,
   status TEXT DEFAULT 'Pending',
-  medications JSONB,
-  prescription_url TEXT,
+  medications JSONB, -- Stores array of prescribed items OR custom typed medicines
+  prescription_url TEXT, -- URL or base64 preview of attached doctor slip photo (Optional)
   rejection_reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
