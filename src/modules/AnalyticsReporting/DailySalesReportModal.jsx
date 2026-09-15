@@ -16,17 +16,17 @@ import {
 export default function DailySalesReportModal({ isOpen, onClose, transactions = [], medicines = [] }) {
   if (!isOpen) return null;
 
-  // Selected date (defaults to today in YYYY-MM-DD format)
+  // Selected date (defaults to 'ALL' to show all recorded transactions by default)
   const todayStr = new Date().toISOString().split('T')[0];
-  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedDate, setSelectedDate] = useState('ALL');
 
   // Filter transactions for the selected date
   const filteredTxns = useMemo(() => {
+    if (selectedDate === 'ALL') return transactions;
     return transactions.filter(t => {
       if (!t) return false;
       const tDateStr = t.date || t.created_at;
       if (!tDateStr) return false;
-      // Match YYYY-MM-DD
       return tDateStr.includes(selectedDate);
     });
   }, [transactions, selectedDate]);
@@ -169,19 +169,33 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
             </div>
 
             {/* Date Selector Filter */}
-            <div className="flex items-center space-x-3 bg-slate-50 p-2 rounded-2xl border border-slate-200 print:hidden">
-              <Calendar className="w-4 h-4 text-sky-600 ml-2" />
-              <label className="text-xs font-bold text-slate-700">Select Date:</label>
+            <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200 print:hidden">
+              <Calendar className="w-4 h-4 text-sky-600 ml-1" />
+              <label className="text-xs font-bold text-slate-700">Filter Date:</label>
+              <button
+                type="button"
+                onClick={() => setSelectedDate('ALL')}
+                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === 'ALL' ? 'bg-[#0284c7] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+              >
+                All Recorded Sales
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedDate(todayStr)}
+                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-[#0284c7] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+              >
+                Today ({todayStr})
+              </button>
               <input 
                 type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                value={selectedDate === 'ALL' ? '' : selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value || 'ALL')}
+                className="bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs rounded-xl px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
               />
             </div>
 
             <div className="hidden print:block text-right text-xs text-slate-600 font-mono">
-              Report Date: <strong>{selectedDate}</strong><br />
+              Report Filter: <strong>{selectedDate === 'ALL' ? 'All Recorded Dates' : selectedDate}</strong><br />
               Generated: {new Date().toLocaleString()}
             </div>
           </div>
