@@ -233,8 +233,12 @@ export async function deleteSupplier(id) {
 export async function fetchPurchaseOrders() {
   try {
     const { data, error } = await supabase.from('purchase_orders').select('*').order('created_at', { ascending: false });
-    if (error || !data || data.length === 0) return INITIAL_PURCHASE_ORDERS;
-    return data.map(po => {
+    if (error) {
+      console.warn("Supabase fetchPurchaseOrders note:", error.message);
+      return INITIAL_PURCHASE_ORDERS;
+    }
+    
+    const dbOrders = (data || []).map(po => {
       let itemsArr = po.items;
       if (typeof itemsArr === 'string') {
         try { itemsArr = JSON.parse(itemsArr); } catch (e) { itemsArr = []; }
@@ -251,6 +255,15 @@ export async function fetchPurchaseOrders() {
         totalAmount: Number(po.total_amount) || 0
       };
     });
+
+    const combined = [...dbOrders];
+    INITIAL_PURCHASE_ORDERS.forEach(initPo => {
+      if (!combined.some(p => p.id === initPo.id)) {
+        combined.push(initPo);
+      }
+    });
+
+    return combined;
   } catch (err) {
     console.warn("Supabase fetchPurchaseOrders fallback:", err);
     return INITIAL_PURCHASE_ORDERS;

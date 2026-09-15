@@ -18,13 +18,22 @@ export default function PurchaseOrders({
   const [newPOMedicineId, setNewPOMedicineId] = useState(medicines[0]?.id || "");
   const [newPOQty, setNewPOQty] = useState(100);
 
+  const handleOpenCreateModal = () => {
+    if (suppliers.length > 0) setNewPOSupplierId(suppliers[0].id);
+    if (medicines.length > 0) setNewPOMedicineId(medicines[0].id);
+    setIsCreatePOOpen(true);
+  };
+
   const handleCreatePO = async (e) => {
     e.preventDefault();
-    const sup = suppliers.find(s => s.id === newPOSupplierId);
-    const med = medicines.find(m => m.id === newPOMedicineId);
-    if (!sup || !med) return;
+    const sup = suppliers.find(s => s.id === newPOSupplierId) || suppliers[0];
+    const med = medicines.find(m => m.id === newPOMedicineId) || medicines[0];
+    if (!sup || !med) {
+      console.warn("Cannot create PO: No valid supplier or medicine available.");
+      return;
+    }
 
-    const unitCost = Math.round(med.unitPrice * 0.7); // 30% wholesale margin assumption
+    const unitCost = Math.round((med.unitPrice || med.price || 50) * 0.7);
     const total = unitCost * newPOQty;
 
     const newPO = {
@@ -97,7 +106,7 @@ export default function PurchaseOrders({
         </div>
 
         <button
-          onClick={() => setIsCreatePOOpen(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
