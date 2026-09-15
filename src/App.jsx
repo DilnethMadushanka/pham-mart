@@ -273,7 +273,7 @@ export default function App() {
         </div>
       ) : (
         /* INTERNAL PHARMACY ENTERPRISE MANAGEMENT CONSOLE */
-        <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
+        <div className="flex-1 flex max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
           
           <Sidebar 
             activeTab={activeTab}

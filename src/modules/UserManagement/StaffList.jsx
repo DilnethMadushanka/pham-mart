@@ -13,7 +13,8 @@ import {
   ShieldAlert,
   Edit,
   Mail,
-  Phone
+  Phone,
+  UserCheck
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
 import { createStaff, updateStaff } from '../../services/supabaseService';
@@ -77,25 +78,29 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Epic Header & Metrics */}
-      <div className="bg-white p-6 rounded-2xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
-              Staff Management
+      {/* Header & Action Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10">
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-200 text-xs font-black tracking-wide border border-sky-400/30 uppercase">
+              Security & Identity
             </span>
-            <h2 className="text-xl font-black text-slate-900">
-              User Management & Access Controls
-            </h2>
+            <span className="text-sky-300 text-xs font-bold">
+              {staffList.length} Registered Staff
+            </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            User Access & Staff Credentials Directory
+          </h2>
+          <p className="text-xs sm:text-sm text-sky-100/90 mt-1 max-w-3xl leading-relaxed">
             Centralized role-based access control, account activation, staff permissions & security audit logs.
           </p>
         </div>
 
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-4 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-bold text-xs shadow-md shadow-sky-600/20 transition-all cursor-pointer"
+          className="relative z-10 flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/25 transition-all cursor-pointer shrink-0"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add Staff Member</span>
@@ -103,48 +108,57 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Quick Role Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Total Staff Accounts</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">{staffList.length}</div>
-          <span className="text-[11px] text-sky-700 font-bold">100% Centralized</span>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center mb-3">
+            <Users className="w-6 h-6" />
+          </div>
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Staff Accounts</span>
+          <div className="text-3xl font-black text-slate-900 mt-1">{staffList.length}</div>
+          <span className="text-xs text-sky-700 font-bold mt-1 inline-block">100% Centralized Directory</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Active Staff Accounts</span>
-          <div className="text-2xl font-black text-sky-700 mt-1">
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
+            <UserCheck className="w-6 h-6" />
+          </div>
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Duty Accounts</span>
+          <div className="text-3xl font-black text-sky-700 mt-1">
             {staffList.filter(s => s.status === "Active").length}
           </div>
-          <span className="text-[11px] text-slate-500">Ready for duty</span>
+          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Ready for active shift</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-          <span className="text-xs text-slate-500 font-semibold">Average Creation KPI</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">1.5 mins</div>
-          <span className="text-[11px] text-sky-700 font-bold">Target: &lt; 2 mins (Passed)</span>
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
+          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center mb-3">
+            <ShieldCheck className="w-6 h-6" />
+          </div>
+          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Average Provisioning Time</span>
+          <div className="text-3xl font-black text-slate-900 mt-1">1.5 mins</div>
+          <span className="text-xs text-purple-700 font-bold mt-1 inline-block">Target KPI: &lt; 2.0 mins (Passed)</span>
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-3">
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+      <div className="bg-white p-5 rounded-3xl border border-sky-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
             type="text"
             placeholder="Search staff by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-sky-500 outline-hidden"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
           />
         </div>
 
         <div className="flex items-center space-x-2 w-full sm:w-auto">
           <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs text-slate-500 font-semibold">Filter Role:</span>
+          <span className="text-xs text-slate-500 font-bold">Filter Role:</span>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
           >
             <option value="ALL">All Roles</option>
             <option value="Owner/Admin">Owner / Admin</option>
@@ -155,99 +169,99 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Staff Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white rounded-3xl border border-sky-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-extrabold">
               <tr>
-                <th className="py-3.5 px-4">Staff Member</th>
-                <th className="py-3.5 px-4">Assigned Role</th>
-                <th className="py-3.5 px-4">Contact Info</th>
-                <th className="py-3.5 px-4">Account Status</th>
-                <th className="py-3.5 px-4">Last Active</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-4 px-5">Staff Member</th>
+                <th className="py-4 px-5">Assigned Role</th>
+                <th className="py-4 px-5">Contact Details</th>
+                <th className="py-4 px-5">Account Status</th>
+                <th className="py-4 px-5">Last Activity</th>
+                <th className="py-4 px-5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredStaff.map((staff) => (
-                <tr key={staff.id} className="hover:bg-slate-50/80 transition-colors">
+                <tr key={staff.id} className="hover:bg-sky-50/40 transition-colors">
                   
                   {/* Name & ID */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-4 px-5">
                     <div className="flex items-center space-x-3">
-                      <div className="w-9 h-9 rounded-full bg-sky-100 border border-sky-300 text-sky-900 font-bold flex items-center justify-center text-xs">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-black flex items-center justify-center text-xs shadow-md shadow-sky-500/15 shrink-0">
                         {staff.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-slate-900">{staff.name}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">@{staff.username} • {staff.id}</div>
+                        <div className="font-black text-slate-900 text-sm leading-snug">{staff.name}</div>
+                        <div className="text-[11.5px] text-slate-400 font-mono">@{staff.username} • {staff.id}</div>
                       </div>
                     </div>
                   </td>
 
                   {/* Role Badge */}
-                  <td className="py-3.5 px-4">
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-lg font-bold text-[11px] border ${
+                  <td className="py-4 px-5">
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl font-black text-xs border ${
                       staff.role === "Owner/Admin" 
-                        ? "bg-purple-50 text-purple-800 border-purple-200"
+                        ? "bg-purple-50 text-purple-900 border-purple-200"
                         : staff.role === "Pharmacist"
-                        ? "bg-sky-50 text-sky-800 border-sky-200"
-                        : "bg-blue-50 text-blue-800 border-blue-200"
+                        ? "bg-sky-50 text-sky-900 border-sky-200"
+                        : "bg-blue-50 text-blue-900 border-blue-200"
                     }`}>
-                      <ShieldCheck className="w-3 h-3 mr-1" />
+                      <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
                       {staff.role}
                     </span>
                   </td>
 
                   {/* Contact */}
-                  <td className="py-3.5 px-4 space-y-0.5">
-                    <div className="flex items-center text-slate-600">
-                      <Mail className="w-3 h-3 mr-1 text-slate-400" />
-                      {staff.email}
+                  <td className="py-4 px-5 space-y-1">
+                    <div className="flex items-center text-slate-700 font-medium">
+                      <Mail className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
+                      <span>{staff.email}</span>
                     </div>
-                    <div className="flex items-center text-slate-500">
-                      <Phone className="w-3 h-3 mr-1 text-slate-400" />
-                      {staff.phone}
+                    <div className="flex items-center text-slate-500 font-medium">
+                      <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
+                      <span>{staff.phone}</span>
                     </div>
                   </td>
 
                   {/* Status */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-4 px-5">
                     <button
                       onClick={() => toggleStaffStatus(staff.id)}
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors cursor-pointer ${
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border transition-colors cursor-pointer ${
                         staff.status === "Active" 
-                          ? "bg-sky-100 text-sky-800 border-sky-300 hover:bg-rose-100 hover:text-rose-800 hover:border-rose-300"
-                          : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-sky-100 hover:text-sky-800"
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300"
+                          : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-emerald-50 hover:text-emerald-800"
                       }`}
                     >
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${staff.status === "Active" ? "bg-sky-600" : "bg-slate-400"}`}></span>
+                      <span className={`w-2 h-2 rounded-full mr-2 ${staff.status === "Active" ? "bg-emerald-500" : "bg-slate-400"}`}></span>
                       {staff.status}
                     </button>
                   </td>
 
                   {/* Last Active */}
-                  <td className="py-3.5 px-4 text-slate-500">
+                  <td className="py-4 px-5 text-slate-600 font-medium">
                     <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1 text-slate-400" />
+                      <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
                       {staff.lastActive}
                     </div>
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end space-x-1">
+                  <td className="py-4 px-5 text-right">
+                    <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleResetPassword(staff)}
                         title="Reset Password"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer border border-transparent hover:border-sky-200"
                       >
                         <Key className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => { setEditingStaff(staff); setIsAddModalOpen(true); }}
                         title="Edit Role & Permissions"
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer border border-transparent hover:border-sky-200"
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -264,7 +278,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       {/* Add / Edit Staff Modal */}
       <AddStaffModal 
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => { setIsAddModalOpen(false); setEditingStaff(null); }}
         onSave={handleSaveStaff}
         staffToEdit={editingStaff}
       />

@@ -69,21 +69,32 @@ export default function PurchaseOrders({
   };
 
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       
-      {/* Header Bar */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-        <div>
-          <h3 className="text-base font-bold text-slate-900 flex items-center">
-            <Truck className="w-5 h-5 mr-2 text-sky-600" />
-            Supplier Purchase Orders & Delivery Processing
-          </h3>
-          <p className="text-xs text-slate-500">Automated stock sync upon Goods Receipt</p>
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10">
+          <div className="flex items-center space-x-2 mb-2">
+            <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-200 text-xs font-black tracking-wide border border-sky-400/30 uppercase">
+              Procurement & Supply Chain
+            </span>
+            <span className="text-sky-300 text-xs font-bold">
+              {purchaseOrders.length} Orders Issued
+            </span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center">
+            <Truck className="w-7 h-7 mr-3 text-sky-400" />
+            Supplier Purchase Orders & Goods Receipt Processing
+          </h2>
+          <p className="text-xs sm:text-sm text-sky-100/90 mt-1 max-w-3xl leading-relaxed">
+            Automated stock sync & batch inventory updates upon Goods Receipt clearance.
+          </p>
         </div>
 
         <button
           onClick={() => setIsCreatePOOpen(true)}
-          className="flex items-center space-x-1.5 px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+          className="relative z-10 flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/25 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>New Purchase Order</span>
@@ -91,57 +102,57 @@ export default function PurchaseOrders({
       </div>
 
       {/* PO List Cards */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {purchaseOrders.map((po) => {
           const isReceived = po.status === "Goods Received";
 
           return (
             <div 
               key={po.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-sky-300 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:border-sky-300 transition-all flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5"
             >
-              <div>
-                <div className="flex items-center space-x-3">
-                  <span className="font-mono font-bold text-slate-900 text-sm">{po.poNumber}</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+              <div className="space-y-2 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-mono font-black text-slate-900 text-base">{po.poNumber}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
                     isReceived 
-                      ? "bg-sky-100 text-sky-800 border-sky-300"
-                      : "bg-amber-100 text-amber-800 border-amber-300"
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                      : "bg-amber-100 text-amber-900 border-amber-300"
                   }`}>
                     {po.status}
                   </span>
                 </div>
 
-                <div className="text-xs text-slate-600 mt-1 font-semibold">
-                  Supplier: <span className="text-slate-900">{po.supplierName}</span> • Order Date: {po.orderDate}
+                <div className="text-xs sm:text-sm text-slate-600 font-semibold">
+                  Supplier: <strong className="text-slate-900 font-black">{po.supplierName}</strong> • Order Date: <span className="text-slate-500">{po.orderDate}</span>
                 </div>
 
                 {/* Items */}
-                <div className="mt-2 text-xs text-slate-500">
+                <div className="pt-1 flex flex-wrap gap-2">
                   {po.items.map((item, idx) => (
-                    <span key={idx} className="mr-3 font-medium bg-slate-50 px-2 py-0.5 rounded-md border border-slate-200">
+                    <span key={idx} className="font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
                       {item.name} × {item.quantity} units (Rs. {item.total.toFixed(2)})
                     </span>
                   ))}
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3 w-full md:w-auto justify-between md:justify-end">
+              <div className="flex items-center space-x-4 w-full lg:w-auto justify-between lg:justify-end pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div className="text-right">
-                  <div className="text-xs text-slate-400">Total Valuation</div>
-                  <div className="text-base font-black text-sky-700">Rs. {po.totalAmount.toFixed(2)}</div>
+                  <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Valuation</div>
+                  <div className="text-lg font-black text-sky-700">Rs. {po.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {!isReceived ? (
                   <button
                     onClick={() => setSelectedPOForReceipt(po)}
-                    className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+                    className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer"
                   >
                     Receive Goods
                   </button>
                 ) : (
-                  <div className="flex items-center text-xs font-bold text-sky-700 bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200">
-                    <CheckCircle2 className="w-4 h-4 mr-1 text-sky-600" />
+                  <div className="flex items-center text-xs font-black text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-2xl border border-emerald-300">
+                    <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600" />
                     Stock Updated
                   </div>
                 )}
