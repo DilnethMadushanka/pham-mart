@@ -230,7 +230,7 @@ export default function POSTerminal({
         <div>
           <div className="flex items-center space-x-2 mb-1">
             <span className="px-3 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200/80">
-              Epic 4 Requirement
+              POS Counter
             </span>
             <span className="text-xs text-slate-500 font-semibold">Live POS Counter Terminal</span>
           </div>

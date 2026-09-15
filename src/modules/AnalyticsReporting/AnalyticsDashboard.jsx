@@ -65,7 +65,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           <div>
             <div className="flex items-center space-x-2.5 mb-1.5">
               <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-black border border-sky-400/30 backdrop-blur-md">
-                Epic 4 Executive Dashboard
+                Executive Analytics Dashboard
               </span>
               <span className="flex items-center text-xs font-bold text-sky-400">
                 <Zap className="w-3.5 h-3.5 mr-1 fill-sky-400" />
@@ -125,7 +125,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           value={pendingRxCount.toString()}
           subtitle="Pharmacist verification queue"
           icon={FileText}
-          badge="Epic 3 Active"
+          badge="Rx Queue"
           colorScheme="rose"
         />
       </div>

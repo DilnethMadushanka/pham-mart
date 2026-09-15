@@ -94,7 +94,7 @@ export default function PrescriptionVerification({
         <div>
           <div className="flex items-center space-x-2">
             <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
-              Epic 3 Requirement
+              Prescription Station
             </span>
             <h2 className="text-xl font-black text-slate-900">
               Prescription Verification & Pharmacist Workstation
@@ -262,7 +262,7 @@ export default function PrescriptionVerification({
                 <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 space-y-1">
                   <div className="font-bold flex items-center">
                     <ShieldAlert className="w-4 h-4 mr-1 text-rose-600" />
-                    Controlled Substance Safety Protocol (Epic 3 & 4)
+                    Controlled Substance Safety Protocol
                   </div>
                   <p className="text-[11px] text-rose-800 leading-relaxed">
                     This prescription contains controlled dangerous drugs. Dispensing is locked at the POS billing counter until Pharmacist approval is recorded.

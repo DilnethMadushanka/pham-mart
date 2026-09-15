@@ -12,14 +12,14 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
     },
     {
       num: "02",
-      title: "Pharmacist Review & Clearance (Epic 3)",
+      title: "Pharmacist Review & Clearance",
       desc: "Registered SLMC pharmacists verify doctor SLMC credentials, dosage limits, and drug interaction safety.",
       icon: Stethoscope,
       color: "bg-sky-100 text-sky-800 border-sky-300"
     },
     {
       num: "03",
-      title: "Automated Stock Reserve & Billing (Epic 4)",
+      title: "Automated Stock Reserve & Billing",
       desc: "Approved items are reserved from inventory and an accurate digital price quotation is generated.",
       icon: ShoppingCart,
       color: "bg-sky-100 text-sky-800 border-sky-300"

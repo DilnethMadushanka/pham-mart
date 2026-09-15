@@ -75,7 +75,7 @@ export default function CustomerList({
         <div>
           <div className="flex items-center space-x-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
-              Epic 3 Requirement
+              Patient Directory
             </span>
             <span className="text-xs text-slate-500 font-semibold">Cashier & Pharmacist Workstation</span>
           </div>

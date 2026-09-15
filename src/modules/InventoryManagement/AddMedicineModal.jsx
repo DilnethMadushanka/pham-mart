@@ -72,7 +72,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               <h3 className="text-base font-bold text-slate-900">
                 {medicineToEdit ? "Edit Medication Record" : "Add New Medication to Inventory"}
               </h3>
-              <p className="text-xs text-slate-500">Epic 2 inventory catalogue management</p>
+              <p className="text-xs text-slate-500">Pharmaceutical inventory catalogue management</p>
             </div>
           </div>
           <button 

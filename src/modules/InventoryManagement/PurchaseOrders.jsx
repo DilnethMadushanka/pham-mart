@@ -78,7 +78,7 @@ export default function PurchaseOrders({
             <Truck className="w-5 h-5 mr-2 text-sky-600" />
             Supplier Purchase Orders & Delivery Processing
           </h3>
-          <p className="text-xs text-slate-500">Automated stock sync upon Goods Receipt (Report Epic 2)</p>
+          <p className="text-xs text-slate-500">Automated stock sync upon Goods Receipt</p>
         </div>
 
         <button

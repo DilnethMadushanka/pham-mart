@@ -20,19 +20,16 @@ export default function Sidebar({
     {
       id: "analytics",
       label: "Analytics & Executive Overview",
-      epic: "Epic 4",
       icon: LayoutDashboard
     },
     {
       id: "pos",
       label: "POS Billing Counter",
-      epic: "Epic 4",
       icon: ShoppingCart
     },
     {
       id: "inventory",
       label: "Medicine & Stock Inventory",
-      epic: "Epic 2",
       icon: Package,
       badge: (lowStockCount + expiredCount) > 0 ? (lowStockCount + expiredCount) : null,
       badgeColor: "bg-amber-100 text-amber-800 border-amber-300"
@@ -40,7 +37,6 @@ export default function Sidebar({
     {
       id: "prescriptions",
       label: "Prescription Verification Station",
-      epic: "Epic 3",
       icon: FileText,
       badge: pendingRxCount > 0 ? pendingRxCount : null,
       badgeColor: "bg-sky-100 text-sky-800 border-sky-300"
@@ -48,13 +44,11 @@ export default function Sidebar({
     {
       id: "customers",
       label: "Patient & Customer Directory",
-      epic: "Epic 3",
       icon: UserCheck
     },
     {
       id: "staff",
       label: "User Access & Staff Accounts",
-      epic: "Epic 1",
       icon: Users
     }
   ];
