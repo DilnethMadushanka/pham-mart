@@ -397,8 +397,47 @@ export async function updatePrescriptionStatus(id, status, rejectionReason = nul
 export async function fetchTransactions() {
   try {
     const { data, error } = await supabase.from('transactions').select('*').order('created_at', { ascending: false });
-    if (error || !data || data.length === 0) return INITIAL_TRANSACTIONS;
-    return data;
+    if (error) {
+      console.warn("Supabase fetchTransactions note:", error.message);
+      return INITIAL_TRANSACTIONS;
+    }
+
+    const dbTxns = (data || []).map(t => {
+      let itemsArr = t.items;
+      if (typeof itemsArr === 'string') {
+        try { itemsArr = JSON.parse(itemsArr); } catch (e) { itemsArr = []; }
+      }
+      return {
+        id: t.id,
+        invoiceNo: t.invoice_no || t.id,
+        invoice_no: t.invoice_no || t.id,
+        date: t.created_at ? new Date(t.created_at).toLocaleString() : new Date().toLocaleString(),
+        created_at: t.created_at,
+        customerName: t.customer_name || 'Walk-in Customer',
+        customer_name: t.customer_name || 'Walk-in Customer',
+        cashierName: t.cashier_name || 'Staff',
+        cashier_name: t.cashier_name || 'Staff',
+        items: Array.isArray(itemsArr) ? itemsArr : [],
+        subtotal: Number(t.subtotal) || 0,
+        discount: Number(t.discount) || 0,
+        discountAmt: Number(t.discount) || 0,
+        tax: Number(t.tax) || 0,
+        taxAmt: Number(t.tax) || 0,
+        total: Number(t.total) || 0,
+        paymentMethod: t.payment_method || 'Cash',
+        payment_method: t.payment_method || 'Cash',
+        status: 'Completed'
+      };
+    });
+
+    const combined = [...dbTxns];
+    INITIAL_TRANSACTIONS.forEach(initT => {
+      if (!combined.some(x => x.id === initT.id || x.invoiceNo === initT.invoiceNo)) {
+        combined.push(initT);
+      }
+    });
+
+    return combined;
   } catch (err) {
     console.warn("Supabase fetchTransactions fallback:", err);
     return INITIAL_TRANSACTIONS;
@@ -407,11 +446,27 @@ export async function fetchTransactions() {
 
 export async function createTransaction(txData) {
   try {
-    const { data, error } = await supabase.from('transactions').insert([txData]).select();
-    if (error) console.error("Error creating transaction:", error.message);
-    return data;
+    const dbPayload = {
+      id: txData.id || `TXN-${Math.floor(8800 + Math.random() * 1000)}`,
+      invoice_no: txData.invoice_no || txData.invoiceNo || `INV-2026-${Math.floor(8800 + Math.random() * 1000)}`,
+      customer_name: txData.customer_name || txData.customerName || 'Walk-in Customer',
+      cashier_name: txData.cashier_name || txData.cashierName || 'Staff',
+      items: txData.items || [],
+      subtotal: Number(txData.subtotal) || 0,
+      discount: Number(txData.discountAmt || txData.discount) || 0,
+      tax: Number(txData.taxAmt || txData.tax) || 0,
+      total: Number(txData.total) || 0,
+      payment_method: txData.payment_method || txData.paymentMethod || 'Cash'
+    };
+    const { data, error } = await supabase.from('transactions').insert([dbPayload]).select();
+    if (error) {
+      console.error("Error creating transaction in Supabase:", error.message);
+      return { data: null, error };
+    }
+    return { data, error: null };
   } catch (err) {
     console.error("createTransaction exception:", err);
+    return { data: null, error: err };
   }
 }
 
