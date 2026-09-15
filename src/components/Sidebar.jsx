@@ -1,16 +1,16 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Package, 
-  FileText, 
+import {
+  LayoutDashboard,
+  ShoppingCart,
+  Package,
+  FileText,
   UserCheck,
   Users
 } from 'lucide-react';
 
-export default function Sidebar({ 
-  activeTab, 
-  setActiveTab, 
+export default function Sidebar({
+  activeTab,
+  setActiveTab,
   currentRole,
   lowStockCount = 0,
   pendingRxCount = 0,
@@ -55,7 +55,7 @@ export default function Sidebar({
 
   return (
     <aside className="w-72 sm:w-72 bg-white border-r border-sky-100/80 flex flex-col h-[calc(100vh-4rem)] sticky top-16 font-sans shrink-0 shadow-2xs">
-      
+
       {/* Navigation Header */}
       <div className="p-4 border-b border-slate-100">
         <div className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400">
@@ -73,11 +73,10 @@ export default function Sidebar({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer group ${
-                isActive 
-                  ? "bg-gradient-to-r from-sky-50 to-blue-50/60 text-[#0284c7] border border-sky-200/80 shadow-xs" 
-                  : "text-slate-600 hover:text-[#0284c7] hover:bg-slate-50"
-              }`}
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer group ${isActive
+                ? "bg-gradient-to-r from-sky-50 to-blue-50/60 text-[#0284c7] border border-sky-200/80 shadow-xs"
+                : "text-slate-600 hover:text-[#0284c7] hover:bg-slate-50"
+                }`}
             >
               <div className="flex items-center space-x-3 min-w-0 pr-1">
                 <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? "text-[#0284c7]" : "text-slate-400 group-hover:text-[#0284c7]"}`} />
