@@ -95,9 +95,10 @@ export async function fetchCustomers() {
       lastVisit: c.last_visit || (c.created_at ? new Date(c.created_at).toISOString().split('T')[0] : '2026-09-01')
     }));
 
+    const deletedList = JSON.parse(localStorage.getItem('pharmart_deleted_customers') || '[]');
     const combined = [...dbCusts];
     INITIAL_CUSTOMERS.forEach(initC => {
-      if (!combined.some(x => x.id === initC.id || (initC.nic && x.nic === initC.nic))) {
+      if (!deletedList.includes(initC.id) && !combined.some(x => String(x.id).toLowerCase() === String(initC.id).toLowerCase() || (initC.nic && x.nic === initC.nic))) {
         combined.push(initC);
       }
     });
@@ -112,7 +113,7 @@ export async function fetchCustomers() {
 export async function createCustomer(customerData) {
   try {
     const dbPayload = {
-      id: customerData.id,
+      id: customerData.id || `CUST-${Math.floor(300 + Math.random() * 700)}`,
       name: customerData.name,
       nic: customerData.nic || null,
       email: customerData.email || null,
@@ -136,6 +137,7 @@ export async function createCustomer(customerData) {
 export async function updateCustomer(id, updateData) {
   try {
     const dbPayload = {
+      id: id,
       name: updateData.name,
       nic: updateData.nic || null,
       email: updateData.email || null,
@@ -143,8 +145,27 @@ export async function updateCustomer(id, updateData) {
       address: updateData.address || null,
       allergies: updateData.allergies || 'None'
     };
-    const { data, error } = await supabase.from('customers').update(dbPayload).eq('id', id).select();
-    if (error) console.error("Error updating customer:", error.message);
+
+    // 1. Try updating by exact ID
+    let { data, error } = await supabase.from('customers').update(dbPayload).eq('id', id).select();
+
+    // 2. If no matching ID row found and NIC exists, try updating by NIC
+    if (!error && (!data || data.length === 0) && updateData.nic) {
+      const byNic = await supabase.from('customers').update(dbPayload).eq('nic', updateData.nic).select();
+      if (!byNic.error && byNic.data && byNic.data.length > 0) {
+        return { data: byNic.data, error: null };
+      }
+    }
+
+    // 3. If still no rows updated (record was never in Supabase DB), UPSERT into Supabase DB!
+    if (!error && (!data || data.length === 0)) {
+      const upsertRes = await supabase.from('customers').upsert([dbPayload]).select();
+      return upsertRes;
+    }
+
+    if (error) {
+      console.error("Error updating customer in Supabase:", error.message);
+    }
     return { data, error };
   } catch (err) {
     console.error("updateCustomer exception:", err);
@@ -152,10 +173,22 @@ export async function updateCustomer(id, updateData) {
   }
 }
 
-export async function deleteCustomer(id) {
+export async function deleteCustomer(id, nic = null) {
   try {
     const { error } = await supabase.from('customers').delete().eq('id', id);
-    if (error) console.error("Error deleting customer:", error.message);
+    if (nic) {
+      await supabase.from('customers').delete().eq('nic', nic);
+    }
+
+    try {
+      const deletedList = JSON.parse(localStorage.getItem('pharmart_deleted_customers') || '[]');
+      if (!deletedList.includes(id)) {
+        deletedList.push(id);
+        localStorage.setItem('pharmart_deleted_customers', JSON.stringify(deletedList));
+      }
+    } catch (e) {}
+
+    if (error) console.error("Error deleting customer in Supabase:", error.message);
     return { error };
   } catch (err) {
     console.error("deleteCustomer exception:", err);

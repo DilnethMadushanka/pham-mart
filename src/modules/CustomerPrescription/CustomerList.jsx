@@ -104,11 +104,11 @@ export default function CustomerList({
     setIsAddModalOpen(true);
   };
 
-  const handleDeleteClick = async (id, name) => {
+  const handleDeleteClick = async (id, name, nic) => {
     if (!window.confirm(`Are you sure you want to delete customer profile for "${name}" (${id})?`)) return;
 
     setCustomers(prev => prev.filter(c => c.id !== id));
-    await deleteCustomer(id);
+    await deleteCustomer(id, nic);
 
     if (addAuditLog) {
       addAuditLog("Customer Deleted", `Deleted customer profile for ${name} (${id})`, "warning");
@@ -125,7 +125,24 @@ export default function CustomerList({
     if (editingCustomer) {
       const updatedObj = { ...editingCustomer, ...newCust };
       setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? updatedObj : c));
-      await updateCustomer(editingCustomer.id, newCust);
+      
+      const { data, error } = await updateCustomer(editingCustomer.id, newCust);
+      if (error) {
+        console.error("Error updating customer in Supabase:", error);
+      } else if (data && data.length > 0) {
+        const saved = data[0];
+        setCustomers(prev => prev.map(c => (c.id === editingCustomer.id || c.id === saved.id) ? {
+          ...c,
+          id: saved.id || c.id,
+          name: saved.name || newCust.name,
+          nic: saved.nic || newCust.nic,
+          phone: saved.phone || newCust.phone,
+          email: saved.email || newCust.email,
+          address: saved.address || newCust.address,
+          allergies: saved.allergies || newCust.allergies
+        } : c));
+      }
+
       if (addAuditLog) {
         addAuditLog("Customer Updated", `Updated digital customer profile for ${newCust.name} (ID: ${editingCustomer.id})`, "info");
       }
@@ -137,7 +154,14 @@ export default function CustomerList({
         lastVisit: new Date().toISOString().split('T')[0]
       };
       setCustomers(prev => [created, ...prev]);
-      await createCustomer(created);
+      const { data, error } = await createCustomer(created);
+      if (error) {
+        console.error("Error creating customer in Supabase:", error);
+      } else if (data && data.length > 0) {
+        const saved = data[0];
+        setCustomers(prev => prev.map(c => c.id === created.id ? { ...c, id: saved.id || c.id } : c));
+      }
+
       if (addAuditLog) {
         addAuditLog("New Customer Registered", `Created digital customer profile for ${created.name} (NIC: ${created.nic})`, "success");
       }
@@ -235,7 +259,7 @@ export default function CustomerList({
                       <Edit className="w-3.5 h-3.5" />
                     </button>
                     <button 
-                      onClick={() => handleDeleteClick(cust.id, cust.name)}
+                      onClick={() => handleDeleteClick(cust.id, cust.name, cust.nic)}
                       title="Delete Customer Profile"
                       className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
                     >
