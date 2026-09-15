@@ -11,7 +11,8 @@ import {
   ArrowUpRight,
   Activity,
   Award,
-  Zap
+  Zap,
+  BarChart3
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -55,16 +56,16 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in font-sans p-6">
+    <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Glassmorphic Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-sky-950 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden border border-sky-900/50">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-sky-900/50">
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative z-10">
           <div>
-            <div className="flex items-center space-x-2.5 mb-1.5">
-              <span className="px-3 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-black border border-sky-400/30 backdrop-blur-md">
+            <div className="flex items-center space-x-2.5 mb-2">
+              <span className="px-3.5 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-black border border-sky-400/30 backdrop-blur-md">
                 Executive Analytics Dashboard
               </span>
               <span className="flex items-center text-xs font-bold text-sky-400">
@@ -72,25 +73,25 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                 Live Sync
               </span>
             </div>
-            <h2 className="text-2xl font-black text-white tracking-tight font-heading">
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-heading">
               Pharmacy Analytics & Business Performance
             </h2>
-            <p className="text-xs text-slate-300 font-medium mt-1">
+            <p className="text-xs sm:text-sm text-sky-100/80 font-medium mt-1">
               Real-time financial trends, stock turn rates, billing error metrics & operational baseline analytics.
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-right min-w-[200px]">
-            <div className="text-[11px] font-extrabold uppercase tracking-wider text-sky-200">Total System Revenue</div>
-            <div className="text-2xl font-black text-white font-mono mt-0.5">
+          <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/15 text-right shrink-0 min-w-[220px]">
+            <div className="text-xs font-extrabold uppercase tracking-wider text-sky-200">Total System Revenue</div>
+            <div className="text-2xl sm:text-3xl font-black text-white font-mono mt-1">
               LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4.5">
+      {/* Metric Cards Grid - Expanded 4 Columns */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <MetricCard 
           title="Daily Sales Revenue"
           value={`Rs. ${totalRevenue.toLocaleString()}`}
@@ -134,19 +135,19 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Sales Revenue Trend Chart */}
-        <div className="lg:col-span-8 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-3.5">
+        <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
+          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
             <div>
-              <h3 className="text-base font-extrabold text-slate-900 tracking-tight font-heading">Weekly Revenue & Transaction Trend</h3>
-              <p className="text-xs text-slate-500 font-medium">Live sales synchronization across POS counters</p>
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Weekly Revenue & Transaction Trend</h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Live sales synchronization across POS counters</p>
             </div>
-            <span className="px-3 py-1 bg-sky-50 text-[#0284c7] text-xs font-black rounded-xl border border-sky-200/60 shadow-2xs flex items-center space-x-1.5">
+            <span className="px-3.5 py-1.5 bg-sky-50 text-[#0284c7] text-xs font-black rounded-xl border border-sky-200/60 shadow-2xs flex items-center space-x-1.5 shrink-0">
               <span className="w-2 h-2 rounded-full bg-[#0284c7] animate-ping"></span>
               <span>Live Feed</span>
             </span>
           </div>
 
-          <div className="h-72">
+          <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={salesChartData}>
                 <defs>
@@ -155,10 +156,10 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                     <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="day" stroke="#94a3b8" fontSize={11} fontWeight={600} />
-                <YAxis stroke="#94a3b8" fontSize={11} fontWeight={600} />
+                <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} fontWeight={600} />
+                <YAxis stroke="#94a3b8" fontSize={12} fontWeight={600} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '12px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                   formatter={(val) => [`Rs. ${val.toLocaleString()}`, 'Revenue']}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#0284c7" strokeWidth={3.5} fillOpacity={1} fill="url(#skyGrad)" />
@@ -168,34 +169,36 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         </div>
 
         {/* Category Breakdown Chart */}
-        <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-          <div className="border-b border-slate-100 pb-3.5">
-            <h3 className="text-base font-extrabold text-slate-900 tracking-tight font-heading">Medicine Category Breakdown</h3>
-            <p className="text-xs text-slate-500 font-medium">Sales revenue distribution by therapeutic category</p>
+        <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5 flex flex-col justify-between">
+          <div>
+            <div className="border-b border-slate-100 pb-4">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Medicine Category Breakdown</h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Sales revenue distribution by therapeutic category</p>
+            </div>
+
+            <div className="h-60 flex justify-center items-center my-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={62}
+                    outerRadius={92}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          <div className="h-56 flex justify-center items-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={58}
-                  outerRadius={84}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="space-y-2 pt-2 border-t border-slate-100">
+          <div className="space-y-2.5 pt-3 border-t border-slate-100">
             {categoryData.map((cat, idx) => (
               <div key={idx} className="flex justify-between items-center text-xs">
                 <div className="flex items-center space-x-2.5">
