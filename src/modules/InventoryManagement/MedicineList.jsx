@@ -17,6 +17,7 @@ import {
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
+import { createMedicine } from '../../services/supabaseService';
 
 export default function MedicineList({ 
   medicines, 
@@ -56,7 +57,7 @@ export default function MedicineList({
 
   const categories = Array.from(new Set(medicines.map(m => m.category)));
 
-  const handleSaveMedicine = (medData) => {
+  const handleSaveMedicine = async (medData) => {
     if (editingMedicine) {
       setMedicines(prev => prev.map(m => m.id === medData.id ? medData : m));
       addAuditLog("Medicine Updated", `Updated record for ${medData.name} (${medData.code})`, "info");
@@ -64,9 +65,10 @@ export default function MedicineList({
       const newMed = {
         ...medData,
         id: `MED-${Math.floor(200 + Math.random() * 800)}`,
-        code: medData.code || `MED-${medData.name.substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`
+        code: medData.code || `MED-${(medData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`
       };
       setMedicines(prev => [newMed, ...prev]);
+      await createMedicine(newMed);
       addAuditLog("New Medicine Added", `Added ${newMed.name} to catalogue`, "success");
     }
     setIsAddMedicineOpen(false);

@@ -116,9 +116,12 @@ export async function createCustomer(customerData) {
 export async function fetchMedicines() {
   try {
     const { data, error } = await supabase.from('medicines').select('*').order('name', { ascending: true });
-    if (error || !data || data.length === 0) return INITIAL_MEDICINES;
+    if (error) {
+      console.warn("Supabase fetchMedicines note:", error.message);
+      return INITIAL_MEDICINES;
+    }
 
-    return data.map(dbMed => {
+    const dbMeds = (data || []).map(dbMed => {
       const initialMatch = INITIAL_MEDICINES.find(m => m.id === dbMed.id || m.code === dbMed.code);
       const isCtrl = dbMed.controlledDrug ?? dbMed.is_controlled ?? initialMatch?.controlledDrug ?? false;
       const isRx = dbMed.prescriptionRequired ?? dbMed.is_prescription ?? initialMatch?.prescriptionRequired ?? false;
@@ -129,12 +132,25 @@ export async function fetchMedicines() {
         supplierId: dbMed.supplierId || dbMed.supplier_id || initialMatch?.supplierId || 'SUP-01',
         supplierName: dbMed.supplierName || dbMed.supplier_name || initialMatch?.supplierName || 'GlaxoSmithKline Pharmaceuticals',
         unitPrice: Number(dbMed.unitPrice || dbMed.price || initialMatch?.unitPrice || 50),
+        genericName: dbMed.genericName || dbMed.dosage || initialMatch?.genericName || '',
+        reorderLevel: Number(dbMed.reorderLevel || dbMed.reorder_level || initialMatch?.reorderLevel || 10),
+        expiryDate: dbMed.expiryDate || dbMed.expiry_date || initialMatch?.expiryDate || '2027-12-31',
+        batchNo: dbMed.batchNo || initialMatch?.batchNo || 'BATCH-2026',
         controlledDrug: isCtrl,
         is_controlled: isCtrl,
         prescriptionRequired: isRx,
         is_prescription: isRx
       };
     });
+
+    const combined = [...dbMeds];
+    INITIAL_MEDICINES.forEach(initM => {
+      if (!combined.some(x => x.id === initM.id || x.code === initM.code)) {
+        combined.push(initM);
+      }
+    });
+
+    return combined;
   } catch (err) {
     console.warn("Supabase fetchMedicines fallback:", err);
     return INITIAL_MEDICINES;
@@ -143,11 +159,29 @@ export async function fetchMedicines() {
 
 export async function createMedicine(medicineData) {
   try {
-    const { data, error } = await supabase.from('medicines').insert([medicineData]).select();
-    if (error) console.error("Error creating medicine:", error.message);
-    return data;
+    const dbPayload = {
+      id: medicineData.id || `MED-${Math.floor(200 + Math.random() * 800)}`,
+      code: medicineData.code || `MED-${(medicineData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`,
+      name: medicineData.name || 'New Medicine',
+      category: medicineData.category || 'Analgesic',
+      dosage: medicineData.dosage || medicineData.genericName || 'Standard',
+      price: Number(medicineData.unitPrice || medicineData.price || 50),
+      stock: Number(medicineData.stock || 0),
+      reorder_level: Number(medicineData.reorderLevel || medicineData.reorder_level || 10),
+      is_prescription: Boolean(medicineData.prescriptionRequired || medicineData.is_prescription),
+      is_controlled: Boolean(medicineData.controlledDrug || medicineData.is_controlled),
+      expiry_date: medicineData.expiryDate || medicineData.expiry_date || null
+    };
+
+    const { data, error } = await supabase.from('medicines').insert([dbPayload]).select();
+    if (error) {
+      console.error("Error creating medicine in Supabase:", error.message);
+      return { data: null, error };
+    }
+    return { data, error: null };
   } catch (err) {
     console.error("createMedicine exception:", err);
+    return { data: null, error: err };
   }
 }
 
