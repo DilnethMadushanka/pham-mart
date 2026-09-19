@@ -16,23 +16,23 @@ export default function NotificationDrawer({
   const pendingRx = prescriptions.filter(p => p.status === "Pending");
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm animate-fade-in flex justify-end">
-      <div className="w-full max-w-md glass-panel bg-white/95 h-full !rounded-none depth-card flex flex-col">
-
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/40 backdrop-blur-xs animate-fade-in flex justify-end">
+      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
+        
         {/* Header */}
-        <div className="p-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50/60 flex justify-between items-center">
+        <div className="p-4 border-b border-sky-100 bg-sky-50/50 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-lg shadow-sky-500/30">
+            <div className="p-2 rounded-lg bg-sky-600 text-white">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-gradient-brand">System Notifications & Alerts</h3>
+              <h3 className="text-sm font-bold text-slate-900">System Notifications & Alerts</h3>
               <p className="text-[11px] text-slate-500">Real-time inventory and prescription action items</p>
             </div>
           </div>
-          <button
+          <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-all hover:rotate-90 duration-300"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60"
           >
             <X className="w-5 h-5" />
           </button>
@@ -66,7 +66,7 @@ export default function NotificationDrawer({
             ) : (
               <div className="space-y-2">
                 {pendingRx.map(p => (
-                  <div key={p.id} className="p-3 rounded-2xl border border-sky-200 bg-sky-50/40 hover:bg-sky-50 hover:-translate-y-0.5 hover:shadow-md transition-all text-xs">
+                  <div key={p.id} className="p-3 rounded-xl border border-sky-200 bg-sky-50/40 hover:bg-sky-50 transition-colors text-xs">
                     <div className="flex justify-between font-bold text-slate-800">
                       <span>{p.rxNumber}</span>
                       <span className="text-sky-700 font-semibold">{p.customerName}</span>
@@ -102,7 +102,7 @@ export default function NotificationDrawer({
 
             <div className="space-y-2">
               {lowStock.map(m => (
-                <div key={m.id} className="p-3 rounded-2xl border border-amber-200 bg-amber-50/50 hover:-translate-y-0.5 hover:shadow-md transition-all text-xs">
+                <div key={m.id} className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 text-xs">
                   <div className="flex justify-between font-bold text-slate-800">
                     <span>{m.name}</span>
                     <span className="text-amber-800 font-extrabold">{m.stock} units left</span>
@@ -124,7 +124,7 @@ export default function NotificationDrawer({
 
             <div className="space-y-2">
               {nearExpiry.map(m => (
-                <div key={m.id} className="p-3 rounded-2xl border border-rose-200 bg-rose-50/50 hover:-translate-y-0.5 hover:shadow-md transition-all text-xs">
+                <div key={m.id} className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 text-xs">
                   <div className="flex justify-between font-bold text-slate-800">
                     <span>{m.name}</span>
                     <span className="text-rose-700 font-bold">{m.expiryDate}</span>

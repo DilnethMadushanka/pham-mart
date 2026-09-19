@@ -90,7 +90,7 @@ export default function PrescriptionVerification({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-[2rem] border border-sky-100 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
             <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
@@ -100,7 +100,7 @@ export default function PrescriptionVerification({
               {prescriptions.filter(p => p.status === "Pending").length} Pending RX
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             Prescription Verification & Pharmacist Console
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
@@ -110,7 +110,7 @@ export default function PrescriptionVerification({
 
         <button
           onClick={() => setIsNewRxModalOpen(true)}
-          className="flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Upload / Register Prescription</span>
@@ -162,10 +162,10 @@ export default function PrescriptionVerification({
               <div
                 key={rx.id}
                 onClick={() => setSelectedRx(rx)}
-                className={`p-6 rounded-3xl border transition-all duration-300 cursor-pointer bg-white ${
-                  isSelected
-                    ? "border-sky-500 ring-2 ring-sky-500/20 shadow-xl -translate-y-1"
-                    : "border-sky-100 hover:border-sky-300 depth-card"
+                className={`p-6 rounded-3xl border transition-all cursor-pointer bg-white ${
+                  isSelected 
+                    ? "border-sky-500 ring-2 ring-sky-500/20 shadow-lg" 
+                    : "border-sky-100 hover:border-sky-300 shadow-sm"
                 }`}
               >
                 <div className="flex justify-between items-start gap-2">
@@ -216,7 +216,7 @@ export default function PrescriptionVerification({
         {/* Selected Prescription Review Workstation */}
         <div className="lg:col-span-6">
           {selectedRx ? (
-            <div className="glass-panel !bg-white/95 p-6 sm:p-7 rounded-[2rem] border-sky-200 shadow-2xl space-y-5 sticky top-20">
+            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-200 shadow-xl space-y-5 sticky top-20">
               
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div>
@@ -339,7 +339,7 @@ export default function PrescriptionVerification({
                   <div className="flex space-x-3">
                     <button
                       onClick={() => handleApprove(selectedRx.id)}
-                      className="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 flex items-center justify-center space-x-1.5 transition-all cursor-pointer"
+                      className="flex-1 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       <span>Approve Prescription</span>

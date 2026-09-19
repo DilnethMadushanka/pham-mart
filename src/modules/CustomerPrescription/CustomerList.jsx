@@ -176,7 +176,7 @@ export default function CustomerList({
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Header */}
-      <div className="bg-white p-6 rounded-[2rem] border border-slate-200/80 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
@@ -184,7 +184,7 @@ export default function CustomerList({
             </span>
             <span className="text-xs text-slate-500 font-semibold">Cashier & Pharmacist Workstation</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             Patient Profiles & Medical Histories
           </h2>
           <p className="text-xs text-slate-500 mt-1">
@@ -194,7 +194,7 @@ export default function CustomerList({
 
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 cursor-pointer transition-all shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Register New Customer</span>
@@ -202,7 +202,7 @@ export default function CustomerList({
       </div>
 
       {/* Search Toolbar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 depth-card flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
@@ -228,7 +228,7 @@ export default function CustomerList({
           return (
             <div 
               key={cust.id} 
-              className="bg-white p-6 rounded-3xl border border-slate-200/80 depth-card hover:border-sky-300 hover:-translate-y-1.5 transition-all flex flex-col justify-between space-y-4 group relative"
+              className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group relative"
             >
               <div>
                 {/* Header info */}
@@ -328,7 +328,7 @@ export default function CustomerList({
       {/* Add / Edit Customer Modal */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="glass-panel !bg-white/95 rounded-[2rem] max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 border border-slate-100">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
                 <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
@@ -384,7 +384,7 @@ export default function CustomerList({
       {/* Customer Purchase & Prescription History Modal */}
       {selectedHistoryCustomer && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="glass-panel !bg-white/95 rounded-[2rem] max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[85vh] flex flex-col animate-in fade-in zoom-in duration-200">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[85vh] flex flex-col border border-slate-100 animate-in fade-in zoom-in duration-200">
             
             {/* Modal Top Banner */}
             <div className="flex justify-between items-start pb-4 border-b border-slate-100 shrink-0">

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Phone,
-  MapPin,
-  Star,
-  Upload,
-  LogIn,
+import { 
+  Phone, 
+  MapPin, 
+  Star, 
+  Upload, 
+  LogIn, 
   Clock,
   Truck,
   ShieldCheck,
@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import PillCapsule3D from '../../components/Scene3D/PillCapsule3D';
 
 const HERO_IMAGES = [
   { 
@@ -66,15 +65,15 @@ export default function HeroBanner({
   };
 
   return (
-    <div className="relative w-full rounded-[2rem] overflow-hidden bg-gradient-to-br from-sky-100/90 via-sky-50 to-white border border-sky-200/80 shadow-2xl min-h-[480px] sm:min-h-[520px] lg:min-h-[540px] flex flex-col justify-between font-sans group mesh-gradient-bg">
-
+    <div className="relative w-full rounded-3xl overflow-hidden bg-gradient-to-br from-sky-100/90 via-sky-50 to-white border border-sky-200 shadow-xl min-h-[480px] sm:min-h-[520px] lg:min-h-[540px] flex flex-col justify-between font-sans group">
+      
       {/* Dynamic Background Image Slideshow with Smooth Cross-Fade */}
       {HERO_IMAGES.map((img, index) => (
-        <div
+        <div 
           key={index}
           className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out mix-blend-multiply transform ${
-            index === activeImageIndex
-              ? "opacity-20 scale-100"
+            index === activeImageIndex 
+              ? "opacity-20 scale-100" 
               : "opacity-0 scale-105 pointer-events-none"
           }`}
           style={{ backgroundImage: `url('${img.url}')` }}
@@ -88,11 +87,6 @@ export default function HeroBanner({
       {/* Multi-Layer Soft Gradient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-sky-50/90 to-transparent"></div>
 
-      {/* Interactive 3D Medicine Capsule Model (decorative, top-right) */}
-      <div className="hidden xl:block absolute top-20 right-6 w-72 h-72 pointer-events-none opacity-90 z-0">
-        <PillCapsule3D className="w-full h-full" />
-      </div>
-
       {/* Content Container */}
       <div className="relative z-10 p-5 sm:p-8 lg:p-10 flex flex-col justify-between h-full min-h-[480px] sm:min-h-[520px] lg:min-h-[540px] w-full">
         
@@ -101,7 +95,7 @@ export default function HeroBanner({
           
           {/* Logo Brand */}
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white shadow-lg shadow-sky-500/40 ring-2 ring-sky-500/20 shrink-0 animate-float">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-600 flex items-center justify-center text-white shadow-md shadow-sky-500/30 ring-2 ring-sky-500/20 shrink-0">
               <Pill className="w-5 h-5 transform -rotate-45" />
             </div>
             <div>
@@ -165,10 +159,8 @@ export default function HeroBanner({
 
             {/* Headline */}
             <div className="space-y-2">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight font-heading">
-                <span className="text-slate-900">Your Health, Our </span>
-                <span className="text-gradient-brand">Priority</span>
-                <span className="text-sky-600">.</span>
+              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight tracking-tight font-heading">
+                Your Health, Our Priority<span className="text-sky-600">.</span>
               </h1>
               <p className="text-xs sm:text-sm md:text-base text-slate-700 leading-relaxed font-semibold max-w-xl">
                 Certified pharmaceuticals, instant doctor prescription clearance by licensed Pharmacists, and express home delivery straight to your door.
@@ -232,7 +224,7 @@ export default function HeroBanner({
 
           {/* Right Column: Highlights Card + Slideshow Controls */}
           <div className="hidden lg:flex lg:col-span-4 flex-col justify-end items-end space-y-3">
-            <div className="w-full max-w-xs p-5 rounded-2xl glass-panel depth-card shimmer-border space-y-3 text-slate-800 font-sans">
+            <div className="w-full max-w-xs p-5 rounded-2xl bg-white/90 backdrop-blur-xl border border-sky-200/80 shadow-lg space-y-3 text-slate-800 font-sans">
               
               <div className="flex items-center space-x-3 pb-2.5 border-b border-sky-100">
                 <div className="w-9 h-9 rounded-xl bg-sky-100 border border-sky-300 flex items-center justify-center text-sky-600">
@@ -298,17 +290,17 @@ export default function HeroBanner({
 
         {/* Bottom Feature Strip */}
         <div className="pt-3 border-t border-sky-200/60 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-slate-700 font-semibold">
-          <div className="flex items-center space-x-2 glass-panel px-3.5 py-2 rounded-xl hover:-translate-y-0.5 transition-transform">
+          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-sky-100 shadow-2xs">
             <Clock className="w-4 h-4 text-sky-600 shrink-0" />
             <span>Pharmacist Review: <strong className="text-slate-900 font-black">Express Service</strong></span>
           </div>
 
-          <div className="flex items-center space-x-2 glass-panel px-3.5 py-2 rounded-xl hover:-translate-y-0.5 transition-transform">
+          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-sky-100 shadow-2xs">
             <Truck className="w-4 h-4 text-sky-600 shrink-0" />
             <span>Regional <strong className="text-slate-900 font-black">Direct Doorstep Delivery</strong></span>
           </div>
 
-          <div className="flex items-center space-x-2 glass-panel px-3.5 py-2 rounded-xl hover:-translate-y-0.5 transition-transform">
+          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-sky-100 shadow-2xs">
             <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
             <span>Certified <strong className="text-slate-900 font-black">Healthcare Licensed</strong></span>
           </div>

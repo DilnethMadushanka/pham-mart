@@ -109,15 +109,14 @@ export default function MedicineList({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Header */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-sky-200/30 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
           <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold shadow-sm shadow-sky-500/30">
+            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
               Inventory Management
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             Medicine Catalogue & Inventory Management
           </h2>
           <p className="text-xs text-slate-500 mt-1 font-medium">
@@ -126,12 +125,12 @@ export default function MedicineList({
         </div>
 
         {/* Sub-tab buttons */}
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0 relative">
+        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0">
           <button
             onClick={() => setActiveSubTab("catalogue")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeSubTab === "catalogue"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -140,9 +139,9 @@ export default function MedicineList({
 
           <button
             onClick={() => setActiveSubTab("purchase_orders")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center space-x-1.5 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeSubTab === "purchase_orders"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -152,9 +151,9 @@ export default function MedicineList({
 
           <button
             onClick={() => setActiveSubTab("suppliers")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 flex items-center space-x-1.5 cursor-pointer ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeSubTab === "suppliers"
-                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/30"
+                ? "bg-white text-sky-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -188,13 +187,13 @@ export default function MedicineList({
         <>
           {/* Summary Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 depth-card hover:-translate-y-1 transition-all">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
               <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Catalogue Items</span>
               <div className="text-3xl font-black text-slate-900 mt-1">{medicines.length}</div>
               <span className="text-xs text-sky-700 font-extrabold mt-1 block">100% Digital Tracking</span>
             </div>
 
-            <div className="bg-amber-50/40 p-5 rounded-3xl border border-amber-200/90 depth-card hover:-translate-y-1 transition-all">
+            <div className="bg-white p-5 rounded-3xl border border-amber-200/90 bg-amber-50/20 shadow-xs hover:shadow-md transition-all">
               <span className="text-xs text-amber-800 font-bold uppercase tracking-wider flex items-center">
                 <AlertTriangle className="w-4 h-4 mr-1 text-amber-600" />
                 Low Stock Threshold
@@ -203,7 +202,7 @@ export default function MedicineList({
               <span className="text-xs text-amber-800 font-bold mt-1 block">Reorder recommended</span>
             </div>
 
-            <div className="bg-rose-50/40 p-5 rounded-3xl border border-rose-200/90 depth-card hover:-translate-y-1 transition-all">
+            <div className="bg-white p-5 rounded-3xl border border-rose-200/90 bg-rose-50/20 shadow-xs hover:shadow-md transition-all">
               <span className="text-xs text-rose-800 font-bold uppercase tracking-wider flex items-center">
                 <Clock className="w-4 h-4 mr-1 text-rose-600" />
                 Expiring Medicine Risk
@@ -212,7 +211,7 @@ export default function MedicineList({
               <span className="text-xs text-rose-800 font-bold mt-1 block">Flagged for inspection</span>
             </div>
 
-            <div className="bg-sky-50/40 p-5 rounded-3xl border border-sky-200/90 depth-card hover:-translate-y-1 transition-all">
+            <div className="bg-white p-5 rounded-3xl border border-sky-200/90 bg-sky-50/20 shadow-xs hover:shadow-md transition-all">
               <span className="text-xs text-sky-800 font-bold uppercase tracking-wider">Controlled Drugs</span>
               <div className="text-3xl font-black text-sky-800 mt-1">
                 {medicines.filter(m => m.controlledDrug).length}
@@ -222,7 +221,7 @@ export default function MedicineList({
           </div>
 
           {/* Controls & Search */}
-          <div className="glass-panel p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
             
             <div className="relative w-full md:w-96">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -231,7 +230,7 @@ export default function MedicineList({
                 placeholder="Search medicine name, code or batch..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               />
             </div>
 
@@ -240,7 +239,7 @@ export default function MedicineList({
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-white/70 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -251,7 +250,7 @@ export default function MedicineList({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-white/70 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="LOW_STOCK">Low Stock Only</option>
@@ -261,7 +260,7 @@ export default function MedicineList({
 
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-sky-500/30 cursor-pointer transition-all hover:-translate-y-0.5"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
@@ -272,10 +271,10 @@ export default function MedicineList({
           </div>
 
           {/* Medicines Grid Table */}
-          <div className="bg-white rounded-3xl border border-slate-200 depth-card overflow-hidden">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50/90 backdrop-blur-sm border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold sticky top-0 z-10">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Medicine & Generic Info</th>
                     <th className="py-3.5 px-4">Category</th>
@@ -287,12 +286,12 @@ export default function MedicineList({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredMedicines.map((med, idx) => {
+                  {filteredMedicines.map((med) => {
                     const isLowStock = med.stock <= med.reorderLevel;
                     const isNearExpiry = med.expiryDate && new Date(med.expiryDate) <= ninetyDaysThreshold;
 
                     return (
-                      <tr key={med.id} className={`hover:bg-sky-50/70 transition-colors ${idx % 2 === 1 ? "bg-slate-50/40" : ""}`}>
+                      <tr key={med.id} className="hover:bg-slate-50/80 transition-colors">
                         
                         {/* Name & Generic */}
                         <td className="py-3.5 px-4">
@@ -360,14 +359,14 @@ export default function MedicineList({
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 hover:scale-110 transition-all cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleDeleteMedicine(med.id, med.name, med.code)}
                               title="Discontinue Product"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 hover:scale-110 transition-all cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

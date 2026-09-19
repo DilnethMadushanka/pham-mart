@@ -34,7 +34,7 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
   ];
 
   return (
-    <section className="bg-white rounded-[2rem] p-8 border border-sky-100 depth-card space-y-8">
+    <section className="bg-white rounded-3xl p-8 border border-sky-100 shadow-sm space-y-8">
       
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <span className="px-3 py-1 bg-sky-100 text-sky-800 text-xs font-bold rounded-full border border-sky-200 inline-block">
@@ -52,14 +52,14 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
         {steps.map((step, idx) => {
           const Icon = step.icon;
           return (
-            <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative group hover:border-sky-300 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 flex flex-col justify-between">
-
+            <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative group hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between">
+              
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-black font-mono text-sky-600 px-2.5 py-1 bg-sky-50 rounded-lg border border-sky-200">
                     Step {step.num}
                   </span>
-                  <div className={`p-3 rounded-2xl group-hover:scale-110 group-hover:rotate-3 transition-transform ${step.color}`}>
+                  <div className={`p-3 rounded-2xl ${step.color}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                 </div>
@@ -84,8 +84,7 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
       </div>
 
       {/* Bottom CTA Banner */}
-      <div className="bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-700 p-6 rounded-2xl text-white flex flex-col sm:flex-row justify-between items-center gap-4 shadow-xl shadow-sky-600/20 relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-sky-600 to-blue-700 p-6 rounded-2xl text-white flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
         <div>
           <h4 className="text-base font-black">Need to order your prescribed medication?</h4>
           <p className="text-xs text-sky-100 mt-0.5">Upload your doctor prescription now for instant Pharmacist verification.</p>
@@ -94,13 +93,13 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
         <div className="flex items-center space-x-3">
           <button
             onClick={onUploadRx}
-            className="px-6 py-2.5 bg-white text-sky-900 hover:bg-sky-50 hover:-translate-y-0.5 hover:shadow-lg font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+            className="px-6 py-2.5 bg-white text-sky-900 hover:bg-sky-50 font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
           >
             Upload Prescription Now
           </button>
           <button
             onClick={onShop}
-            className="px-5 py-2.5 bg-sky-800/80 backdrop-blur-md hover:bg-sky-900 hover:-translate-y-0.5 text-white font-extrabold text-xs rounded-xl border border-sky-400/40 transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-sky-800 hover:bg-sky-900 text-white font-extrabold text-xs rounded-xl border border-sky-500 transition-colors cursor-pointer"
           >
             View Catalogue
           </button>

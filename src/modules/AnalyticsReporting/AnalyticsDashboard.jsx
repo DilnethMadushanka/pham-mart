@@ -63,7 +63,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Glassmorphic Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 sm:p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden border border-sky-900/50 mesh-gradient-bg">
+      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-sky-900/50">
         <div className="absolute -top-12 -right-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative z-10">
@@ -88,7 +88,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <button
               onClick={() => setIsReportModalOpen(true)}
-              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-sky-500/25 hover:shadow-xl hover:-translate-y-0.5 transition-all cursor-pointer border border-sky-400/30"
+              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-sky-500/25 transition-all cursor-pointer border border-sky-400/30"
             >
               <Printer className="w-4 h-4" />
               <span>Daily Sales Report</span>
@@ -149,7 +149,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Sales Revenue Trend Chart */}
-        <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 depth-card space-y-5">
+        <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
           <div className="flex justify-between items-center border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Weekly Revenue & Transaction Trend</h3>
@@ -183,7 +183,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         </div>
 
         {/* Category Breakdown Chart */}
-        <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 depth-card space-y-5 flex flex-col justify-between">
+        <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5 flex flex-col justify-between">
           <div>
             <div className="border-b border-slate-100 pb-4">
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Medicine Category Breakdown</h3>

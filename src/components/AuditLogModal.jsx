@@ -5,23 +5,23 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-      <div className="glass-panel bg-white/95 rounded-3xl max-w-3xl w-full depth-card border border-sky-100 overflow-hidden flex flex-col max-h-[85vh]">
-
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-sky-100 overflow-hidden flex flex-col max-h-[85vh]">
+        
         {/* Header */}
-        <div className="p-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50/60 flex justify-between items-center">
+        <div className="p-4 border-b border-sky-100 bg-sky-50/60 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-lg shadow-sky-500/30">
+            <div className="p-2 rounded-xl bg-sky-600 text-white">
               <History className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gradient-brand">System Audit Trail & Security Logs</h3>
+              <h3 className="text-base font-bold text-slate-900">System Audit Trail & Security Logs</h3>
               <p className="text-xs text-slate-500">Epic 1 Requirement: Centralized access, verification & security history</p>
             </div>
           </div>
-          <button
+          <button 
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer transition-all hover:rotate-90 duration-300"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -36,11 +36,11 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
             return (
               <div 
                 key={log.id} 
-                className={`p-3.5 rounded-2xl border transition-all duration-300 text-xs hover:-translate-y-0.5 hover:shadow-md ${
-                  isDanger
-                    ? "bg-rose-50/70 border-rose-200 text-rose-900"
-                    : isSuccess
-                    ? "bg-sky-50/70 border-sky-200 text-sky-900"
+                className={`p-3.5 rounded-xl border transition-all text-xs ${
+                  isDanger 
+                    ? "bg-rose-50/70 border-rose-200 text-rose-900" 
+                    : isSuccess 
+                    ? "bg-sky-50/70 border-sky-200 text-sky-900" 
                     : "bg-slate-50 border-slate-200 text-slate-800"
                 }`}
               >
@@ -76,9 +76,9 @@ export default function AuditLogModal({ isOpen, onClose, logs }) {
         {/* Footer */}
         <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-xs text-slate-500">
           <span>Immutable audit record enforced by system architecture</span>
-          <button
+          <button 
             onClick={onClose}
-            className="px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-700 text-white rounded-xl font-bold text-xs hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 transition-all cursor-pointer"
+            className="px-4 py-2 bg-sky-600 text-white rounded-xl font-bold text-xs hover:bg-sky-700 transition-colors shadow-xs cursor-pointer"
           >
             Close Audit View
           </button>

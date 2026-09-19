@@ -27,7 +27,7 @@ export default function BaselineKPITable() {
     <div className="space-y-6 animate-fade-in">
       
       {/* Header Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-[2rem] border border-sky-100 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
             <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
@@ -37,7 +37,7 @@ export default function BaselineKPITable() {
               13 Baseline KPIs
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             System Performance & Baseline KPI Indicators
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
@@ -52,7 +52,7 @@ export default function BaselineKPITable() {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-5 rounded-3xl border border-sky-100 depth-card flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="bg-white p-5 rounded-3xl border border-sky-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
@@ -82,7 +82,7 @@ export default function BaselineKPITable() {
       </div>
 
       {/* KPI Table */}
-      <div className="bg-white rounded-3xl border border-sky-100 depth-card overflow-hidden">
+      <div className="bg-white rounded-3xl border border-sky-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-extrabold">

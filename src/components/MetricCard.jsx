@@ -17,7 +17,7 @@ export default function MetricCard({
   const isBlue = colorScheme === "blue";
 
   return (
-    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 depth-card hover:border-sky-300 hover:-translate-y-1.5 transition-all duration-300 relative overflow-hidden group flex flex-col justify-between h-full min-h-[160px]">
+    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs hover:shadow-xl hover:border-sky-300 transition-all duration-300 relative overflow-hidden group flex flex-col justify-between h-full min-h-[160px]">
       
       {/* Background Accent Subtle Glow */}
       <div className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-125 ${

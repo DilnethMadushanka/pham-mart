@@ -90,15 +90,15 @@ export default function SupplierList({
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Header Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold shadow-sm shadow-sky-500/30 flex items-center">
-              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-white" />
+            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200 flex items-center">
+              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-sky-600" />
               Enterprise Supply Chain
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             Suppliers & Distributors
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed font-medium">
@@ -108,7 +108,7 @@ export default function SupplierList({
 
         <button
           onClick={() => { setEditingSupplier(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/30 hover:-translate-y-0.5 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4.5 h-4.5" />
           <span>Register New Supplier</span>
@@ -118,7 +118,7 @@ export default function SupplierList({
       {/* Top Stat Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
         
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 depth-card hover:-translate-y-1 transition-all flex items-center justify-between group">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Suppliers</span>
             <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-sky-600 transition-colors">
@@ -134,7 +134,7 @@ export default function SupplierList({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 depth-card hover:-translate-y-1 transition-all flex items-center justify-between group">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avg Delivery Lead Time</span>
             <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">
@@ -149,7 +149,7 @@ export default function SupplierList({
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 depth-card hover:-translate-y-1 transition-all flex items-center justify-between group">
+        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Tracked Purchase Orders</span>
             <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-indigo-600 transition-colors">
@@ -167,7 +167,7 @@ export default function SupplierList({
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="glass-panel p-4 rounded-3xl flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
         
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -176,7 +176,7 @@ export default function SupplierList({
             placeholder="Search supplier name, contact person, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white/70 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
           />
           {searchTerm && (
             <button 
@@ -206,7 +206,7 @@ export default function SupplierList({
           </p>
           <button
             onClick={() => { setSearchTerm(""); setIsAddModalOpen(true); }}
-            className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold rounded-2xl shadow-lg shadow-sky-500/30 hover:from-sky-600 hover:to-blue-700 hover:-translate-y-0.5 transition-all cursor-pointer"
+            className="px-5 py-2.5 bg-sky-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-sky-700 transition-colors cursor-pointer"
           >
             Add New Supplier
           </button>
@@ -231,7 +231,7 @@ export default function SupplierList({
             return (
               <div 
                 key={supplier.id}
-                className="bg-white rounded-3xl border border-slate-200/80 p-6 depth-card hover:border-sky-300 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-xl hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
               >
                 {/* Top Hover Gradient Line */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />

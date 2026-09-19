@@ -150,11 +150,11 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       
-      <div className="bg-white w-full max-w-4xl rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col font-sans">
-
+      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col font-sans">
+        
         {/* Header (Hidden during print) */}
-        <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white flex justify-between items-center shrink-0 print:hidden mesh-gradient-bg">
-          <div className="flex items-center space-x-3 relative z-10">
+        <div className="p-5 sm:p-6 bg-slate-900 text-white flex justify-between items-center shrink-0 print:hidden">
+          <div className="flex items-center space-x-3">
             <div className="p-2.5 bg-sky-500/20 text-sky-400 rounded-2xl border border-sky-400/30">
               <FileText className="w-6 h-6" />
             </div>
@@ -175,7 +175,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
 
             <button
               onClick={handlePrint}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print Official Report</span>

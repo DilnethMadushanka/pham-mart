@@ -79,7 +79,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     <div className="space-y-6 animate-fade-in">
       
       {/* Header & Action Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-[2rem] border border-sky-100 depth-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
             <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
@@ -89,7 +89,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
               {staffList.length} Registered Staff
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-gradient-brand">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
             User Access & Staff Credentials Directory
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
@@ -99,7 +99,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add Staff Member</span>
@@ -108,7 +108,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
       {/* Quick Role Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 depth-card relative overflow-hidden group hover:border-sky-300 transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center mb-3">
             <Users className="w-6 h-6" />
           </div>
@@ -117,7 +117,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
           <span className="text-xs text-sky-700 font-bold mt-1 inline-block">100% Centralized Directory</span>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 depth-card relative overflow-hidden group hover:border-sky-300 transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
             <UserCheck className="w-6 h-6" />
           </div>
@@ -128,7 +128,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
           <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Ready for active shift</span>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 depth-card relative overflow-hidden group hover:border-sky-300 transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center mb-3">
             <ShieldCheck className="w-6 h-6" />
           </div>
@@ -139,7 +139,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-5 rounded-3xl border border-sky-100 depth-card flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="bg-white p-5 rounded-3xl border border-sky-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
@@ -168,7 +168,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Staff Table */}
-      <div className="bg-white rounded-3xl border border-sky-100 depth-card overflow-hidden">
+      <div className="bg-white rounded-3xl border border-sky-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-extrabold">

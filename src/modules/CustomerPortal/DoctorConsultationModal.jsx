@@ -24,12 +24,11 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="glass-panel bg-white/95 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
-
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-sky-100 overflow-hidden">
+        
         {/* Header */}
-        <div className="bg-gradient-to-r from-sky-500 to-blue-700 p-5 text-white flex justify-between items-center relative overflow-hidden">
-          <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="bg-gradient-to-r from-sky-600 to-blue-700 p-5 text-white flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-2xl bg-white/20 backdrop-blur-md">
               <Stethoscope className="w-6 h-6 text-white" />
@@ -140,7 +139,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:shadow-xl hover:shadow-sky-500/30 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-600/20 transition-all cursor-pointer hover:-translate-y-0.5"
+            className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-sky-600/20 transition-all cursor-pointer"
           >
             Request Instant Callback
           </button>

@@ -21,17 +21,17 @@ export default function PatientTestimonialsSection() {
   ];
 
   return (
-    <section className="bg-[#F8F9FA] rounded-[2rem] p-8 sm:p-10 border border-slate-200 depth-card space-y-8 mesh-gradient-bg">
-
+    <section className="bg-[#F8F9FA] rounded-2xl p-8 sm:p-10 border border-slate-200 shadow-xs space-y-8">
+      
       {/* Section Title & Subheading */}
       <div className="text-center max-w-2xl mx-auto space-y-2">
         <div className="flex justify-center items-center space-x-1 text-amber-400 pb-1">
           {[...Array(5)].map((_, i) => (
-            <Star key={i} className="w-5 h-5 fill-amber-400 stroke-amber-400 animate-float" style={{ animationDelay: `${i * 0.15}s` }} />
+            <Star key={i} className="w-5 h-5 fill-amber-400 stroke-amber-400" />
           ))}
         </div>
-        <h2 className="text-3xl sm:text-4xl font-black">
-          <span className="text-gradient-brand">The Patient Comes First</span><span className="text-[#0284c7]">.</span>
+        <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+          The Patient Comes First<span className="text-[#0284c7]">.</span>
         </h2>
         <p className="text-sm text-slate-500 font-medium">
           Rated 4.8 Stars on Google by our patients and community.
@@ -43,7 +43,7 @@ export default function PatientTestimonialsSection() {
         {reviews.map((rev, idx) => (
           <div 
             key={idx} 
-            className="bg-white p-7 rounded-3xl border border-slate-200 depth-card hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between space-y-5"
+            className="bg-white p-7 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-5"
           >
             <div className="space-y-3">
               {/* 5 Yellow Stars at the top of each card */}

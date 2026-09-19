@@ -205,8 +205,8 @@ export default function CustomerRxUpload({
 
   if (submittedRx) {
     return (
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-[2rem] border border-sky-200 depth-card space-y-6 animate-fade-in font-sans mesh-gradient-bg">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/30 animate-float">
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-sky-200 shadow-xl space-y-6 animate-fade-in font-sans">
+        <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto border-2 border-emerald-300 shadow-md">
           <CheckCircle2 className="w-10 h-10" />
         </div>
 
@@ -263,7 +263,7 @@ export default function CustomerRxUpload({
 
         <button
           onClick={handleResetForm}
-          className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:shadow-xl hover:shadow-sky-500/30 text-white font-bold rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer hover:-translate-y-0.5"
+          className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Submit Another Order / Prescription</span>
@@ -273,12 +273,12 @@ export default function CustomerRxUpload({
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-[2rem] border border-sky-100 depth-card space-y-6 animate-fade-in font-sans">
-
+    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border border-sky-100 shadow-xl space-y-6 animate-fade-in font-sans">
+      
       {/* Form Header Banner */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30 shrink-0">
             <FileCheck2 className="w-6 h-6" />
           </div>
           <div>
@@ -300,9 +300,9 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("both")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "both"
-              ? "bg-white text-sky-900 shadow-md border border-slate-200 -translate-y-0.5"
+              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -313,9 +313,9 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("typed")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "typed"
-              ? "bg-white text-sky-900 shadow-md border border-slate-200 -translate-y-0.5"
+              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -326,9 +326,9 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("photo")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all duration-300 flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "photo"
-              ? "bg-white text-sky-900 shadow-md border border-slate-200 -translate-y-0.5"
+              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -380,7 +380,7 @@ export default function CustomerRxUpload({
                   type="button"
                   onClick={handleAddQuickMedicine}
                   disabled={!selectedQuickMedicine}
-                  className="px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:shadow-lg hover:shadow-sky-500/30 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center space-x-1 shadow-sm cursor-pointer shrink-0 transition-all"
+                  className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center space-x-1 shadow-sm cursor-pointer shrink-0"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>Add Item</span>
@@ -571,7 +571,7 @@ export default function CustomerRxUpload({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 bg-gradient-to-r from-sky-500 to-blue-600 hover:shadow-xl hover:shadow-sky-500/40 active:from-sky-600 active:to-blue-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-sky-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-1 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
+          className="w-full py-4 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-sky-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
         >
           {isSubmitting ? (
             <>

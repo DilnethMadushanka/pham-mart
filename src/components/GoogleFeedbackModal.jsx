@@ -100,7 +100,7 @@ export default function GoogleFeedbackModal({
       onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
       className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/65 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-sans"
     >
-      <div className="glass-panel bg-white/95 rounded-3xl max-w-lg w-full depth-card border border-sky-100/80 overflow-hidden flex flex-col my-6 relative transform transition-all">
+      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-sky-100/80 overflow-hidden flex flex-col my-6 relative transform transition-all">
         
         {/* Premium Google Themed Header */}
         <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-blue-900 p-6 text-white relative overflow-hidden">

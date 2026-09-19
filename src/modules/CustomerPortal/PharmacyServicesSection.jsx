@@ -29,8 +29,8 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
           <span className="px-3.5 py-1 bg-sky-100 text-[#0284c7] text-xs font-extrabold rounded-full border border-sky-200 inline-block uppercase tracking-wider">
             Healthcare Services
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black">
-            <span className="text-gradient-brand">PHARMART Pharmacy</span><span className="text-[#0284c7]">.</span>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
+            PHARMART Pharmacy<span className="text-[#0284c7]">.</span>
           </h2>
           <p className="text-sm text-slate-500 font-medium">
             Providing reliable pharmaceutical care, expert consultation, and custom formulations for your total wellbeing.
@@ -41,12 +41,12 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
           {serviceCards.map((card, idx) => {
             const Icon = card.icon;
             return (
-              <div
-                key={idx}
-                className="bg-white p-7 rounded-3xl border border-slate-200 depth-card hover:border-sky-300 hover:-translate-y-1.5 transition-all duration-300 space-y-4 flex flex-col justify-between group"
+              <div 
+                key={idx} 
+                className="bg-white p-7 rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg hover:border-sky-300 transition-all space-y-4 flex flex-col justify-between"
               >
                 <div className="space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center border border-sky-200 shadow-xs">
                     <Icon className="w-7 h-7" />
                   </div>
                   <h3 className="font-extrabold text-slate-900 text-lg leading-snug">
@@ -63,17 +63,17 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
       </div>
 
       {/* Wide Selection Feature Section (2-Column Grid) */}
-      <div className="bg-white rounded-[2rem] p-6 sm:p-10 border border-slate-200 depth-card grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative overflow-hidden mesh-gradient-bg">
-
+      <div className="bg-white rounded-2xl p-6 sm:p-10 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+        
         {/* Left Column: Image of Female Pharmacist */}
-        <div className="md:col-span-5 h-80 sm:h-96 rounded-3xl overflow-hidden shadow-xl border border-slate-200 relative group tilt-card">
-          <img
-            src="/images/female_pharmacist.png"
-            alt="Female Pharmacist"
+        <div className="md:col-span-5 h-80 sm:h-96 rounded-2xl overflow-hidden shadow-md border border-slate-200 relative group">
+          <img 
+            src="/images/female_pharmacist.png" 
+            alt="Female Pharmacist" 
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent"></div>
-          <div className="absolute bottom-4 left-4 right-4 glass-panel bg-white/90 p-3.5 rounded-xl text-xs font-bold text-slate-900">
+          <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-3.5 rounded-xl border border-white/40 shadow-sm text-xs font-bold text-slate-900">
             Certified Pharmacist Care & Consultation
           </div>
         </div>
@@ -117,7 +117,7 @@ export default function PharmacyServicesSection({ onOpenLocation }) {
           <div className="pt-3">
             <button
               onClick={onOpenLocation}
-              className="px-7 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:shadow-xl hover:shadow-sky-500/30 text-white font-extrabold text-xs sm:text-sm rounded-full shadow-md flex items-center space-x-2 transition-all transform hover:-translate-y-1"
+              className="px-7 py-3.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs sm:text-sm rounded-full shadow-md hover:shadow-lg flex items-center space-x-2 transition-all transform hover:-translate-y-0.5"
             >
               <MapPin className="w-4 h-4" />
               <span>Where to find us?</span>

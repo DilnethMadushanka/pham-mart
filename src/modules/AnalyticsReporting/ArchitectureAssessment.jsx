@@ -19,7 +19,7 @@ export default function ArchitectureAssessment() {
     <div className="space-y-6 animate-fade-in">
       
       {/* Report Header Card */}
-      <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-[2rem] shadow-2xl relative overflow-hidden border border-sky-800/40 mesh-gradient-bg">
+      <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden border border-sky-800/40">
         <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 space-y-3">
           <div className="flex items-center space-x-2">
@@ -71,7 +71,7 @@ export default function ArchitectureAssessment() {
       {/* Dynamic Content Views */}
       {activeSection === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card space-y-4">
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-4">
             <h3 className="font-black text-slate-900 text-lg flex items-center">
               <BookOpen className="w-5 h-5 mr-2.5 text-sky-600" />
               Executive Summary & Context
@@ -84,7 +84,7 @@ export default function ArchitectureAssessment() {
             </p>
           </div>
 
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card space-y-4">
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-4">
             <h3 className="font-black text-slate-900 text-lg flex items-center">
               <Award className="w-5 h-5 mr-2.5 text-sky-600" />
               Organizational Blueprint
@@ -108,7 +108,7 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "problems" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
             <AlertTriangle className="w-5 h-5 mr-2.5 text-amber-600" />
             As-Is Manual Operational Inefficiencies & Business Impact
@@ -136,7 +136,7 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "stakeholders" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
             <Users className="w-5 h-5 mr-2.5 text-sky-600" />
             Stakeholder Classification & Engagement Strategy
@@ -166,7 +166,7 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "swimlanes" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 depth-card space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
             <GitBranch className="w-5 h-5 mr-2.5 text-sky-600" />
             Swimlane Responsibilities Across System Modules

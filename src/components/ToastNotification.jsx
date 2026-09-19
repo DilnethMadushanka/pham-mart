@@ -19,12 +19,12 @@ export default function ToastNotification({
 
   return (
     <div className="fixed top-5 right-5 z-[100] max-w-md w-full animate-slide-down font-sans px-4">
-      <div className={`p-4 rounded-2xl shadow-2xl border border-l-4 flex items-center justify-between space-x-3 backdrop-blur-xl transition-all glass-panel ${
-        isSuccess
-          ? "bg-slate-900/90 text-white border-sky-500/40 border-l-sky-400 ring-2 ring-sky-500/20"
+      <div className={`p-4 rounded-2xl shadow-2xl border flex items-center justify-between space-x-3 backdrop-blur-xl transition-all ${
+        isSuccess 
+          ? "bg-slate-900/90 text-white border-sky-500/40 ring-2 ring-sky-500/20"
           : isError
-          ? "bg-rose-900/90 text-white border-rose-500/40 border-l-rose-400 ring-2 ring-rose-500/20"
-          : "bg-slate-900/90 text-white border-sky-500/40 border-l-sky-400"
+          ? "bg-rose-900/90 text-white border-rose-500/40 ring-2 ring-rose-500/20"
+          : "bg-slate-900/90 text-white border-sky-500/40"
       }`}>
         <div className="flex items-center space-x-3 min-w-0">
           {isSuccess ? (
