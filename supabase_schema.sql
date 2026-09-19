@@ -129,16 +129,16 @@ CREATE TABLE audit_logs (
 -- proper backend (e.g. Supabase Auth) with hashed credentials.
 INSERT INTO staff (id, name, username, role, email, phone, status, permissions, password, last_active)
 VALUES
-  ('STF-001', 'Ms. Chathurangika Kahandawaarachchi', 'admin_chathurangika', 'Owner/Admin', 'owner@pharmart.lk', '+94 77 123 4567', 'Active', '["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access"]', 'Admin@2026!', 'Just now'),
-  ('STF-002', 'Mendis M.M.N', 'pharmacist_mendis', 'Pharmacist', 'mendis@pharmart.lk', '+94 71 987 6543', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', 'Pharma@2026!', '5 mins ago'),
-  ('STF-003', 'Pathiraja M.M.S', 'cashier_pathiraja', 'Cashier', 'pathiraja@pharmart.lk', '+94 76 555 4321', 'Active', '["pos_checkout", "customer_register", "inventory_view"]', 'Cashier@2026!', '12 mins ago'),
-  ('STF-004', 'Madushanka E.D', 'pharmacist_madushanka', 'Pharmacist', 'madushanka@pharmart.lk', '+94 70 111 2233', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', 'Pharma@2027!', '1 hour ago');
+  ('STF-001', 'Ms. Chathurangika Kahandawaarachchi', 'admin_chathurangika', 'Owner/Admin', 'owner@pharmart.lk', '+94 77 123 4567', 'Active', '["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access"]', 'YxY3Xmk#UCvm7D', 'Just now'),
+  ('STF-002', 'Mendis M.M.N', 'pharmacist_mendis', 'Pharmacist', 'mendis@pharmart.lk', '+94 71 987 6543', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', 'Wp#aAA@M896q&s', '5 mins ago'),
+  ('STF-003', 'Pathiraja M.M.S', 'cashier_pathiraja', 'Cashier', 'pathiraja@pharmart.lk', '+94 76 555 4321', 'Active', '["pos_checkout", "customer_register", "inventory_view"]', 'xa68ti8wF8hb3S', '12 mins ago'),
+  ('STF-004', 'Madushanka E.D', 'pharmacist_madushanka', 'Pharmacist', 'madushanka@pharmart.lk', '+94 70 111 2233', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', '6WXL^6ihTjrX^J', '1 hour ago');
 
 -- Seed Customers
 INSERT INTO customers (id, name, nic, email, phone, address, allergies, password)
 VALUES
-  ('CUST-301', 'K. A. Sunil Shantha', '781290348V', 'sunil.s@gmail.com', '+94 77 444 1234', 'No 45, Baseline Road, Colombo 09', 'Penicillin', 'Sunil@2026!'),
-  ('CUST-302', 'Kamani Perera', '855420119V', 'kamani.p@yahoo.com', '+94 71 888 5522', '12/A, High Level Road, Nugegoda', 'None', 'Kamani@2026!');
+  ('CUST-301', 'K. A. Sunil Shantha', '781290348V', 'sunil.s@gmail.com', '+94 77 444 1234', 'No 45, Baseline Road, Colombo 09', 'Penicillin', 'zwNm5r6x%9QEKR'),
+  ('CUST-302', 'Kamani Perera', '855420119V', 'kamani.p@yahoo.com', '+94 71 888 5522', '12/A, High Level Road, Nugegoda', 'None', 'v*KLS6fLG8nbAG');
 
 -- Seed Medicines Inventory
 INSERT INTO medicines (id, code, name, category, dosage, price, stock, reorder_level, is_prescription, is_controlled, expiry_date)

@@ -14,7 +14,7 @@ export const INITIAL_STAFF = [
     phone: "+94 77 123 4567",
     status: "Active",
     permissions: ["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access", "void_refund"],
-    password: "Admin@2026!",
+    password: "YxY3Xmk#UCvm7D",
     lastActive: "Just now",
     createdAt: "2025-01-10"
   },
@@ -27,7 +27,7 @@ export const INITIAL_STAFF = [
     phone: "+94 71 987 6543",
     status: "Active",
     permissions: ["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve", "pos_checkout"],
-    password: "Pharma@2026!",
+    password: "Wp#aAA@M896q&s",
     lastActive: "5 mins ago",
     createdAt: "2025-02-01"
   },
@@ -40,7 +40,7 @@ export const INITIAL_STAFF = [
     phone: "+94 76 555 4321",
     status: "Active",
     permissions: ["pos_checkout", "customer_register", "inventory_view"],
-    password: "Cashier@2026!",
+    password: "xa68ti8wF8hb3S",
     lastActive: "12 mins ago",
     createdAt: "2025-03-15"
   },
@@ -53,7 +53,7 @@ export const INITIAL_STAFF = [
     phone: "+94 70 111 2233",
     status: "Active",
     permissions: ["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"],
-    password: "Pharma@2027!",
+    password: "6WXL^6ihTjrX^J",
     lastActive: "1 hour ago",
     createdAt: "2025-04-10"
   },
@@ -66,7 +66,7 @@ export const INITIAL_STAFF = [
     phone: "+94 75 444 8899",
     status: "Inactive",
     permissions: ["pos_checkout"],
-    password: "Cashier@2027!",
+    password: "snb&9Sds@bretH",
     lastActive: "2 days ago",
     createdAt: "2025-05-20"
   }
@@ -357,7 +357,7 @@ export const INITIAL_CUSTOMERS = [
     email: "sunil.s@gmail.com",
     address: "12/A, High Level Road, Nugegoda",
     allergies: "Penicillin, Sulfa drugs",
-    password: "Sunil@2026!",
+    password: "zwNm5r6x%9QEKR",
     historyCount: 14,
     lastVisit: "2026-08-14"
   },
@@ -369,7 +369,7 @@ export const INITIAL_CUSTOMERS = [
     email: "anula.w@yahoo.com",
     address: "45, Galle Road, Dehiwala",
     allergies: "None reported",
-    password: "Anula@2026!",
+    password: "xcC**V4NVBe47C",
     historyCount: 22,
     lastVisit: "2026-08-17"
   },
@@ -381,7 +381,7 @@ export const INITIAL_CUSTOMERS = [
     email: "priyantha.b@hotmail.com",
     address: "88/3, Kandy Road, Kiribathgoda",
     allergies: "Aspirin",
-    password: "Priyantha@2026!",
+    password: "C%Ynbh4rK&&Vc9",
     historyCount: 6,
     lastVisit: "2026-08-10"
   }
