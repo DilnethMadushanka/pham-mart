@@ -13,7 +13,7 @@ export default function MyOrders({ prescriptions, currentUser }) {
           <p className="text-xs text-slate-500 mt-0.5">Live tracking for pharmacist review, dispensing, and home delivery</p>
         </div>
 
-        <div className="px-3 py-1 bg-sky-50 text-sky-800 text-xs font-bold rounded-xl border border-sky-200">
+        <div className="px-3 py-1 bg-blue-50 text-blue-800 text-xs font-bold rounded-xl border border-blue-200">
           Account: {currentUser?.name || "K. A. Sunil Shantha"}
         </div>
       </div>
@@ -49,7 +49,7 @@ export default function MyOrders({ prescriptions, currentUser }) {
                     isPending 
                       ? "bg-amber-100 text-amber-800 border-amber-300 animate-pulse" 
                       : isApproved 
-                      ? "bg-sky-100 text-sky-800 border-sky-300" 
+                      ? "bg-blue-100 text-blue-800 border-blue-300" 
                       : "bg-rose-100 text-rose-800 border-rose-300"
                   }`}>
                     {isPending ? "Under Pharmacist Review" : isApproved ? "Approved & Ready for Pickup / Delivery" : "Rejected"}

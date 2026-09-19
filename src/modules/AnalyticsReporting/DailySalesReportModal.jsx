@@ -155,19 +155,19 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
         {/* Header (Hidden during print) */}
         <div className="p-5 sm:p-6 bg-slate-900 text-white flex justify-between items-center shrink-0 print:hidden">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-sky-500/20 text-sky-400 rounded-2xl border border-sky-400/30">
+            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-2xl border border-blue-400/30">
               <FileText className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-xl font-black text-white">Daily Sales & Financial Report Generator</h2>
-              <p className="text-xs text-sky-200/80 mt-0.5 font-medium">Export, inspect and print daily POS revenue data</p>
+              <p className="text-xs text-blue-200/80 mt-0.5 font-medium">Export, inspect and print daily POS revenue data</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
               onClick={handleDownloadCSV}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-blue-300 font-bold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
             >
               <Download className="w-4 h-4" />
               <span>CSV Sheet</span>
@@ -175,7 +175,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
 
             <button
               onClick={handlePrint}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+              className="flex items-center space-x-1.5 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print Official Report</span>
@@ -198,26 +198,26 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-xl font-black tracking-tight text-slate-900">PHARMART PHARMACY</span>
-                <span className="text-xs px-2.5 py-0.5 bg-sky-100 text-sky-800 rounded-md font-bold">Enterprise Audit Report</span>
+                <span className="text-xs px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-md font-bold">Enterprise Audit Report</span>
               </div>
               <p className="text-xs text-slate-500 font-medium mt-1">Main Counter & E-Pharmacy Daily Checkout Ledger</p>
             </div>
 
             {/* Date Selector Filter */}
             <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200 print:hidden">
-              <Calendar className="w-4 h-4 text-sky-600 ml-1" />
+              <Calendar className="w-4 h-4 text-blue-600 ml-1" />
               <label className="text-xs font-bold text-slate-700">Filter Date:</label>
               <button
                 type="button"
                 onClick={() => setSelectedDate('ALL')}
-                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === 'ALL' ? 'bg-[#0284c7] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === 'ALL' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
               >
                 All Recorded Sales
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedDate(todayStr)}
-                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-[#0284c7] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
+                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
               >
                 Today ({todayStr})
               </button>
@@ -225,7 +225,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
                 type="date"
                 value={selectedDate === 'ALL' ? '' : selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value || 'ALL')}
-                className="bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs rounded-xl px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer"
+                className="bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs rounded-xl px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
               />
             </div>
 
@@ -237,9 +237,9 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
 
           {/* Metric Highlights Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-sky-50/70 p-4 rounded-2xl border border-sky-100">
-              <div className="text-[11px] font-bold text-sky-700 uppercase tracking-wider">Gross Sales Revenue</div>
-              <div className="text-xl sm:text-2xl font-black text-sky-900 font-mono mt-1">
+            <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-100">
+              <div className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Gross Sales Revenue</div>
+              <div className="text-xl sm:text-2xl font-black text-blue-900 font-mono mt-1">
                 LKR {metrics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
               </div>
             </div>
@@ -269,7 +269,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
           {/* Payment Method Breakdown */}
           <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
             <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center">
-              <CreditCard className="w-4 h-4 mr-1.5 text-sky-600" />
+              <CreditCard className="w-4 h-4 mr-1.5 text-blue-600" />
               Payment Collection Breakdown
             </h4>
 
@@ -318,7 +318,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
                   <tbody className="divide-y divide-slate-100 text-slate-800">
                     {filteredTxns.map((t, index) => (
                       <tr key={t.id || index} className="hover:bg-slate-50/80">
-                        <td className="p-3 font-mono font-bold text-sky-700">
+                        <td className="p-3 font-mono font-bold text-blue-700">
                           {t.invoiceNo || t.invoice_no || t.id}
                         </td>
                         <td className="p-3 text-slate-500">
@@ -357,7 +357,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
           {metrics.topItems.length > 0 && (
             <div className="space-y-3 pt-2">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center">
-                <PackageCheck className="w-4 h-4 mr-1.5 text-sky-600" />
+                <PackageCheck className="w-4 h-4 mr-1.5 text-blue-600" />
                 Top Performing Items (By Revenue)
               </h4>
 
@@ -368,7 +368,7 @@ export default function DailySalesReportModal({ isOpen, onClose, transactions = 
                       <div className="font-bold text-slate-900">{item.name}</div>
                       <div className="text-[11px] text-slate-500 font-semibold">{item.qty} units sold today</div>
                     </div>
-                    <div className="text-right font-mono font-black text-sky-800">
+                    <div className="text-right font-mono font-black text-blue-800">
                       LKR {item.total.toFixed(2)}
                     </div>
                   </div>

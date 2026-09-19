@@ -57,7 +57,9 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
   const handleSaveStaff = async (staffData) => {
     if (editingStaff) {
-      setStaffList(prev => prev.map(s => s.id === staffData.id ? staffData : s));
+      // Merge rather than replace — staffData omits `password` when it wasn't reset,
+      // so a plain replace would wipe the existing password from local state.
+      setStaffList(prev => prev.map(s => s.id === staffData.id ? { ...s, ...staffData } : s));
       await updateStaff(staffData.id, staffData);
       addAuditLog("Staff Account Updated", `Updated roles and permissions for ${staffData.name}`, "info");
     } else {
@@ -79,13 +81,13 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     <div className="space-y-6 animate-fade-in">
       
       {/* Header & Action Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
               Security & Identity
             </span>
-            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
               {staffList.length} Registered Staff
             </span>
           </div>
@@ -99,7 +101,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add Staff Member</span>
@@ -108,27 +110,27 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
 
       {/* Quick Role Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-sky-50 border border-sky-200 text-sky-700 flex items-center justify-center mb-3">
+        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
+          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center mb-3">
             <Users className="w-6 h-6" />
           </div>
           <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Staff Accounts</span>
           <div className="text-3xl font-black text-slate-900 mt-1">{staffList.length}</div>
-          <span className="text-xs text-sky-700 font-bold mt-1 inline-block">100% Centralized Directory</span>
+          <span className="text-xs text-blue-700 font-bold mt-1 inline-block">100% Centralized Directory</span>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
             <UserCheck className="w-6 h-6" />
           </div>
           <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Duty Accounts</span>
-          <div className="text-3xl font-black text-sky-700 mt-1">
+          <div className="text-3xl font-black text-blue-700 mt-1">
             {staffList.filter(s => s.status === "Active").length}
           </div>
           <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Ready for active shift</span>
         </div>
 
-        <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm relative overflow-hidden group hover:border-sky-300 transition-all">
+        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
           <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center mb-3">
             <ShieldCheck className="w-6 h-6" />
           </div>
@@ -139,7 +141,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-5 rounded-3xl border border-sky-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="bg-white p-5 rounded-3xl border border-blue-100 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4">
         <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
@@ -147,7 +149,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
             placeholder="Search staff by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
           />
         </div>
 
@@ -157,7 +159,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-sky-500 outline-hidden"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-hidden"
           >
             <option value="ALL">All Roles</option>
             <option value="Owner/Admin">Owner / Admin</option>
@@ -168,7 +170,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       </div>
 
       {/* Staff Table */}
-      <div className="bg-white rounded-3xl border border-sky-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-extrabold">
@@ -183,12 +185,12 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredStaff.map((staff) => (
-                <tr key={staff.id} className="hover:bg-sky-50/40 transition-colors">
+                <tr key={staff.id} className="hover:bg-blue-50/40 transition-colors">
                   
                   {/* Name & ID */}
                   <td className="py-4 px-5">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-black flex items-center justify-center text-xs shadow-md shadow-sky-500/15 shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white font-black flex items-center justify-center text-xs shadow-md shadow-blue-500/15 shrink-0">
                         {staff.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
@@ -204,7 +206,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                       staff.role === "Owner/Admin" 
                         ? "bg-purple-50 text-purple-900 border-purple-200"
                         : staff.role === "Pharmacist"
-                        ? "bg-sky-50 text-sky-900 border-sky-200"
+                        ? "bg-blue-50 text-blue-900 border-blue-200"
                         : "bg-blue-50 text-blue-900 border-blue-200"
                     }`}>
                       <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
@@ -253,14 +255,14 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                       <button
                         onClick={() => handleResetPassword(staff)}
                         title="Reset Password"
-                        className="p-2 rounded-xl text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer border border-transparent hover:border-sky-200"
+                        className="p-2 rounded-xl text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer border border-transparent hover:border-blue-200"
                       >
                         <Key className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => { setEditingStaff(staff); setIsAddModalOpen(true); }}
                         title="Edit Role & Permissions"
-                        className="p-2 rounded-xl text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer border border-transparent hover:border-sky-200"
+                        className="p-2 rounded-xl text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer border border-transparent hover:border-blue-200"
                       >
                         <Edit className="w-4 h-4" />
                       </button>

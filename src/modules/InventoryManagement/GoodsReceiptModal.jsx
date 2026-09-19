@@ -5,7 +5,8 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
   const [items, setItems] = useState(po.items);
 
   const handleQtyChange = (idx, newQty) => {
-    setItems(prev => prev.map((item, i) => i === idx ? { ...item, quantity: newQty } : item));
+    const safeQty = Math.max(0, newQty);
+    setItems(prev => prev.map((item, i) => i === idx ? { ...item, quantity: safeQty } : item));
   };
 
   const handleConfirm = () => {
@@ -14,11 +15,11 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-sky-100 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-blue-100 overflow-hidden">
         
-        <div className="p-4 border-b border-sky-100 bg-sky-50/70 flex justify-between items-center">
+        <div className="p-4 border-b border-blue-100 bg-blue-50/70 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-sky-600 text-white">
+            <div className="p-2 rounded-xl bg-blue-600 text-white">
               <PackageCheck className="w-5 h-5" />
             </div>
             <div>
@@ -51,23 +52,24 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-slate-500 font-semibold">Qty Delivered:</span>
-                  <input 
+                  <input
                     type="number"
+                    min="0"
                     value={item.quantity}
                     onChange={(e) => handleQtyChange(idx, parseInt(e.target.value) || 0)}
-                    className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-center font-bold text-sky-800"
+                    className="w-20 px-2 py-1 border border-slate-300 rounded-lg text-center font-bold text-blue-800"
                   />
                 </div>
               </div>
             ))}
           </div>
 
-          <div className="p-3 bg-sky-50 text-sky-900 rounded-xl border border-sky-200">
+          <div className="p-3 bg-blue-50 text-blue-900 rounded-xl border border-blue-200">
             <div className="font-bold flex items-center">
-              <CheckCircle2 className="w-4 h-4 mr-1 text-sky-600" />
+              <CheckCircle2 className="w-4 h-4 mr-1 text-blue-600" />
               Automated Stock Synchronization
             </div>
-            <p className="text-[11px] mt-1 text-sky-700">
+            <p className="text-[11px] mt-1 text-blue-700">
               Confirming goods receipt will automatically update medicine inventory quantities in real-time.
             </p>
           </div>
@@ -81,7 +83,7 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
             </button>
             <button
               onClick={handleConfirm}
-              className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               Confirm Goods Receipt
             </button>

@@ -67,16 +67,27 @@ export default function PurchaseOrders({
     await updatePurchaseOrderStatus(poId, "Goods Received");
 
     // 2. Update stock level in medicines list automatically!
-    receivedItems.forEach(item => {
-      setMedicines(prev => prev.map(m => {
-        if (m.id === item.medicineId) {
-          const newStock = m.stock + item.quantity;
-          updateMedicineStock(m.id, newStock);
-          return { ...m, stock: newStock };
-        }
-        return m;
-      }));
-    });
+    // Compute the new stock values from the current `medicines` prop first, then apply
+    // the state update and the Supabase writes separately — calling updateMedicineStock
+    // from inside a setState updater is unsafe since React may invoke that updater more
+    // than once, which would issue duplicate/extra writes.
+    const stockUpdates = receivedItems
+      .map(item => {
+        const med = medicines.find(m => m.id === item.medicineId);
+        if (!med) return null;
+        const deliveredQty = Math.max(0, item.quantity);
+        return { id: med.id, newStock: med.stock + deliveredQty };
+      })
+      .filter(Boolean);
+
+    setMedicines(prev => prev.map(m => {
+      const match = stockUpdates.find(u => u.id === m.id);
+      return match ? { ...m, stock: match.newStock } : m;
+    }));
+
+    for (const update of stockUpdates) {
+      await updateMedicineStock(update.id, update.newStock);
+    }
 
     addAuditLog("Goods Receipt Completed", `Stock received for PO ${poId}. Automated inventory stock deduction/addition executed.`, "success");
     setSelectedPOForReceipt(null);
@@ -86,18 +97,18 @@ export default function PurchaseOrders({
     <div className="space-y-6 animate-fade-in">
       
       {/* Header Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
               Procurement & Supply Chain
             </span>
-            <span className="text-xs font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
               {purchaseOrders.length} Orders Issued
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center">
-            <Truck className="w-6 h-6 mr-2 text-sky-600" />
+            <Truck className="w-6 h-6 mr-2 text-blue-600" />
             Supplier Purchase Orders & Goods Receipt Processing
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
@@ -107,7 +118,7 @@ export default function PurchaseOrders({
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>New Purchase Order</span>
@@ -122,7 +133,7 @@ export default function PurchaseOrders({
           return (
             <div 
               key={po.id}
-              className="bg-white p-6 rounded-3xl border border-sky-100 shadow-sm hover:border-sky-300 transition-all flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5"
+              className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm hover:border-blue-300 transition-all flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5"
             >
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
@@ -153,13 +164,13 @@ export default function PurchaseOrders({
               <div className="flex items-center space-x-4 w-full lg:w-auto justify-between lg:justify-end pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div className="text-right">
                   <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Valuation</div>
-                  <div className="text-lg font-black text-sky-700">Rs. {po.totalAmount.toFixed(2)}</div>
+                  <div className="text-lg font-black text-blue-700">Rs. {po.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {!isReceived ? (
                   <button
                     onClick={() => setSelectedPOForReceipt(po)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer"
                   >
                     Receive Goods
                   </button>
@@ -231,7 +242,7 @@ export default function PurchaseOrders({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
                 >
                   Issue Order
                 </button>

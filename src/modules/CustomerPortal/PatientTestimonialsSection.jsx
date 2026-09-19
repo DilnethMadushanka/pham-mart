@@ -31,7 +31,7 @@ export default function PatientTestimonialsSection() {
           ))}
         </div>
         <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
-          The Patient Comes First<span className="text-[#0284c7]">.</span>
+          The Patient Comes First<span className="text-[#2563EB]">.</span>
         </h2>
         <p className="text-sm text-slate-500 font-medium">
           Rated 4.8 Stars on Google by our patients and community.

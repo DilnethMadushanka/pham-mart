@@ -109,10 +109,10 @@ export default function MedicineList({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Header */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
               Inventory Management
             </span>
           </div>
@@ -130,7 +130,7 @@ export default function MedicineList({
             onClick={() => setActiveSubTab("catalogue")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeSubTab === "catalogue"
-                ? "bg-white text-sky-800 shadow-xs"
+                ? "bg-white text-blue-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -141,7 +141,7 @@ export default function MedicineList({
             onClick={() => setActiveSubTab("purchase_orders")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeSubTab === "purchase_orders"
-                ? "bg-white text-sky-800 shadow-xs"
+                ? "bg-white text-blue-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -153,7 +153,7 @@ export default function MedicineList({
             onClick={() => setActiveSubTab("suppliers")}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
               activeSubTab === "suppliers"
-                ? "bg-white text-sky-800 shadow-xs"
+                ? "bg-white text-blue-800 shadow-xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
@@ -190,7 +190,7 @@ export default function MedicineList({
             <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
               <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Catalogue Items</span>
               <div className="text-3xl font-black text-slate-900 mt-1">{medicines.length}</div>
-              <span className="text-xs text-sky-700 font-extrabold mt-1 block">100% Digital Tracking</span>
+              <span className="text-xs text-blue-700 font-extrabold mt-1 block">100% Digital Tracking</span>
             </div>
 
             <div className="bg-white p-5 rounded-3xl border border-amber-200/90 bg-amber-50/20 shadow-xs hover:shadow-md transition-all">
@@ -211,12 +211,12 @@ export default function MedicineList({
               <span className="text-xs text-rose-800 font-bold mt-1 block">Flagged for inspection</span>
             </div>
 
-            <div className="bg-white p-5 rounded-3xl border border-sky-200/90 bg-sky-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-sky-800 font-bold uppercase tracking-wider">Controlled Drugs</span>
-              <div className="text-3xl font-black text-sky-800 mt-1">
+            <div className="bg-white p-5 rounded-3xl border border-blue-200/90 bg-blue-50/20 shadow-xs hover:shadow-md transition-all">
+              <span className="text-xs text-blue-800 font-bold uppercase tracking-wider">Controlled Drugs</span>
+              <div className="text-3xl font-black text-blue-800 mt-1">
                 {medicines.filter(m => m.controlledDrug).length}
               </div>
-              <span className="text-xs text-sky-700 font-bold mt-1 block">Strict Verification</span>
+              <span className="text-xs text-blue-700 font-bold mt-1 block">Strict Verification</span>
             </div>
           </div>
 
@@ -230,7 +230,7 @@ export default function MedicineList({
                 placeholder="Search medicine name, code or batch..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
               />
             </div>
 
@@ -239,7 +239,7 @@ export default function MedicineList({
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -250,7 +250,7 @@ export default function MedicineList({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="LOW_STOCK">Low Stock Only</option>
@@ -260,7 +260,7 @@ export default function MedicineList({
 
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer transition-all"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
@@ -323,7 +323,7 @@ export default function MedicineList({
                         {/* Stock Level */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center space-x-2">
-                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-sky-700"}`}>
+                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-blue-700"}`}>
                               {med.stock} units
                             </span>
                             {isLowStock && (
@@ -359,7 +359,7 @@ export default function MedicineList({
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-50 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
                             >
                               <Edit className="w-4 h-4" />
                             </button>

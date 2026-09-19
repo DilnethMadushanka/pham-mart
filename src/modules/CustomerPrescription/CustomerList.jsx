@@ -179,7 +179,7 @@ export default function CustomerList({
       <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200">
+            <span className="px-2.5 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
               Patient Directory
             </span>
             <span className="text-xs text-slate-500 font-semibold">Cashier & Pharmacist Workstation</span>
@@ -194,7 +194,7 @@ export default function CustomerList({
 
         <button
           onClick={handleOpenAddModal}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 cursor-pointer transition-all shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Register New Customer</span>
@@ -210,7 +210,7 @@ export default function CustomerList({
             placeholder="Search customer by name, NIC or phone number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
           />
         </div>
 
@@ -228,17 +228,17 @@ export default function CustomerList({
           return (
             <div 
               key={cust.id} 
-              className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group relative"
+              className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between space-y-4 group relative"
             >
               <div>
                 {/* Header info */}
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex items-center space-x-3">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white font-black text-sm flex items-center justify-center shadow-xs shrink-0">
                       {cust.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-sky-700 transition-colors">
+                      <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-blue-700 transition-colors">
                         {cust.name}
                       </h3>
                       <div className="text-[11px] text-slate-400 font-mono font-semibold">
@@ -254,7 +254,7 @@ export default function CustomerList({
                     <button 
                       onClick={() => handleEditClick(cust)}
                       title="Edit Customer Profile"
-                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-sky-100 text-slate-500 hover:text-sky-700 transition-colors cursor-pointer"
+                      className="p-1.5 rounded-xl bg-slate-100 hover:bg-blue-100 text-slate-500 hover:text-blue-700 transition-colors cursor-pointer"
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
@@ -308,14 +308,14 @@ export default function CustomerList({
               <div className="pt-3 border-t border-slate-100 space-y-3">
                 <div className="flex justify-between items-center text-[11px] text-slate-500 font-semibold">
                   <span>Purchases: <strong className="text-slate-900">{custTxnList.length}</strong></span>
-                  <span>Prescriptions: <strong className="text-sky-700">{custRxList.length}</strong></span>
+                  <span>Prescriptions: <strong className="text-blue-700">{custRxList.length}</strong></span>
                 </div>
 
                 <button
                   onClick={() => { setSelectedHistoryCustomer(cust); setHistoryTab("purchases"); }}
-                  className="w-full py-2.5 bg-slate-100 hover:bg-sky-50 hover:text-sky-800 text-slate-700 font-bold text-xs rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer border border-slate-200/60"
+                  className="w-full py-2.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-800 text-slate-700 font-bold text-xs rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer border border-slate-200/60"
                 >
-                  <History className="w-4 h-4 text-sky-600" />
+                  <History className="w-4 h-4 text-blue-600" />
                   <span>View Purchase & Rx Records</span>
                 </button>
               </div>
@@ -331,7 +331,7 @@ export default function CustomerList({
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 border border-slate-100">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                   <UserCheck className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">
@@ -346,33 +346,33 @@ export default function CustomerList({
             <form onSubmit={handleSaveCustomer} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Customer Full Name <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">National ID (NIC) <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Email Address</label>
-                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
                 </div>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Home / Delivery Address</label>
-                <input type="text" placeholder="No 45, Baseline Road, Colombo" value={newCust.address} onChange={e=>setNewCust({...newCust, address:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input type="text" placeholder="No 45, Baseline Road, Colombo" value={newCust.address} onChange={e=>setNewCust({...newCust, address:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Known Drug Allergies</label>
-                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
                 <button type="button" onClick={() => { setIsAddModalOpen(false); setEditingCustomer(null); }} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md cursor-pointer">
+                <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md cursor-pointer">
                   {editingCustomer ? "Update Customer Profile" : "Save Customer Profile"}
                 </button>
               </div>
@@ -389,7 +389,7 @@ export default function CustomerList({
             {/* Modal Top Banner */}
             <div className="flex justify-between items-start pb-4 border-b border-slate-100 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 rounded-2xl bg-sky-100 text-sky-800 font-black text-base flex items-center justify-center border border-sky-200">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 font-black text-base flex items-center justify-center border border-blue-200">
                   {selectedHistoryCustomer.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -429,7 +429,7 @@ export default function CustomerList({
                     <button
                       onClick={() => setHistoryTab("purchases")}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                        historyTab === "purchases" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                        historyTab === "purchases" ? "bg-white text-blue-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <Receipt className="w-4 h-4" />
@@ -439,7 +439,7 @@ export default function CustomerList({
                     <button
                       onClick={() => setHistoryTab("prescriptions")}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                        historyTab === "prescriptions" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                        historyTab === "prescriptions" ? "bg-white text-blue-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <FileText className="w-4 h-4" />
@@ -456,9 +456,9 @@ export default function CustomerList({
                           {custRxs.length > 0 && (
                             <button
                               onClick={() => setHistoryTab("prescriptions")}
-                              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-2xl font-black text-xs transition-all cursor-pointer border border-sky-300 shadow-xs"
+                              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-900 rounded-2xl font-black text-xs transition-all cursor-pointer border border-blue-300 shadow-xs"
                             >
-                              <FileText className="w-4 h-4 text-sky-600" />
+                              <FileText className="w-4 h-4 text-blue-600" />
                               <span>Click to View {custRxs.length} Prescription Record(s) Uploaded by Patient</span>
                             </button>
                           )}
@@ -482,7 +482,7 @@ export default function CustomerList({
 
                             <div className="flex justify-between items-center pt-1 font-bold">
                               <span className="text-slate-600">Total Paid ({txn.paymentMethod || "Cash"}):</span>
-                              <span className="text-sky-700 text-sm font-black">Rs. {Number(txn.total || 0).toFixed(2)}</span>
+                              <span className="text-blue-700 text-sm font-black">Rs. {Number(txn.total || 0).toFixed(2)}</span>
                             </div>
                           </div>
                         ))
@@ -517,7 +517,7 @@ export default function CustomerList({
                                 {rx.medicines.map((m, idx) => (
                                   <div key={idx} className="flex justify-between text-slate-800 font-bold bg-white p-2 rounded-xl border border-slate-200">
                                     <span>{m.name} ({m.dosage})</span>
-                                    <span className="text-sky-700 font-black">{m.quantity} units</span>
+                                    <span className="text-blue-700 font-black">{m.quantity} units</span>
                                   </div>
                                 ))}
                               </div>

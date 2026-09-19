@@ -205,13 +205,13 @@ export default function CustomerRxUpload({
 
   if (submittedRx) {
     return (
-      <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-sky-200 shadow-xl space-y-6 animate-fade-in font-sans">
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl border border-blue-200 shadow-xl space-y-6 animate-fade-in font-sans">
         <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto border-2 border-emerald-300 shadow-md">
           <CheckCircle2 className="w-10 h-10" />
         </div>
 
         <div className="text-center space-y-2">
-          <span className="px-3.5 py-1 bg-sky-100 text-sky-900 text-xs font-extrabold rounded-full border border-sky-300">
+          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 text-xs font-extrabold rounded-full border border-blue-300">
             Pharmacist Verification Pending
           </span>
           <h2 className="text-2xl font-black text-slate-900">Order & Prescription Submitted!</h2>
@@ -224,7 +224,7 @@ export default function CustomerRxUpload({
         <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 text-xs">
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
             <span className="text-slate-500 font-medium">Order Reference No:</span>
-            <span className="font-mono font-black text-sky-800 text-sm">{submittedRx.rxNumber}</span>
+            <span className="font-mono font-black text-blue-800 text-sm">{submittedRx.rxNumber}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Patient Name:</span>
@@ -245,17 +245,17 @@ export default function CustomerRxUpload({
             {submittedRx.medicines.map((m, idx) => (
               <div key={idx} className="font-bold text-slate-800 flex justify-between bg-white p-2 rounded-lg border border-slate-200">
                 <span>{m.name}</span>
-                <span className="text-sky-700 font-black">{m.quantity} units</span>
+                <span className="text-blue-700 font-black">{m.quantity} units</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="p-4 bg-sky-50 rounded-2xl border border-sky-200 text-xs text-sky-900 flex items-start space-x-3">
-          <ShieldCheck className="w-5 h-5 text-sky-700 shrink-0 mt-0.5" />
+        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start space-x-3">
+          <ShieldCheck className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
           <div>
             <p className="font-bold">What Happens Next?</p>
-            <p className="text-[11px] text-sky-800 mt-0.5 leading-relaxed">
+            <p className="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
               Our licensed Pharmacist will inspect your prescription photo / requested medicine names, confirm dosage details, and contact you via phone before dispatching your order.
             </p>
           </div>
@@ -263,7 +263,7 @@ export default function CustomerRxUpload({
 
         <button
           onClick={handleResetForm}
-          className="w-full py-3.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer"
+          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
           <span>Submit Another Order / Prescription</span>
@@ -273,18 +273,18 @@ export default function CustomerRxUpload({
   }
 
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border border-sky-100 shadow-xl space-y-6 animate-fade-in font-sans">
+    <div className="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-3xl border border-blue-100 shadow-xl space-y-6 animate-fade-in font-sans">
       
       {/* Form Header Banner */}
       <div className="flex items-center justify-between border-b border-slate-100 pb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30 shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/30 shrink-0">
             <FileCheck2 className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
               <h2 className="text-xl font-black text-slate-900">Order Medicines & Upload Prescription</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 text-[10.5px] font-extrabold border border-sky-200">
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-extrabold border border-blue-200">
                 Patient Portal
               </span>
             </div>
@@ -302,11 +302,11 @@ export default function CustomerRxUpload({
           onClick={() => setOrderMethod("both")}
           className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "both"
-              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
+              ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <Pill className="w-4 h-4 text-sky-600" />
+          <Pill className="w-4 h-4 text-blue-600" />
           <span>Photo + Typed Medicines</span>
         </button>
 
@@ -315,11 +315,11 @@ export default function CustomerRxUpload({
           onClick={() => setOrderMethod("typed")}
           className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "typed"
-              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
+              ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <Pencil className="w-4 h-4 text-sky-600" />
+          <Pencil className="w-4 h-4 text-blue-600" />
           <span>Type Medicines Only</span>
         </button>
 
@@ -328,11 +328,11 @@ export default function CustomerRxUpload({
           onClick={() => setOrderMethod("photo")}
           className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "photo"
-              ? "bg-white text-sky-900 shadow-sm border border-slate-200"
+              ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
           }`}
         >
-          <ImageIcon className="w-4 h-4 text-sky-600" />
+          <ImageIcon className="w-4 h-4 text-blue-600" />
           <span>Upload Photo Only</span>
         </button>
       </div>
@@ -341,13 +341,13 @@ export default function CustomerRxUpload({
         
         {/* 1. Type Required Medicines Section (Available in 'typed' and 'both' mode) */}
         {(orderMethod === "typed" || orderMethod === "both") && (
-          <div className="bg-sky-50/60 p-5 rounded-3xl border border-sky-200/80 space-y-3">
+          <div className="bg-blue-50/60 p-5 rounded-3xl border border-blue-200/80 space-y-3">
             <div className="flex justify-between items-center">
               <label className="font-black text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
-                <Pencil className="w-4 h-4 text-sky-600" />
+                <Pencil className="w-4 h-4 text-blue-600" />
                 <span>Type Required Medicine Names & Quantities</span>
               </label>
-              <span className="text-[10.5px] font-extrabold text-sky-800 bg-sky-100 px-2.5 py-0.5 rounded-full border border-sky-300">
+              <span className="text-[10.5px] font-extrabold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
                 Custom Order
               </span>
             </div>
@@ -357,7 +357,7 @@ export default function CustomerRxUpload({
               <select
                 value={selectedQuickMedicine}
                 onChange={(e) => setSelectedQuickMedicine(e.target.value)}
-                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
               >
                 <option value="">-- Select from Medicine Catalog --</option>
                 {medicines.map(m => (
@@ -380,7 +380,7 @@ export default function CustomerRxUpload({
                   type="button"
                   onClick={handleAddQuickMedicine}
                   disabled={!selectedQuickMedicine}
-                  className="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center space-x-1 shadow-sm cursor-pointer shrink-0"
+                  className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-bold text-xs rounded-2xl flex items-center space-x-1 shadow-sm cursor-pointer shrink-0"
                 >
                   <PlusCircle className="w-4 h-4" />
                   <span>Add Item</span>
@@ -399,7 +399,7 @@ export default function CustomerRxUpload({
                       <span className="text-slate-400 font-normal ml-2">({item.dosage})</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-sky-700 font-black">{item.quantity} units</span>
+                      <span className="text-blue-700 font-black">{item.quantity} units</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveTypedItem(idx)}
@@ -423,7 +423,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. Paracetamol 500mg (2 strips), Cetirizine 10mg (1 box), Vitamin C 500mg..."
                 value={typedMedicinesText}
                 onChange={(e) => setTypedMedicinesText(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-hidden"
               />
             </div>
           </div>
@@ -434,7 +434,7 @@ export default function CustomerRxUpload({
           <div>
             <label className="block font-bold text-slate-800 mb-1.5 flex items-center justify-between">
               <span className="flex items-center space-x-1">
-                <ImageIcon className="w-4 h-4 text-sky-600" />
+                <ImageIcon className="w-4 h-4 text-blue-600" />
                 <span>Attach Photo of Doctor's Prescription Slip {orderMethod === "photo" ? "*" : "(Optional)"}</span>
               </span>
               {orderMethod === "both" && (
@@ -457,41 +457,41 @@ export default function CustomerRxUpload({
               onDrop={handleDrop}
               className={`p-5 border-2 border-dashed rounded-3xl text-center space-y-2 cursor-pointer transition-all ${
                 isDragging 
-                  ? "border-sky-500 bg-sky-100/60 scale-[1.01]" 
+                  ? "border-blue-500 bg-blue-100/60 scale-[1.01]" 
                   : selectedFile || previewUrl
-                  ? "border-sky-400 bg-sky-50/50" 
-                  : "border-slate-300 hover:border-sky-400 bg-slate-50/60 hover:bg-sky-50/30"
+                  ? "border-blue-400 bg-blue-50/50" 
+                  : "border-slate-300 hover:border-blue-400 bg-slate-50/60 hover:bg-blue-50/30"
               }`}
             >
               {previewUrl ? (
                 <div className="space-y-3">
-                  <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-sky-300 shadow-md">
+                  <div className="relative max-w-xs mx-auto rounded-2xl overflow-hidden border border-blue-300 shadow-md">
                     <img src={previewUrl} alt="Prescription slip photo preview" className="w-full h-44 object-cover" />
                     <span className="absolute top-2 right-2 px-2.5 py-1 bg-slate-900/80 text-white rounded-full text-[10px] font-bold backdrop-blur-xs flex items-center space-x-1">
-                      <CheckCircle2 className="w-3 h-3 text-sky-400" />
+                      <CheckCircle2 className="w-3 h-3 text-blue-400" />
                       <span>Photo Attached</span>
                     </span>
                   </div>
                   {selectedFile && (
                     <div className="font-bold text-slate-900 flex items-center justify-center space-x-1 text-xs">
-                      <Paperclip className="w-4 h-4 text-sky-600" />
+                      <Paperclip className="w-4 h-4 text-blue-600" />
                       <span>{selectedFile.name} ({(selectedFile.size / (1024*1024)).toFixed(2)} MB)</span>
                     </div>
                   )}
-                  <p className="text-[11px] text-sky-700 font-semibold hover:underline">Tap or drop to change photo</p>
+                  <p className="text-[11px] text-blue-700 font-semibold hover:underline">Tap or drop to change photo</p>
                 </div>
               ) : selectedFile ? (
                 <div className="space-y-2 py-2">
-                  <FileText className="w-8 h-8 text-sky-600 mx-auto" />
+                  <FileText className="w-8 h-8 text-blue-600 mx-auto" />
                   <div className="font-bold text-slate-900 flex items-center justify-center space-x-1 text-xs">
-                    <CheckCircle2 className="w-4 h-4 text-sky-600" />
+                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
                     <span>{selectedFile.name}</span>
                   </div>
                   <p className="text-[11px] text-slate-500">Prescription file attached • Tap to change</p>
                 </div>
               ) : (
                 <div className="space-y-2 py-4">
-                  <div className="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center mx-auto border border-sky-300">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center mx-auto border border-blue-300">
                     <Upload className="w-5 h-5" />
                   </div>
                   <div className="font-bold text-slate-900 text-xs">
@@ -516,7 +516,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. K. A. Sunil Shantha"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
               />
             </div>
           </div>
@@ -531,7 +531,7 @@ export default function CustomerRxUpload({
                 placeholder="+94 77 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
               />
             </div>
           </div>
@@ -547,7 +547,7 @@ export default function CustomerRxUpload({
               placeholder="e.g. 12/A, High Level Road, Nugegoda"
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden text-xs"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
             />
           </div>
         </div>
@@ -555,7 +555,7 @@ export default function CustomerRxUpload({
         {/* Patient Remarks */}
         <div>
           <label className="block font-bold text-slate-700 mb-1 flex items-center space-x-1">
-            <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+            <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
             <span>Special Instructions for Pharmacist (Optional)</span>
           </label>
           <textarea
@@ -563,7 +563,7 @@ export default function CustomerRxUpload({
             placeholder="e.g. Please send 1 month supply, or call before dispatching..."
             value={patientNotes}
             onChange={(e) => setPatientNotes(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-2 focus:ring-sky-500 outline-hidden text-xs"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
           />
         </div>
 
@@ -571,7 +571,7 @@ export default function CustomerRxUpload({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-sky-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
+          className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
         >
           {isSubmitting ? (
             <>

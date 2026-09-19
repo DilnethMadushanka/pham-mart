@@ -20,9 +20,9 @@ export default function NotificationDrawer({
       <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col">
         
         {/* Header */}
-        <div className="p-4 border-b border-sky-100 bg-sky-50/50 flex justify-between items-center">
+        <div className="p-4 border-b border-blue-100 bg-blue-50/50 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-sky-600 text-white">
+            <div className="p-2 rounded-lg bg-blue-600 text-white">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
@@ -45,13 +45,13 @@ export default function NotificationDrawer({
           <div>
             <div className="flex justify-between items-center mb-2">
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
-                <FileText className="w-3.5 h-3.5 mr-1 text-sky-600" />
+                <FileText className="w-3.5 h-3.5 mr-1 text-blue-600" />
                 Pending Prescriptions ({pendingRx.length})
               </h4>
               {pendingRx.length > 0 && (
                 <button 
                   onClick={() => { onNavigate("prescriptions"); onClose(); }} 
-                  className="text-xs text-sky-700 hover:underline font-semibold flex items-center"
+                  className="text-xs text-blue-700 hover:underline font-semibold flex items-center"
                 >
                   Verify All <ArrowRight className="w-3 h-3 ml-0.5" />
                 </button>
@@ -59,17 +59,17 @@ export default function NotificationDrawer({
             </div>
 
             {pendingRx.length === 0 ? (
-              <div className="p-3 bg-sky-50 rounded-xl text-xs text-sky-800 flex items-center">
-                <CheckCircle2 className="w-4 h-4 text-sky-600 mr-2 shrink-0" />
+              <div className="p-3 bg-blue-50 rounded-xl text-xs text-blue-800 flex items-center">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 mr-2 shrink-0" />
                 All customer prescriptions verified! No pending items.
               </div>
             ) : (
               <div className="space-y-2">
                 {pendingRx.map(p => (
-                  <div key={p.id} className="p-3 rounded-xl border border-sky-200 bg-sky-50/40 hover:bg-sky-50 transition-colors text-xs">
+                  <div key={p.id} className="p-3 rounded-xl border border-blue-200 bg-blue-50/40 hover:bg-blue-50 transition-colors text-xs">
                     <div className="flex justify-between font-bold text-slate-800">
                       <span>{p.rxNumber}</span>
-                      <span className="text-sky-700 font-semibold">{p.customerName}</span>
+                      <span className="text-blue-700 font-semibold">{p.customerName}</span>
                     </div>
                     <p className="text-[11px] text-slate-600 mt-1">Doctor: {p.doctorName}</p>
                     {p.isControlledDrug && (
@@ -93,7 +93,7 @@ export default function NotificationDrawer({
               {lowStock.length > 0 && (
                 <button 
                   onClick={() => { onNavigate("inventory"); onClose(); }} 
-                  className="text-xs text-sky-700 hover:underline font-semibold flex items-center"
+                  className="text-xs text-blue-700 hover:underline font-semibold flex items-center"
                 >
                   Create PO <ArrowRight className="w-3 h-3 ml-0.5" />
                 </button>

@@ -52,10 +52,10 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
 
   // Category Breakdown Pie Data
   const categoryData = [
-    { name: "Antibiotics", value: 35, color: "#0284c7" },
+    { name: "Antibiotics", value: 35, color: "#2563EB" },
     { name: "Analgesics", value: 25, color: "#0ea5e9" },
-    { name: "Diabetes", value: 15, color: "#38bdf8" },
-    { name: "Cardiovascular", value: 15, color: "#0369a1" },
+    { name: "Diabetes", value: 15, color: "#60A5FA" },
+    { name: "Cardiovascular", value: 15, color: "#1D4ED8" },
     { name: "Controlled", value: 10, color: "#f43f5e" }
   ];
 
@@ -63,24 +63,24 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Glassmorphic Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-sky-900/50">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-blue-900/50">
+        <div className="absolute -top-12 -right-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative z-10">
           <div>
             <div className="flex items-center space-x-2.5 mb-2">
-              <span className="px-3.5 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-black border border-sky-400/30 backdrop-blur-md">
+              <span className="px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black border border-blue-400/30 backdrop-blur-md">
                 Executive Analytics Dashboard
               </span>
-              <span className="flex items-center text-xs font-bold text-sky-400">
-                <Zap className="w-3.5 h-3.5 mr-1 fill-sky-400" />
+              <span className="flex items-center text-xs font-bold text-blue-400">
+                <Zap className="w-3.5 h-3.5 mr-1 fill-blue-400" />
                 Live Sync
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-heading">
               Pharmacy Analytics & Business Performance
             </h2>
-            <p className="text-xs sm:text-sm text-sky-100/80 font-medium mt-1">
+            <p className="text-xs sm:text-sm text-blue-100/80 font-medium mt-1">
               Real-time financial trends, stock turn rates, billing error metrics & operational baseline analytics.
             </p>
           </div>
@@ -88,14 +88,14 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <button
               onClick={() => setIsReportModalOpen(true)}
-              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-sky-500/25 transition-all cursor-pointer border border-sky-400/30"
+              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer border border-blue-400/30"
             >
               <Printer className="w-4 h-4" />
               <span>Daily Sales Report</span>
             </button>
 
             <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-right shrink-0 min-w-[180px]">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-sky-200">Total Revenue</div>
+              <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Total Revenue</div>
               <div className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">
                 LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
@@ -155,8 +155,8 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
               <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Weekly Revenue & Transaction Trend</h3>
               <p className="text-xs text-slate-500 font-medium mt-0.5">Live sales synchronization across POS counters</p>
             </div>
-            <span className="px-3.5 py-1.5 bg-sky-50 text-[#0284c7] text-xs font-black rounded-xl border border-sky-200/60 shadow-2xs flex items-center space-x-1.5 shrink-0">
-              <span className="w-2 h-2 rounded-full bg-[#0284c7] animate-ping"></span>
+            <span className="px-3.5 py-1.5 bg-blue-50 text-[#2563EB] text-xs font-black rounded-xl border border-blue-200/60 shadow-2xs flex items-center space-x-1.5 shrink-0">
+              <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping"></span>
               <span>Live Feed</span>
             </span>
           </div>
@@ -166,8 +166,8 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
               <AreaChart data={salesChartData}>
                 <defs>
                   <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0284c7" stopOpacity={0.35}/>
-                    <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} fontWeight={600} />
@@ -176,7 +176,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
                   formatter={(val) => [`Rs. ${val.toLocaleString()}`, 'Revenue']}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#0284c7" strokeWidth={3.5} fillOpacity={1} fill="url(#skyGrad)" />
+                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={3.5} fillOpacity={1} fill="url(#skyGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

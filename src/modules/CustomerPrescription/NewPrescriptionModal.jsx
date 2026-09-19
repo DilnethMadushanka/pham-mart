@@ -42,11 +42,11 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-sky-100 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-blue-100 overflow-hidden">
         
-        <div className="p-4 border-b border-sky-100 bg-sky-50/70 flex justify-between items-center">
+        <div className="p-4 border-b border-blue-100 bg-blue-50/70 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-sky-600 text-white">
+            <div className="p-2 rounded-xl bg-blue-600 text-white">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-sky-800"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-800"
               />
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
               Register Prescription
             </button>

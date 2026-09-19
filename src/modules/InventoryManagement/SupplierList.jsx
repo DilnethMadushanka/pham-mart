@@ -90,11 +90,11 @@ export default function SupplierList({
     <div className="space-y-6 animate-fade-in font-sans">
       
       {/* Top Header Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200 flex items-center">
-              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-sky-600" />
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200 flex items-center">
+              <ShieldCheck className="w-3.5 h-3.5 mr-1 text-blue-600" />
               Enterprise Supply Chain
             </span>
           </div>
@@ -108,7 +108,7 @@ export default function SupplierList({
 
         <button
           onClick={() => { setEditingSupplier(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#0284c7] hover:bg-[#0369a1] text-white rounded-2xl font-black text-xs shadow-md shadow-sky-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4.5 h-4.5" />
           <span>Register New Supplier</span>
@@ -121,15 +121,15 @@ export default function SupplierList({
         <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Suppliers</span>
-            <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-sky-600 transition-colors">
+            <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-blue-600 transition-colors">
               {suppliers.length}
             </div>
-            <div className="flex items-center space-x-1.5 mt-1 text-xs font-bold text-sky-600">
-              <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+            <div className="flex items-center space-x-1.5 mt-1 text-xs font-bold text-blue-600">
+              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
               <span>100% Active Distributors</span>
             </div>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold border border-sky-100 group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100 group-hover:scale-110 transition-transform">
             <Building2 className="w-7 h-7" />
           </div>
         </div>
@@ -176,7 +176,7 @@ export default function SupplierList({
             placeholder="Search supplier name, contact person, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
           />
           {searchTerm && (
             <button 
@@ -206,7 +206,7 @@ export default function SupplierList({
           </p>
           <button
             onClick={() => { setSearchTerm(""); setIsAddModalOpen(true); }}
-            className="px-5 py-2.5 bg-sky-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-sky-700 transition-colors cursor-pointer"
+            className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-blue-700 transition-colors cursor-pointer"
           >
             Add New Supplier
           </button>
@@ -231,16 +231,16 @@ export default function SupplierList({
             return (
               <div 
                 key={supplier.id}
-                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-xl hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
               >
                 {/* Top Hover Gradient Line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <div>
                   {/* Card Top Header Row */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center space-x-2">
-                      <span className="px-3 py-1 rounded-xl bg-sky-50 text-sky-700 font-mono font-black text-xs border border-sky-200/80 shadow-2xs">
+                      <span className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 font-mono font-black text-xs border border-blue-200/80 shadow-2xs">
                         {supplier.id}
                       </span>
                       <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
@@ -253,7 +253,7 @@ export default function SupplierList({
                       <button
                         onClick={() => { setEditingSupplier(supplier); setIsAddModalOpen(true); }}
                         title="Edit Supplier"
-                        className="p-2 rounded-xl text-slate-400 hover:text-sky-600 hover:bg-sky-50 transition-colors cursor-pointer"
+                        className="p-2 rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
@@ -269,7 +269,7 @@ export default function SupplierList({
 
                   {/* Supplier Company Name - Full, bold, unclipped */}
                   <div className="mb-4">
-                    <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-sky-600 transition-colors break-words">
+                    <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-blue-600 transition-colors break-words">
                       {supplier.name}
                     </h3>
                   </div>
@@ -279,7 +279,7 @@ export default function SupplierList({
                     
                     {supplier.contactPerson ? (
                       <div className="flex items-center space-x-2.5">
-                        <User className="w-4 h-4 text-sky-600 shrink-0" />
+                        <User className="w-4 h-4 text-blue-600 shrink-0" />
                         <span className="font-bold text-slate-800">{supplier.contactPerson}</span>
                       </div>
                     ) : (
@@ -292,7 +292,7 @@ export default function SupplierList({
                     {supplier.phone ? (
                       <div className="flex items-center space-x-2.5">
                         <Phone className="w-4 h-4 text-slate-400 shrink-0" />
-                        <a href={`tel:${supplier.phone}`} className="font-mono text-slate-700 font-semibold hover:text-sky-600">
+                        <a href={`tel:${supplier.phone}`} className="font-mono text-slate-700 font-semibold hover:text-blue-600">
                           {supplier.phone}
                         </a>
                       </div>
@@ -301,7 +301,7 @@ export default function SupplierList({
                     {supplier.email ? (
                       <div className="flex items-center space-x-2.5 truncate">
                         <Mail className="w-4 h-4 text-slate-400 shrink-0" />
-                        <a href={`mailto:${supplier.email}`} className="text-sky-600 hover:underline font-medium truncate">
+                        <a href={`mailto:${supplier.email}`} className="text-blue-600 hover:underline font-medium truncate">
                           {supplier.email}
                         </a>
                       </div>
@@ -321,7 +321,7 @@ export default function SupplierList({
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-1.5 text-slate-700 font-bold">
-                      <Package className="w-4 h-4 text-sky-500" />
+                      <Package className="w-4 h-4 text-blue-500" />
                       <span>{suppliedMedsCount} Medicines</span>
                     </div>
                     <div className="flex items-center space-x-1.5 text-slate-700 font-bold">

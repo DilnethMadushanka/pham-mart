@@ -10,12 +10,12 @@ export default function ReceiptModal({ txn, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-sky-100 overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Top Actions */}
-        <div className="p-4 border-b border-sky-100 bg-sky-50/70 flex justify-between items-center no-print">
+        <div className="p-4 border-b border-blue-100 bg-blue-50/70 flex justify-between items-center no-print">
           <div className="flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5 text-sky-600" />
+            <CheckCircle className="w-5 h-5 text-blue-600" />
             <span className="font-bold text-slate-900 text-sm">Sale Completed Successfully!</span>
           </div>
           <button 
@@ -31,7 +31,7 @@ export default function ReceiptModal({ txn, onClose }) {
           
           {/* Pharmacy Header */}
           <div className="text-center border-b border-dashed border-slate-300 pb-4">
-            <div className="flex justify-center items-center space-x-1 font-sans font-black text-xl text-[#0284c7]">
+            <div className="flex justify-center items-center space-x-1 font-sans font-black text-xl text-[#2563EB]">
               <Pill className="w-5 h-5" />
               <span>PHARMART PHARMACY</span>
             </div>
@@ -84,7 +84,7 @@ export default function ReceiptModal({ txn, onClose }) {
               <span>Rs. {txn.subtotal.toFixed(2)}</span>
             </div>
             {txn.discountAmt > 0 && (
-              <div className="flex justify-between text-sky-700">
+              <div className="flex justify-between text-blue-700">
                 <span>Discount ({txn.discountPct}%):</span>
                 <span>- Rs. {txn.discountAmt.toFixed(2)}</span>
               </div>
@@ -134,7 +134,7 @@ export default function ReceiptModal({ txn, onClose }) {
 
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer"
           >
             Done & Next Sale
           </button>

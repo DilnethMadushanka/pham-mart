@@ -2,17 +2,23 @@
 
 @layer base {
   :root {
-    --primary-blue: #0284c7;
-    --primary-dark: #0369a1;
-    --primary-light: #38bdf8;
-    --primary-subtle: #f0f9ff;
-    --bg-page: #f8fafc;
+    /* PHARMART design system tokens */
+    --navy-900: #0B2545;
+    --navy-950: #091E3A;
+    --primary-blue: #2563EB;
+    --primary-blue-dark: #1D4ED8;
+    --bg-page: #F8FAFC;
+    --bg-page-alt: #F1F5F9;
     --card-bg: #ffffff;
-    --border-color: #e2e8f0;
+    --border-color: #E2E8F0;
+    --status-green: #10B981;
+    --status-amber: #F59E0B;
+    --status-red: #EF4444;
+    --status-gray: #64748B;
   }
-  
+
   body {
-    background-color: #f8fafc;
+    background-color: #F8FAFC;
     color: #0f172a;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
@@ -22,6 +28,23 @@
     font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   }
 }
+
+/* PHARMART status pill chips */
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  border-width: 1px;
+}
+.status-chip-green { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+.status-chip-amber { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+.status-chip-red { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+.status-chip-gray { background: #F8FAFC; color: #64748B; border-color: #E2E8F0; }
+.status-chip-blue { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
 
 /* Background Crossfade Animation */
 .bg-slide-transition {
@@ -56,6 +79,6 @@
   background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #0284c7;
+  background: #2563EB;
   border-radius: 9999px;
 }

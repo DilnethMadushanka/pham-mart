@@ -190,6 +190,11 @@ export default function POSTerminal({
       return;
     }
 
+    if (grandTotal <= 0) {
+      alert("Grand total must be greater than zero. Please check the discount and tax percentages.");
+      return;
+    }
+
     if (paymentMethod === "Cash" && (parseFloat(tenderedCash) || 0) < grandTotal) {
       alert(`Tendered cash must be at least Rs. ${grandTotal.toFixed(2)}`);
       return;
@@ -223,19 +228,8 @@ export default function POSTerminal({
       status: "Completed"
     };
 
-    // 1. Save Transaction to Supabase DB in real-time
-    await createTransaction(newTxn);
-
-    // 2. AUTOMATIC INVENTORY DEDUCTION (Real-time Supabase Update!)
-    for (const item of cart) {
-      const med = medicines.find(m => m.id === item.id);
-      if (med) {
-        const updatedStock = Math.max(0, med.stock - item.qty);
-        await updateMedicineStock(med.id, updatedStock);
-      }
-    }
-
-    // 3. Update local state
+    // 1. Update local state immediately (optimistic) so the UI reflects the sale before
+    // any Supabase realtime resync can race with the per-item writes below.
     setTransactions(prev => [newTxn, ...prev]);
 
     setMedicines(prev => prev.map(m => {
@@ -245,6 +239,18 @@ export default function POSTerminal({
       }
       return m;
     }));
+
+    // 2. Persist transaction + inventory deduction to Supabase in parallel, minimizing
+    // the window in which a realtime resync could observe only a partial update.
+    await Promise.all([
+      createTransaction(newTxn),
+      ...cart.map(item => {
+        const med = medicines.find(m => m.id === item.id);
+        if (!med) return Promise.resolve();
+        const updatedStock = Math.max(0, med.stock - item.qty);
+        return updateMedicineStock(med.id, updatedStock);
+      })
+    ]);
 
     // 3. Log audit event
     addAuditLog(
@@ -267,10 +273,10 @@ export default function POSTerminal({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Header Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200/80">
+            <span className="px-3 py-0.5 rounded-md bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200/80">
               POS Counter
             </span>
             <span className="text-xs text-slate-500 font-semibold">Live POS Counter Terminal</span>
@@ -294,12 +300,12 @@ export default function POSTerminal({
       <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="flex items-center space-x-2.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200/80">
-            <UserCheck className="w-4.5 h-4.5 text-sky-600 shrink-0" />
+            <UserCheck className="w-4.5 h-4.5 text-blue-600 shrink-0" />
             <span className="font-bold text-slate-700 text-xs shrink-0">Active Customer:</span>
             <select
               value={selectedCustomerId}
               onChange={(e) => setSelectedCustomerId(e.target.value)}
-              className="font-extrabold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-2 focus:ring-sky-500 transition-all cursor-pointer min-w-[220px]"
+              className="font-extrabold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer min-w-[220px]"
             >
               <option value="">Walk-in Customer (General)</option>
               {customers.map(c => (
@@ -321,7 +327,7 @@ export default function POSTerminal({
           <button
             onClick={() => setIsAddCustOpen(true)}
             title="Register new customer profile"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 transition-all cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ New Customer</span>
@@ -331,9 +337,9 @@ export default function POSTerminal({
             <button
               onClick={() => { setIsViewHistoryOpen(true); setHistoryTab("purchases"); }}
               title="View customer purchase & prescription history"
-              className="flex items-center space-x-2 px-4 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-extrabold text-xs rounded-2xl transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-extrabold text-xs rounded-2xl transition-all cursor-pointer"
             >
-              <History className="w-4 h-4 text-sky-600" />
+              <History className="w-4 h-4 text-blue-600" />
               <span>View History & Rx</span>
             </button>
           )}
@@ -353,7 +359,7 @@ export default function POSTerminal({
               placeholder="Quick search medicine by name, generic code or brand..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden shadow-xs"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden shadow-xs"
             />
           </div>
 
@@ -368,12 +374,12 @@ export default function POSTerminal({
                   className={`p-4 bg-white rounded-2xl border transition-all text-xs flex flex-col justify-between ${
                     isOut 
                       ? "opacity-50 cursor-not-allowed border-slate-200" 
-                      : "border-slate-200 hover:border-sky-400 hover:shadow-md cursor-pointer group"
+                      : "border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer group"
                   }`}
                 >
                   <div>
                     <div className="flex justify-between items-start">
-                      <span className="font-bold text-slate-900 text-sm group-hover:text-sky-700 transition-colors">
+                      <span className="font-bold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
                         {med.name}
                       </span>
                       {med.controlledDrug && (
@@ -388,7 +394,7 @@ export default function POSTerminal({
                   <div className="mt-4 pt-2 border-t border-slate-100 flex justify-between items-end">
                     <div>
                       <span className="text-[11px] text-slate-400 block font-medium">Stock Level</span>
-                      <span className={`font-black text-xs ${med.stock <= med.reorderLevel ? "text-rose-600" : "text-sky-700"}`}>
+                      <span className={`font-black text-xs ${med.stock <= med.reorderLevel ? "text-rose-600" : "text-blue-700"}`}>
                         {med.stock} units
                       </span>
                     </div>
@@ -407,11 +413,11 @@ export default function POSTerminal({
         </div>
 
         {/* Right Column: Checkout Billing Counter */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-sky-200 shadow-xl flex flex-col h-full sticky top-20">
+        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-blue-200 shadow-xl flex flex-col h-full sticky top-20">
           
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-base font-black text-slate-900 flex items-center">
-              <ShoppingCart className="w-5 h-5 mr-2 text-sky-600" />
+              <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
               Order Checkout Basket ({cart.reduce((a,c) => a + c.qty, 0)})
             </h3>
             {cart.length > 0 && (
@@ -437,7 +443,7 @@ export default function POSTerminal({
                 <div key={item.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
                   <div className="flex-1 pr-2">
                     <div className="font-bold text-slate-900">{item.name}</div>
-                    <div className="text-[11px] text-sky-700 font-semibold">
+                    <div className="text-[11px] text-blue-700 font-semibold">
                       Rs. {(Number(item.unitPrice || item.unit_price || 0)).toFixed(2)} × {item.qty} = Rs. {((Number(item.unitPrice || item.unit_price || 0)) * item.qty).toFixed(2)}
                     </div>
                   </div>
@@ -452,7 +458,7 @@ export default function POSTerminal({
                     <span className="font-extrabold px-2 text-slate-900">{item.qty}</span>
                     <button
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      className="p-1 rounded-md bg-sky-600 hover:bg-sky-700 text-white"
+                      className="p-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
@@ -478,7 +484,7 @@ export default function POSTerminal({
                   min="0"
                   max="50"
                   value={discountPct}
-                  onChange={(e) => setDiscountPct(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setDiscountPct(Math.min(50, Math.max(0, parseFloat(e.target.value) || 0)))}
                   className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-center font-bold text-slate-800"
                 />
               </div>
@@ -489,7 +495,7 @@ export default function POSTerminal({
                   min="0"
                   max="30"
                   value={taxPct}
-                  onChange={(e) => setTaxPct(parseFloat(e.target.value) || 0)}
+                  onChange={(e) => setTaxPct(Math.min(30, Math.max(0, parseFloat(e.target.value) || 0)))}
                   className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-center font-bold text-slate-800"
                 />
               </div>
@@ -502,7 +508,7 @@ export default function POSTerminal({
                 <span>Rs. {subtotal.toFixed(2)}</span>
               </div>
               {discountAmt > 0 && (
-                <div className="flex justify-between text-sky-700 font-semibold">
+                <div className="flex justify-between text-blue-700 font-semibold">
                   <span>Discount ({discountPct}%):</span>
                   <span>- Rs. {discountAmt.toFixed(2)}</span>
                 </div>
@@ -515,7 +521,7 @@ export default function POSTerminal({
               )}
               <div className="flex justify-between text-base font-black text-slate-900 pt-1 border-t border-slate-200">
                 <span>Grand Total:</span>
-                <span className="text-sky-700">Rs. {grandTotal.toFixed(2)}</span>
+                <span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
@@ -532,7 +538,7 @@ export default function POSTerminal({
                     onClick={() => setPaymentMethod(m)}
                     className={`py-2 rounded-xl text-xs font-bold border transition-all ${
                       paymentMethod === m 
-                        ? "bg-sky-600 text-white border-sky-600 shadow-xs" 
+                        ? "bg-blue-600 text-white border-blue-600 shadow-xs" 
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
@@ -550,12 +556,12 @@ export default function POSTerminal({
                       placeholder="0.00"
                       value={tenderedCash}
                       onChange={(e) => setTenderedCash(e.target.value)}
-                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-center font-black text-sky-800"
+                      className="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-center font-black text-blue-800"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-0.5">Change Due</label>
-                    <div className="px-2.5 py-1.5 bg-sky-50 rounded-lg font-black text-sky-800 text-center border border-sky-200">
+                    <div className="px-2.5 py-1.5 bg-blue-50 rounded-lg font-black text-blue-800 text-center border border-blue-200">
                       Rs. {changeDue.toFixed(2)}
                     </div>
                   </div>
@@ -569,7 +575,7 @@ export default function POSTerminal({
               disabled={cart.length === 0}
               className={`w-full py-3 rounded-xl font-extrabold text-sm shadow-md transition-all flex items-center justify-center space-x-2 mt-2 ${
                 cart.length > 0 
-                  ? "bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20 cursor-pointer" 
+                  ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 cursor-pointer" 
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
             >
@@ -597,7 +603,7 @@ export default function POSTerminal({
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 border border-slate-100">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">Register Customer at POS Counter</h3>
@@ -610,29 +616,29 @@ export default function POSTerminal({
             <form onSubmit={handlePOSAddCustomer} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Customer Full Name <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">National ID (NIC) <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Email Address</label>
-                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
                 </div>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Known Drug Allergies</label>
-                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden" />
               </div>
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
                 <button type="button" onClick={()=>setIsAddCustOpen(false)} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md cursor-pointer">Register & Select</button>
+                <button type="submit" className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md cursor-pointer">Register & Select</button>
               </div>
             </form>
           </div>
@@ -646,7 +652,7 @@ export default function POSTerminal({
             
             <div className="flex justify-between items-start pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-11 h-11 rounded-2xl bg-sky-100 text-sky-800 font-black text-sm flex items-center justify-center border border-sky-200">
+                <div className="w-11 h-11 rounded-2xl bg-blue-100 text-blue-800 font-black text-sm flex items-center justify-center border border-blue-200">
                   {activeCustomer.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -685,7 +691,7 @@ export default function POSTerminal({
                     <button
                       onClick={() => setHistoryTab("purchases")}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                        historyTab === "purchases" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                        historyTab === "purchases" ? "bg-white text-blue-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <Receipt className="w-4 h-4" />
@@ -695,7 +701,7 @@ export default function POSTerminal({
                     <button
                       onClick={() => setHistoryTab("prescriptions")}
                       className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-2 cursor-pointer ${
-                        historyTab === "prescriptions" ? "bg-white text-sky-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
+                        historyTab === "prescriptions" ? "bg-white text-blue-800 shadow-xs border border-slate-200/80" : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
                       <FileText className="w-4 h-4" />
@@ -712,9 +718,9 @@ export default function POSTerminal({
                           {custRxs.length > 0 && (
                             <button
                               onClick={() => setHistoryTab("prescriptions")}
-                              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-2xl font-black text-xs transition-all cursor-pointer border border-sky-300 shadow-xs"
+                              className="inline-flex items-center space-x-2 px-4 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-900 rounded-2xl font-black text-xs transition-all cursor-pointer border border-blue-300 shadow-xs"
                             >
-                              <FileText className="w-4 h-4 text-sky-600" />
+                              <FileText className="w-4 h-4 text-blue-600" />
                               <span>Click to View {custRxs.length} Prescription Record(s) Uploaded by Patient</span>
                             </button>
                           )}
@@ -738,7 +744,7 @@ export default function POSTerminal({
 
                             <div className="flex justify-between items-center pt-1 font-bold">
                               <span className="text-slate-600">Total Paid ({txn.paymentMethod || "Cash"}):</span>
-                              <span className="text-sky-700 text-sm font-black">Rs. {Number(txn.total).toFixed(2)}</span>
+                              <span className="text-blue-700 text-sm font-black">Rs. {Number(txn.total).toFixed(2)}</span>
                             </div>
                           </div>
                         ))
@@ -773,7 +779,7 @@ export default function POSTerminal({
                                 {rx.medicines.map((m, idx) => (
                                   <div key={idx} className="flex justify-between text-slate-800 font-bold bg-white p-2 rounded-xl border border-slate-200">
                                     <span>{m.name} ({m.dosage})</span>
-                                    <span className="text-sky-700 font-black">{m.quantity} units</span>
+                                    <span className="text-blue-700 font-black">{m.quantity} units</span>
                                   </div>
                                 ))}
                               </div>

@@ -19,20 +19,20 @@ export default function ArchitectureAssessment() {
     <div className="space-y-6 animate-fade-in">
       
       {/* Report Header Card */}
-      <div className="bg-gradient-to-r from-slate-950 via-sky-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden border border-sky-800/40">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 text-white p-6 sm:p-8 rounded-3xl shadow-xl relative overflow-hidden border border-blue-800/40">
+        <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 space-y-3">
           <div className="flex items-center space-x-2">
             <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-black tracking-wide border border-white/30 uppercase">
               {REPORT_INFO.module}
             </span>
-            <span className="text-sky-200 text-xs font-bold">
+            <span className="text-blue-200 text-xs font-bold">
               Group: {REPORT_INFO.group}
             </span>
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">{REPORT_INFO.title}</h2>
-          <p className="text-xs sm:text-sm text-sky-100/90 max-w-3xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-blue-100/90 max-w-3xl leading-relaxed">
             Client Organization: <strong className="text-white">{REPORT_INFO.client}</strong> • Submitted to: <strong className="text-white">{REPORT_INFO.lecturer}</strong> ({REPORT_INFO.submissionDate})
           </p>
 
@@ -59,7 +59,7 @@ export default function ArchitectureAssessment() {
             onClick={() => setActiveSection(tab.id)}
             className={`px-4 py-2.5 rounded-xl transition-all cursor-pointer font-extrabold ${
               activeSection === tab.id
-                ? "bg-white text-sky-800 shadow-sm border border-slate-200/60"
+                ? "bg-white text-blue-800 shadow-sm border border-slate-200/60"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
             }`}
           >
@@ -71,9 +71,9 @@ export default function ArchitectureAssessment() {
       {/* Dynamic Content Views */}
       {activeSection === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-4">
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-4">
             <h3 className="font-black text-slate-900 text-lg flex items-center">
-              <BookOpen className="w-5 h-5 mr-2.5 text-sky-600" />
+              <BookOpen className="w-5 h-5 mr-2.5 text-blue-600" />
               Executive Summary & Context
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -84,9 +84,9 @@ export default function ArchitectureAssessment() {
             </p>
           </div>
 
-          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-4">
+          <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-4">
             <h3 className="font-black text-slate-900 text-lg flex items-center">
-              <Award className="w-5 h-5 mr-2.5 text-sky-600" />
+              <Award className="w-5 h-5 mr-2.5 text-blue-600" />
               Organizational Blueprint
             </h3>
             <div className="space-y-3 text-xs sm:text-sm">
@@ -98,9 +98,9 @@ export default function ArchitectureAssessment() {
                 <span className="font-semibold text-slate-500">Industry Sector:</span>
                 <span className="font-black text-slate-900">Healthcare & Retail Pharmacy</span>
               </div>
-              <div className="p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80 flex justify-between items-center">
-                <span className="font-semibold text-sky-800">System Modules Covered:</span>
-                <span className="font-black text-sky-900">All Modules Fully Digitized</span>
+              <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 flex justify-between items-center">
+                <span className="font-semibold text-blue-800">System Modules Covered:</span>
+                <span className="font-black text-blue-900">All Modules Fully Digitized</span>
               </div>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "problems" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
             <AlertTriangle className="w-5 h-5 mr-2.5 text-amber-600" />
             As-Is Manual Operational Inefficiencies & Business Impact
@@ -128,7 +128,7 @@ export default function ArchitectureAssessment() {
                   <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black border border-rose-200">Bottleneck</span>
                 </div>
                 <p className="text-slate-600 text-xs"><strong>As-Is Evidence:</strong> {p.evidence}</p>
-                <p className="text-sky-800 text-xs"><strong>Business Impact:</strong> {p.impact}</p>
+                <p className="text-blue-800 text-xs"><strong>Business Impact:</strong> {p.impact}</p>
               </div>
             ))}
           </div>
@@ -136,9 +136,9 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "stakeholders" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
-            <Users className="w-5 h-5 mr-2.5 text-sky-600" />
+            <Users className="w-5 h-5 mr-2.5 text-blue-600" />
             Stakeholder Classification & Engagement Strategy
           </h3>
 
@@ -148,7 +148,7 @@ export default function ArchitectureAssessment() {
                 <div className="flex justify-between items-center">
                   <span className="font-black text-slate-900 text-sm">{s.name}</span>
                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                    s.type === "Internal" ? "bg-sky-100 text-sky-800 border-sky-300" : "bg-blue-100 text-blue-800 border-blue-300"
+                    s.type === "Internal" ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-blue-100 text-blue-800 border-blue-300"
                   }`}>
                     {s.type}
                   </span>
@@ -166,9 +166,9 @@ export default function ArchitectureAssessment() {
       )}
 
       {activeSection === "swimlanes" && (
-        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-sky-100 shadow-sm space-y-5">
+        <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
           <h3 className="text-lg font-black text-slate-900 flex items-center">
-            <GitBranch className="w-5 h-5 mr-2.5 text-sky-600" />
+            <GitBranch className="w-5 h-5 mr-2.5 text-blue-600" />
             Swimlane Responsibilities Across System Modules
           </h3>
 
@@ -181,7 +181,7 @@ export default function ArchitectureAssessment() {
             ].map((sw, idx) => (
               <div key={idx} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                 <span className="font-black text-slate-900">{sw.module}</span>
-                <span className="text-sky-800 font-bold bg-sky-50 px-3 py-1 rounded-xl border border-sky-200/80 w-fit">{sw.roles}</span>
+                <span className="text-blue-800 font-bold bg-blue-50 px-3 py-1 rounded-xl border border-blue-200/80 w-fit">{sw.roles}</span>
               </div>
             ))}
           </div>
