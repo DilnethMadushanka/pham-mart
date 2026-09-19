@@ -28,17 +28,17 @@ export default function FaqAccordion() {
   ];
 
   return (
-    <section className="bg-[#F8F9FA] rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-sm space-y-8 w-full">
-      
+    <section className="bg-[#F8F9FA] rounded-[2rem] p-6 sm:p-10 border border-slate-200 depth-card space-y-8 w-full mesh-gradient-bg">
+
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-6 gap-4">
         <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#0284c7] text-white flex items-center justify-center shadow-md shadow-[#0284c7]/20">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white flex items-center justify-center shadow-lg shadow-sky-500/30 animate-float">
             <HelpCircle className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Frequently Asked Questions (FAQs)<span className="text-[#0284c7]">.</span>
+            <h2 className="text-2xl sm:text-3xl font-black">
+              <span className="text-gradient-brand">Frequently Asked Questions (FAQs)</span><span className="text-[#0284c7]">.</span>
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
               Prescription fulfillment, pharmacy services & direct delivery guidelines
@@ -60,9 +60,9 @@ export default function FaqAccordion() {
             <div 
               key={idx}
               className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
-                isOpen 
-                  ? "border-[#0284c7] bg-white shadow-md ring-1 ring-[#0284c7]/30" 
-                  : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-xs"
+                isOpen
+                  ? "border-sky-400 bg-white shadow-xl shadow-sky-500/10 ring-1 ring-[#0284c7]/30 -translate-y-0.5"
+                  : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-md hover:-translate-y-0.5"
               }`}
             >
               <button

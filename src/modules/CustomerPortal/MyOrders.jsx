@@ -7,9 +7,9 @@ export default function MyOrders({ prescriptions, currentUser }) {
   return (
     <div className="max-w-3xl mx-auto space-y-5 animate-fade-in">
       
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex justify-between items-center">
+      <div className="glass-panel depth-card p-6 rounded-3xl flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-black text-slate-900">My Orders & Prescription Status</h2>
+          <h2 className="text-xl font-black"><span className="text-gradient-brand">My Orders & Prescription Status</span></h2>
           <p className="text-xs text-slate-500 mt-0.5">Live tracking for pharmacist review, dispensing, and home delivery</p>
         </div>
 
@@ -29,7 +29,7 @@ export default function MyOrders({ prescriptions, currentUser }) {
             const isApproved = rx.status === "Approved";
 
             return (
-              <div key={rx.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+              <div key={rx.id} className="bg-white p-5 rounded-2xl border border-slate-200 depth-card hover:-translate-y-1 transition-transform duration-300 space-y-3">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center space-x-2">

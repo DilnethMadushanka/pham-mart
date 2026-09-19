@@ -9,8 +9,19 @@
     --bg-page: #f8fafc;
     --card-bg: #ffffff;
     --border-color: #e2e8f0;
+
+    /* Extended depth / glass design tokens */
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --glass-shadow: 0 8px 32px rgba(2, 132, 199, 0.12);
+    --depth-shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --depth-shadow-md: 0 12px 24px -8px rgba(2, 132, 199, 0.18), 0 4px 8px -2px rgba(15, 23, 42, 0.06);
+    --depth-shadow-lg: 0 24px 48px -12px rgba(2, 132, 199, 0.25), 0 8px 16px -4px rgba(15, 23, 42, 0.08);
+    --mesh-1: #38bdf8;
+    --mesh-2: #818cf8;
+    --mesh-3: #34d399;
   }
-  
+
   body {
     background-color: #f8fafc;
     color: #0f172a;
@@ -45,6 +56,115 @@
 
 .animate-pulse-glow {
   animation: pulseGlow 2.5s infinite;
+}
+
+/* ---- Advanced UI / 3D design system utilities ---- */
+
+/* Glassmorphism surface */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Floating mesh gradient blobs for ambient backgrounds */
+.mesh-gradient-bg {
+  position: relative;
+  isolation: isolate;
+}
+.mesh-gradient-bg::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--mesh-1) 35%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--mesh-2) 28%, transparent) 0%, transparent 45%),
+    radial-gradient(circle at 50% 90%, color-mix(in srgb, var(--mesh-3) 25%, transparent) 0%, transparent 50%);
+  filter: blur(40px);
+  animation: meshDrift 18s ease-in-out infinite alternate;
+}
+@keyframes meshDrift {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+  100% { transform: translate3d(2%, -3%, 0) rotate(6deg) scale(1.08); }
+}
+
+/* 3D tilt-on-hover card, paired with a JS mousemove handler setting --rx/--ry, degrades gracefully without JS */
+.tilt-card {
+  --rx: 0deg;
+  --ry: 0deg;
+  transform-style: preserve-3d;
+  transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry));
+  transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+  will-change: transform;
+}
+.tilt-card:hover {
+  box-shadow: var(--depth-shadow-lg);
+}
+.tilt-card-content {
+  transform: translateZ(24px);
+}
+
+/* Raised depth card, no JS required */
+.depth-card {
+  box-shadow: var(--depth-shadow-md);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.depth-card:hover {
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: var(--depth-shadow-lg);
+}
+
+/* Gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, #0284c7 0%, #38bdf8 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Shimmering border for premium accents */
+@keyframes borderShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.shimmer-border {
+  position: relative;
+  border-radius: inherit;
+}
+.shimmer-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg, #0284c7, #38bdf8, #6366f1, #38bdf8, #0284c7);
+  background-size: 200% 100%;
+  animation: borderShimmer 4s linear infinite;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Soft float animation for decorative / 3D elements */
+@keyframes softFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: softFloat 5s ease-in-out infinite;
+}
+
+/* Fade-in utility used by dropdowns */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
 }
 
 /* Custom Scrollbar */

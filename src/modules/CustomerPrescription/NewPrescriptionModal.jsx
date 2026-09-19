@@ -42,11 +42,11 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-sky-100 overflow-hidden">
-        
-        <div className="p-4 border-b border-sky-100 bg-sky-50/70 flex justify-between items-center">
+      <div className="glass-panel !bg-white/95 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden">
+
+        <div className="p-4 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50/60 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-xl bg-sky-600 text-white">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -159,7 +159,7 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              className="px-5 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               Register Prescription
             </button>

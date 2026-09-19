@@ -64,13 +64,13 @@ export default function AddSupplierModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+      <div className="glass-panel !bg-white/95 rounded-3xl max-w-lg w-full p-6 shadow-2xl">
         
         {/* Modal Header */}
         <div className="flex justify-between items-center pb-4 border-b border-slate-100">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold shadow-lg shadow-sky-500/30">
               <Building className="w-5 h-5" />
             </div>
             <div>
@@ -85,7 +85,7 @@ export default function AddSupplierModal({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-all hover:rotate-90 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -107,7 +107,7 @@ export default function AddSupplierModal({
               placeholder="e.g. State Pharmaceuticals Corporation (SPC)"
               value={formData.name}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+              className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
             />
           </div>
 
@@ -124,7 +124,7 @@ export default function AddSupplierModal({
                 placeholder="e.g. Kamal Perera"
                 value={formData.contactPerson}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               />
             </div>
 
@@ -139,7 +139,7 @@ export default function AddSupplierModal({
                 placeholder="e.g. +94 11 243 1845"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               />
             </div>
           </div>
@@ -157,7 +157,7 @@ export default function AddSupplierModal({
                 placeholder="e.g. orders@supplier.lk"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               />
             </div>
 
@@ -173,7 +173,7 @@ export default function AddSupplierModal({
                 max="60"
                 value={formData.leadTimeDays}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-bold text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export default function AddSupplierModal({
               placeholder="e.g. 75 Sir Baron Jayatilaka Mawatha, Colombo 01"
               value={formData.address}
               onChange={handleChange}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all resize-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium text-slate-900 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all resize-none"
             />
           </div>
 
@@ -199,13 +199,13 @@ export default function AddSupplierModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 font-bold text-slate-700 rounded-2xl transition-all cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md shadow-sky-500/20 flex items-center space-x-2 transition-all cursor-pointer"
+              className="px-6 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/30 flex items-center space-x-2 transition-all hover:-translate-y-0.5 cursor-pointer"
             >
               {supplierToEdit ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               <span>{supplierToEdit ? "Save Changes" : "Register Supplier"}</span>

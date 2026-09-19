@@ -252,12 +252,14 @@ export default function AuthModal({
   return (
     <div 
       onClick={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }}
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in font-sans"
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/65 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-fade-in font-sans"
     >
-      <div className="bg-white rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[85vh] shadow-2xl border border-sky-100 overflow-hidden flex flex-col my-auto relative">
-        
+      <div className="glass-panel bg-white/95 rounded-3xl max-w-md w-full max-h-[92vh] sm:max-h-[85vh] depth-card border border-sky-100 overflow-hidden flex flex-col my-auto relative">
+
         {/* Top Header Banner */}
-        <div className="bg-[#0284c7] p-4 sm:p-6 text-white relative shrink-0">
+        <div className="bg-gradient-to-br from-sky-500 via-sky-600 to-blue-800 p-4 sm:p-6 text-white relative shrink-0 overflow-hidden">
+          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+          <div className="absolute -bottom-10 -left-6 w-28 h-28 bg-sky-300/20 rounded-full blur-2xl pointer-events-none"></div>
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); if (onClose) onClose(); }}
@@ -267,8 +269,8 @@ export default function AuthModal({
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
 
-          <div className="flex items-center space-x-3 mb-2">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-md shrink-0">
+          <div className="flex items-center space-x-3 mb-2 relative z-10">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-md shrink-0 animate-float">
               <Pill className="w-5 h-5 sm:w-6 sm:h-6 transform -rotate-45" />
             </div>
             <div>
@@ -278,7 +280,7 @@ export default function AuthModal({
           </div>
 
           {/* Mode Tabs (Login vs Register) */}
-          <div className="flex bg-white/15 p-1 rounded-xl mt-3 sm:mt-4 border border-white/20 text-xs font-bold">
+          <div className="flex bg-white/15 p-1 rounded-xl mt-3 sm:mt-4 border border-white/20 text-xs font-bold relative z-10">
             <button
               onClick={() => { setAuthMode("login"); setIsGooglePickerOpen(false); setLoginError(""); }}
               className={`flex-1 py-2 sm:py-2.5 rounded-lg transition-all flex items-center justify-center space-x-1.5 cursor-pointer min-h-[40px] ${
@@ -458,7 +460,7 @@ export default function AuthModal({
                         placeholder="Enter email or username..."
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -473,14 +475,14 @@ export default function AuthModal({
                         placeholder="••••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
-                        className="w-full pl-9 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-[#0284c7] hover:bg-[#0369a1] active:scale-[0.99] text-white font-bold rounded-xl shadow-md shadow-[#0284c7]/20 text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
+                    className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-700 hover:shadow-lg hover:shadow-sky-500/30 active:scale-[0.99] text-white font-bold rounded-xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px] hover:-translate-y-0.5"
                   >
                     <LogIn className="w-4 h-4" />
                     <span>Sign In to Account</span>
@@ -499,7 +501,7 @@ export default function AuthModal({
                         placeholder="e.g. K. A. Sunil Shantha"
                         value={regName}
                         onChange={(e) => setRegName(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-[#0284c7] outline-hidden min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -513,7 +515,7 @@ export default function AuthModal({
                         placeholder="e.g. 199012345678"
                         value={regNic}
                         onChange={(e) => setRegNic(e.target.value)}
-                        className="w-full px-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                        className="w-full px-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
 
@@ -526,7 +528,7 @@ export default function AuthModal({
                           placeholder="+94 77 123 4567"
                           value={regPhone}
                           onChange={(e) => setRegPhone(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                          className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                         />
                       </div>
                     </div>
@@ -542,7 +544,7 @@ export default function AuthModal({
                         placeholder="sunil.s@gmail.com"
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -556,7 +558,7 @@ export default function AuthModal({
                         placeholder="e.g. 12/A, High Level Road, Nugegoda"
                         value={regAddress}
                         onChange={(e) => setRegAddress(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
@@ -568,7 +570,7 @@ export default function AuthModal({
                       placeholder="e.g. Penicillin, Sulfa drugs (Leave blank if none)"
                       value={regAllergies}
                       onChange={(e) => setRegAllergies(e.target.value)}
-                      className="w-full px-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                      className="w-full px-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                     />
                   </div>
 
@@ -582,14 +584,14 @@ export default function AuthModal({
                         placeholder="Create strong password..."
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
-                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                        className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50/80 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-sky-500 focus:border-sky-400 focus:bg-white outline-hidden transition-all min-h-[44px]"
                       />
                     </div>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 bg-[#0284c7] hover:bg-[#0369a1] active:scale-[0.99] text-white font-extrabold rounded-xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px]"
+                    className="w-full py-3.5 bg-gradient-to-r from-sky-500 to-blue-700 hover:shadow-lg hover:shadow-sky-500/30 active:scale-[0.99] text-white font-extrabold rounded-xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer min-h-[46px] hover:-translate-y-0.5"
                   >
                     <UserPlus className="w-4 h-4" />
                     <span>Create Customer Account & Sign In</span>

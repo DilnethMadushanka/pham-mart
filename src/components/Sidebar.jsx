@@ -54,7 +54,7 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="w-72 sm:w-72 bg-white border-r border-sky-100/80 flex flex-col h-[calc(100vh-4rem)] sticky top-16 font-sans shrink-0 shadow-2xs">
+    <aside className="w-72 sm:w-72 glass-panel !rounded-none border-r border-sky-100/80 flex flex-col h-[calc(100vh-4rem)] sticky top-16 font-sans shrink-0">
 
       {/* Navigation Header */}
       <div className="p-4 border-b border-slate-100">
@@ -73,13 +73,13 @@ export default function Sidebar({
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all cursor-pointer group ${isActive
-                ? "bg-gradient-to-r from-sky-50 to-blue-50/60 text-[#0284c7] border border-sky-200/80 shadow-xs"
-                : "text-slate-600 hover:text-[#0284c7] hover:bg-slate-50"
+              className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl text-xs font-bold transition-all duration-300 cursor-pointer group ${isActive
+                ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg shadow-sky-500/30 -translate-y-0.5"
+                : "text-slate-600 hover:text-[#0284c7] hover:bg-white hover:shadow-md hover:-translate-y-0.5"
                 }`}
             >
               <div className="flex items-center space-x-3 min-w-0 pr-1">
-                <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? "text-[#0284c7]" : "text-slate-400 group-hover:text-[#0284c7]"}`} />
+                <Icon className={`w-4.5 h-4.5 shrink-0 transition-colors ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#0284c7]"}`} />
                 <span className="font-extrabold text-[11.5px] tracking-tight text-left leading-tight truncate">{item.label}</span>
               </div>
 
@@ -95,7 +95,7 @@ export default function Sidebar({
 
       {/* Footer Info Box */}
       <div className="p-3.5 border-t border-slate-100 bg-slate-50/70">
-        <div className="bg-[#0284c7] p-3.5 rounded-2xl text-white text-xs shadow-md shadow-sky-500/10">
+        <div className="bg-gradient-to-br from-sky-500 to-blue-700 p-3.5 rounded-2xl text-white text-xs depth-card">
           <div className="font-black flex items-center space-x-2 text-xs">
             <span className="w-2 h-2 rounded-full bg-sky-200 animate-ping"></span>
             <span>PHARMART Active</span>

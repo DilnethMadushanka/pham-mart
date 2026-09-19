@@ -35,14 +35,14 @@ export default function Navbar({
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-xs font-sans">
+    <header className="sticky top-0 z-40 glass-panel border-b border-sky-100 !rounded-none font-sans">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           
           {/* Brand Logo */}
           <div className="flex items-center space-x-4 sm:space-x-8">
             <div className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer" onClick={() => setViewMode("website")}>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#0284c7] flex items-center justify-center text-white shadow-md shadow-[#0284c7]/20 shrink-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white shadow-lg shadow-sky-500/30 shrink-0 transition-transform hover:scale-105 hover:rotate-3">
                 {/* Light Blue Medical Cross Icon */}
                 <div className="relative w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
                   <div className="absolute w-4 sm:w-5 h-1 sm:h-1.5 bg-white rounded-full"></div>
@@ -51,8 +51,8 @@ export default function Navbar({
               </div>
               <div>
                 <div className="flex items-center space-x-1.5 sm:space-x-2">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 font-heading">
-                    PHARMART<span className="text-[#0284c7]">.</span>
+                  <span className="text-lg sm:text-xl font-bold tracking-tight text-gradient-brand font-heading">
+                    PHARMART<span className="text-sky-600">.</span>
                   </span>
                   <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-[#f0f9ff] text-[#0284c7] border border-[#0284c7]/20">
                     Healthcare

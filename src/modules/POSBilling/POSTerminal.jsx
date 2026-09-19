@@ -267,15 +267,15 @@ export default function POSTerminal({
     <div className="space-y-6 animate-fade-in">
       
       {/* Top Header Banner */}
-      <div className="bg-white p-6 rounded-3xl border border-sky-100 shadow-xs flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      <div className="bg-white p-6 rounded-3xl border border-sky-100 depth-card flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-0.5 rounded-md bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200/80">
+            <span className="px-3 py-0.5 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 text-white text-xs font-bold shadow-sm shadow-sky-500/30">
               POS Counter
             </span>
             <span className="text-xs text-slate-500 font-semibold">Live POS Counter Terminal</span>
           </div>
-          <h2 className="text-2xl font-black text-slate-900">
+          <h2 className="text-2xl font-black text-gradient-brand">
             Point-of-Sale Billing Terminal
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
@@ -284,14 +284,15 @@ export default function POSTerminal({
         </div>
 
         <div className="flex items-center space-x-2 shrink-0">
-          <div className="px-3.5 py-1.5 rounded-2xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+          <div className="px-3.5 py-1.5 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             Counter #01 (Active)
           </div>
         </div>
       </div>
 
       {/* Expanded Dedicated Customer Toolbar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="glass-panel p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <div className="flex items-center space-x-2.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200/80">
             <UserCheck className="w-4.5 h-4.5 text-sky-600 shrink-0" />
@@ -321,7 +322,7 @@ export default function POSTerminal({
           <button
             onClick={() => setIsAddCustOpen(true)}
             title="Register new customer profile"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-sky-500/20 transition-all cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-sky-500/30 hover:-translate-y-0.5 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
             <span>+ New Customer</span>
@@ -353,7 +354,7 @@ export default function POSTerminal({
               placeholder="Quick search medicine by name, generic code or brand..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden shadow-xs"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden depth-card transition-all"
             />
           </div>
 
@@ -365,10 +366,10 @@ export default function POSTerminal({
                 <div
                   key={med.id}
                   onClick={() => !isOut && addToCart(med)}
-                  className={`p-4 bg-white rounded-2xl border transition-all text-xs flex flex-col justify-between ${
-                    isOut 
-                      ? "opacity-50 cursor-not-allowed border-slate-200" 
-                      : "border-slate-200 hover:border-sky-400 hover:shadow-md cursor-pointer group"
+                  className={`p-4 bg-white rounded-2xl border transition-all duration-300 text-xs flex flex-col justify-between ${
+                    isOut
+                      ? "opacity-50 cursor-not-allowed border-slate-200"
+                      : "border-slate-200 hover:border-sky-400 hover:-translate-y-1 hover:shadow-lg hover:shadow-sky-500/10 cursor-pointer group"
                   }`}
                 >
                   <div>
@@ -407,8 +408,8 @@ export default function POSTerminal({
         </div>
 
         {/* Right Column: Checkout Billing Counter */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-sky-200 shadow-xl flex flex-col h-full sticky top-20">
-          
+        <div className="lg:col-span-5 glass-panel !bg-white/95 p-5 rounded-3xl shimmer-border flex flex-col h-full sticky top-20">
+
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-base font-black text-slate-900 flex items-center">
               <ShoppingCart className="w-5 h-5 mr-2 text-sky-600" />
@@ -434,7 +435,7 @@ export default function POSTerminal({
               </div>
             ) : (
               cart.map((item) => (
-                <div key={item.id} className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs flex justify-between items-center">
+                <div key={item.id} className="p-3 bg-white rounded-2xl border border-slate-200 text-xs flex justify-between items-center depth-card">
                   <div className="flex-1 pr-2">
                     <div className="font-bold text-slate-900">{item.name}</div>
                     <div className="text-[11px] text-sky-700 font-semibold">
@@ -445,20 +446,20 @@ export default function POSTerminal({
                   <div className="flex items-center space-x-1.5">
                     <button
                       onClick={() => updateQty(item.id, item.qty - 1)}
-                      className="p-1 rounded-md bg-slate-200 hover:bg-slate-300 text-slate-700"
+                      className="p-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all hover:scale-110"
                     >
                       <Minus className="w-3 h-3" />
                     </button>
                     <span className="font-extrabold px-2 text-slate-900">{item.qty}</span>
                     <button
                       onClick={() => updateQty(item.id, item.qty + 1)}
-                      className="p-1 rounded-md bg-sky-600 hover:bg-sky-700 text-white"
+                      className="p-1.5 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white transition-all hover:scale-110"
                     >
                       <Plus className="w-3 h-3" />
                     </button>
                     <button
                       onClick={() => removeFromCart(item.id)}
-                      className="p-1 text-slate-400 hover:text-rose-600 ml-1"
+                      className="p-1 text-slate-400 hover:text-rose-600 hover:scale-110 transition-all ml-1"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -496,7 +497,7 @@ export default function POSTerminal({
             </div>
 
             {/* Calculations Breakdown */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-xs">
+            <div className="bg-gradient-to-br from-sky-50 to-blue-50/40 p-3 rounded-2xl border border-sky-100 space-y-1 text-xs">
               <div className="flex justify-between text-slate-600">
                 <span>Subtotal:</span>
                 <span>Rs. {subtotal.toFixed(2)}</span>
@@ -530,9 +531,9 @@ export default function POSTerminal({
                     key={m}
                     type="button"
                     onClick={() => setPaymentMethod(m)}
-                    className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                      paymentMethod === m 
-                        ? "bg-sky-600 text-white border-sky-600 shadow-xs" 
+                    className={`py-2 rounded-xl text-xs font-bold border transition-all duration-300 ${
+                      paymentMethod === m
+                        ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white border-sky-600 shadow-md shadow-sky-500/30 -translate-y-0.5"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >
@@ -567,9 +568,9 @@ export default function POSTerminal({
             <button
               onClick={handleCheckout}
               disabled={cart.length === 0}
-              className={`w-full py-3 rounded-xl font-extrabold text-sm shadow-md transition-all flex items-center justify-center space-x-2 mt-2 ${
-                cart.length > 0 
-                  ? "bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/20 cursor-pointer" 
+              className={`w-full py-3.5 rounded-2xl font-extrabold text-sm shadow-lg transition-all duration-300 flex items-center justify-center space-x-2 mt-2 ${
+                cart.length > 0
+                  ? "bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-sky-600/30 hover:-translate-y-0.5 cursor-pointer"
                   : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }`}
             >
@@ -593,11 +594,11 @@ export default function POSTerminal({
 
       {/* POS Quick Add Customer Modal */}
       {isAddCustOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in duration-200 border border-slate-100">
+        <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel !bg-white/95 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-fade-in">
             <div className="flex justify-between items-center pb-3 border-b border-slate-100">
               <div className="flex items-center space-x-2.5">
-                <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 text-white flex items-center justify-center font-bold shadow-md shadow-sky-500/30">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <h3 className="text-base font-extrabold text-slate-900">Register Customer at POS Counter</h3>
@@ -610,29 +611,29 @@ export default function POSTerminal({
             <form onSubmit={handlePOSAddCustomer} className="space-y-3 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Customer Full Name <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. K. A. Sunil Shantha" value={newCust.name} onChange={e=>setNewCust({...newCust, name:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all" />
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">National ID (NIC) <span className="text-rose-500">*</span></label>
-                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input required type="text" placeholder="e.g. 781290348V" value={newCust.nic} onChange={e=>setNewCust({...newCust, nic:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all" />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Email Address</label>
-                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                  <input type="email" placeholder="customer@gmail.com" value={newCust.email} onChange={e=>setNewCust({...newCust, email:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-medium focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all" />
                 </div>
               </div>
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Known Drug Allergies</label>
-                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden" />
+                <input type="text" placeholder="e.g. Penicillin, Sulfa drugs, Aspirin" value={newCust.allergies} onChange={e=>setNewCust({...newCust, allergies:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50/60 border border-slate-200 rounded-2xl font-semibold text-rose-700 focus:bg-white focus:ring-2 focus:ring-sky-500 outline-hidden transition-all" />
               </div>
               <div className="pt-3 border-t border-slate-100 flex justify-end space-x-2">
-                <button type="button" onClick={()=>setIsAddCustOpen(false)} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-slate-700 cursor-pointer">Cancel</button>
-                <button type="submit" className="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md cursor-pointer">Register & Select</button>
+                <button type="button" onClick={()=>setIsAddCustOpen(false)} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 font-bold rounded-2xl text-slate-700 transition-all cursor-pointer">Cancel</button>
+                <button type="submit" className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-sky-500/30 hover:-translate-y-0.5 transition-all cursor-pointer">Register & Select</button>
               </div>
             </form>
           </div>
@@ -641,12 +642,12 @@ export default function POSTerminal({
 
       {/* POS Customer Purchase & Rx History Modal */}
       {isViewHistoryOpen && activeCustomer.id && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col border border-slate-100 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 bg-slate-900/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-panel !bg-white/95 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-fade-in">
             
             <div className="flex justify-between items-start pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center space-x-3">
-                <div className="w-11 h-11 rounded-2xl bg-sky-100 text-sky-800 font-black text-sm flex items-center justify-center border border-sky-200">
+                <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-700 text-white font-black text-sm flex items-center justify-center shadow-md shadow-sky-500/30">
                   {activeCustomer.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div>

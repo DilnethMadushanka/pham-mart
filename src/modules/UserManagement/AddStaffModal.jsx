@@ -62,7 +62,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-sky-100 overflow-hidden">
+      <div className="glass-panel !bg-white/95 rounded-[2rem] max-w-lg w-full shadow-2xl overflow-hidden">
         
         {/* Modal Header */}
         <div className="p-5 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50/60 flex justify-between items-center">
