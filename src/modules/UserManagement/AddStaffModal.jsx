@@ -9,12 +9,14 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
     email: '',
     phone: '',
     status: 'Active',
-    permissions: ['inventory_view', 'pos_checkout']
+    permissions: ['inventory_view', 'pos_checkout'],
+    password: ''
   });
 
   useEffect(() => {
     if (staffToEdit) {
-      setFormData(staffToEdit);
+      // Leave password blank when editing — only overwrite it if the admin types a new one.
+      setFormData({ ...staffToEdit, password: '' });
     } else {
       setFormData({
         name: '',
@@ -23,7 +25,8 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
         email: '',
         phone: '',
         status: 'Active',
-        permissions: ['inventory_view', 'pos_checkout']
+        permissions: ['inventory_view', 'pos_checkout'],
+        password: ''
       });
     }
   }, [staffToEdit, isOpen]);
@@ -36,7 +39,17 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
       alert('Please fill in all required fields.');
       return;
     }
-    onSave(formData);
+    if (!staffToEdit && !formData.password) {
+      alert('Please set an initial password for this staff account.');
+      return;
+    }
+
+    const submission = { ...formData };
+    if (staffToEdit && !submission.password) {
+      // Editing without typing a new password: don't overwrite the existing one.
+      delete submission.password;
+    }
+    onSave(submission);
   };
 
   const allPermissions = [
@@ -62,12 +75,12 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-sky-100 overflow-hidden">
+      <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-sky-100 bg-gradient-to-r from-sky-50 to-blue-50/60 flex justify-between items-center">
+        <div className="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-blue-50/60 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/20">
+            <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20">
               <User className="w-5 h-5" />
             </div>
             <div>
@@ -96,7 +109,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               placeholder="e.g. Dr. K. A. Perera"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
             />
           </div>
 
@@ -109,7 +122,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="e.g. perera_k"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
               />
             </div>
 
@@ -118,12 +131,29 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
               >
                 <option value="Owner/Admin">Owner / Admin</option>
                 <option value="Pharmacist">Pharmacist</option>
                 <option value="Cashier">Cashier</option>
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">
+              {staffToEdit ? "Reset Password (leave blank to keep current)" : "Initial Password *"}
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                required={!staffToEdit}
+                placeholder={staffToEdit ? "Leave blank to keep existing password" : "e.g. Pharma@2026!"}
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+              />
             </div>
           </div>
 
@@ -136,7 +166,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="staff@pharmart.lk"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
               />
             </div>
 
@@ -147,7 +177,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="+94 77 000 0000"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-sky-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
               />
             </div>
           </div>
@@ -159,12 +189,12 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               {allPermissions.map((p) => {
                 const checked = formData.permissions.includes(p.key);
                 return (
-                  <label key={p.key} className="flex items-center space-x-2 cursor-pointer text-[11px] font-semibold text-slate-700 hover:text-sky-800">
+                  <label key={p.key} className="flex items-center space-x-2 cursor-pointer text-[11px] font-semibold text-slate-700 hover:text-blue-800">
                     <input 
                       type="checkbox"
                       checked={checked}
                       onChange={() => togglePermission(p.key)}
-                      className="rounded-md border-slate-300 text-sky-600 focus:ring-sky-500"
+                      className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500"
                     />
                     <span>{p.label}</span>
                   </label>
@@ -184,7 +214,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black rounded-2xl shadow-lg shadow-sky-500/25 cursor-pointer"
+              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer"
             >
               {staffToEdit ? "Update Account" : "Create Staff Account"}
             </button>

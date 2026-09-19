@@ -1,5 +1,9 @@
 // PHARMART Pharmacy Enterprise System Initial Data
 
+// NOTE: the `password` fields below are demo-only plaintext credentials for local
+// evaluation of this static dataset. This app has no backend/hashing layer — before any
+// real deployment, authentication must move to a proper backend (e.g. Supabase Auth)
+// with hashed credentials rather than comparing plaintext passwords client-side.
 export const INITIAL_STAFF = [
   {
     id: "STF-001",
@@ -10,6 +14,7 @@ export const INITIAL_STAFF = [
     phone: "+94 77 123 4567",
     status: "Active",
     permissions: ["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access", "void_refund"],
+    password: "Admin@2026!",
     lastActive: "Just now",
     createdAt: "2025-01-10"
   },
@@ -22,6 +27,7 @@ export const INITIAL_STAFF = [
     phone: "+94 71 987 6543",
     status: "Active",
     permissions: ["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve", "pos_checkout"],
+    password: "Pharma@2026!",
     lastActive: "5 mins ago",
     createdAt: "2025-02-01"
   },
@@ -34,6 +40,7 @@ export const INITIAL_STAFF = [
     phone: "+94 76 555 4321",
     status: "Active",
     permissions: ["pos_checkout", "customer_register", "inventory_view"],
+    password: "Cashier@2026!",
     lastActive: "12 mins ago",
     createdAt: "2025-03-15"
   },
@@ -46,6 +53,7 @@ export const INITIAL_STAFF = [
     phone: "+94 70 111 2233",
     status: "Active",
     permissions: ["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"],
+    password: "Pharma@2027!",
     lastActive: "1 hour ago",
     createdAt: "2025-04-10"
   },
@@ -58,6 +66,7 @@ export const INITIAL_STAFF = [
     phone: "+94 75 444 8899",
     status: "Inactive",
     permissions: ["pos_checkout"],
+    password: "Cashier@2027!",
     lastActive: "2 days ago",
     createdAt: "2025-05-20"
   }
@@ -348,6 +357,7 @@ export const INITIAL_CUSTOMERS = [
     email: "sunil.s@gmail.com",
     address: "12/A, High Level Road, Nugegoda",
     allergies: "Penicillin, Sulfa drugs",
+    password: "Sunil@2026!",
     historyCount: 14,
     lastVisit: "2026-08-14"
   },
@@ -359,6 +369,7 @@ export const INITIAL_CUSTOMERS = [
     email: "anula.w@yahoo.com",
     address: "45, Galle Road, Dehiwala",
     allergies: "None reported",
+    password: "Anula@2026!",
     historyCount: 22,
     lastVisit: "2026-08-17"
   },
@@ -370,6 +381,7 @@ export const INITIAL_CUSTOMERS = [
     email: "priyantha.b@hotmail.com",
     address: "88/3, Kandy Road, Kiribathgoda",
     allergies: "Aspirin",
+    password: "Priyantha@2026!",
     historyCount: 6,
     lastVisit: "2026-08-10"
   }

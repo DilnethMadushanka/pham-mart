@@ -35,6 +35,7 @@ export async function createStaff(staffMember) {
       phone: staffMember.phone || null,
       status: staffMember.status || 'Active',
       permissions: staffMember.permissions || [],
+      password: staffMember.password,
       last_active: staffMember.lastActive || staffMember.last_active || 'Just now'
     };
     const { data, error } = await supabase.from('staff').insert([dbPayload]).select();
@@ -59,6 +60,7 @@ export async function updateStaff(id, updateData) {
     if (updateData.phone !== undefined) dbPayload.phone = updateData.phone;
     if (updateData.status !== undefined) dbPayload.status = updateData.status;
     if (updateData.permissions !== undefined) dbPayload.permissions = updateData.permissions;
+    if (updateData.password !== undefined) dbPayload.password = updateData.password;
     if (updateData.lastActive !== undefined || updateData.last_active !== undefined) {
       dbPayload.last_active = updateData.lastActive || updateData.last_active;
     }
@@ -136,8 +138,9 @@ export async function createCustomer(customerData) {
 
 export async function updateCustomer(id, updateData) {
   try {
-    const dbPayload = {
-      id: id,
+    // Fields only — deliberately excludes `id` so a fallback match-by-NIC/name never
+    // overwrites the matched row's real primary key with the (non-matching) caller id.
+    const fieldsPayload = {
       name: updateData.name,
       nic: updateData.nic || null,
       email: updateData.email || null,
@@ -145,21 +148,23 @@ export async function updateCustomer(id, updateData) {
       address: updateData.address || null,
       allergies: updateData.allergies || 'None'
     };
+    if (updateData.password !== undefined) fieldsPayload.password = updateData.password;
 
     // 1. Try updating by exact ID
-    let { data, error } = await supabase.from('customers').update(dbPayload).eq('id', id).select();
+    let { data, error } = await supabase.from('customers').update(fieldsPayload).eq('id', id).select();
 
     // 2. If no matching ID row found and NIC exists, try updating by NIC
     if (!error && (!data || data.length === 0) && updateData.nic) {
-      const byNic = await supabase.from('customers').update(dbPayload).eq('nic', updateData.nic).select();
+      const byNic = await supabase.from('customers').update(fieldsPayload).eq('nic', updateData.nic).select();
       if (!byNic.error && byNic.data && byNic.data.length > 0) {
         return { data: byNic.data, error: null };
       }
     }
 
     // 3. If still no rows updated (record was never in Supabase DB), UPSERT into Supabase DB!
+    // The upsert payload includes `id` since it may need to INSERT a brand-new row.
     if (!error && (!data || data.length === 0)) {
-      const upsertRes = await supabase.from('customers').upsert([dbPayload]).select();
+      const upsertRes = await supabase.from('customers').upsert([{ id, ...fieldsPayload }]).select();
       return upsertRes;
     }
 
@@ -301,8 +306,9 @@ export async function createMedicine(medicineData) {
 
 export async function updateMedicine(id, updateData) {
   try {
-    const dbPayload = {
-      id: id,
+    // Fields only — deliberately excludes `id` so a fallback match-by-code/name never
+    // overwrites the matched row's real primary key with the (non-matching) caller id.
+    const fieldsPayload = {
       code: updateData.code || `MED-${(updateData.name || 'DRG').substring(0,3).toUpperCase()}`,
       name: updateData.name,
       category: updateData.category || 'Analgesic',
@@ -316,22 +322,22 @@ export async function updateMedicine(id, updateData) {
     };
 
     // 1. Try update by exact ID
-    let { data, error } = await supabase.from('medicines').update(dbPayload).eq('id', id).select();
+    let { data, error } = await supabase.from('medicines').update(fieldsPayload).eq('id', id).select();
 
     // If column mismatch error occurred, retry with stripped optional fields
     if (error && error.message && error.message.includes('Could not find column')) {
-      delete dbPayload.dosage;
-      delete dbPayload.reorder_level;
-      delete dbPayload.is_prescription;
-      delete dbPayload.is_controlled;
-      const retry = await supabase.from('medicines').update(dbPayload).eq('id', id).select();
+      delete fieldsPayload.dosage;
+      delete fieldsPayload.reorder_level;
+      delete fieldsPayload.is_prescription;
+      delete fieldsPayload.is_controlled;
+      const retry = await supabase.from('medicines').update(fieldsPayload).eq('id', id).select();
       data = retry.data;
       error = retry.error;
     }
 
     // 2. If no matching ID row found and code exists, try update by code
     if (!error && (!data || data.length === 0) && updateData.code) {
-      const byCode = await supabase.from('medicines').update(dbPayload).eq('code', updateData.code).select();
+      const byCode = await supabase.from('medicines').update(fieldsPayload).eq('code', updateData.code).select();
       if (!byCode.error && byCode.data && byCode.data.length > 0) {
         return { data: byCode.data, error: null };
       }
@@ -339,15 +345,16 @@ export async function updateMedicine(id, updateData) {
 
     // 3. If no matching row by code and name exists, try update by name
     if (!error && (!data || data.length === 0) && updateData.name) {
-      const byName = await supabase.from('medicines').update(dbPayload).eq('name', updateData.name).select();
+      const byName = await supabase.from('medicines').update(fieldsPayload).eq('name', updateData.name).select();
       if (!byName.error && byName.data && byName.data.length > 0) {
         return { data: byName.data, error: null };
       }
     }
 
-    // 4. Fallback: UPSERT into Supabase DB!
+    // 4. Fallback: UPSERT into Supabase DB! The upsert payload includes `id` since it
+    // may need to INSERT a brand-new row.
     if (!error && (!data || data.length === 0)) {
-      const upsertRes = await supabase.from('medicines').upsert([dbPayload]).select();
+      const upsertRes = await supabase.from('medicines').upsert([{ id, ...fieldsPayload }]).select();
       return upsertRes;
     }
 
