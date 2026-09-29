@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Stethoscope, Phone, Calendar, Clock, CheckCircle2, User, MessageSquare } from 'lucide-react';
+import { notify } from '../../lib/notify';
 
 export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }) {
   const [patientName, setPatientName] = useState("");
@@ -13,11 +14,14 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!patientName || !phone) {
-      alert("Please enter patient name and contact number.");
+      notify("Details needed", "Please enter the patient's name and a contact number.", "error");
       return;
     }
 
-    alert(`Consultation Request Submitted!\n\nPatient: ${patientName}\nConsultant: ${consultType === "pharmacist" ? "Duty Pharmacist Mendis M.M.N" : "Dr. L. C. Fernando (SLMC-44912)"}\nOur team will call you within 15 minutes at ${phone}.`);
+    notify(
+      "Consultation requested",
+      `${consultType === "pharmacist" ? "The duty pharmacist" : "Dr. L. C. Fernando"} will call ${patientName} on ${phone}.`
+    );
     
     addAuditLog("Consultation Requested", `Patient ${patientName} requested ${consultType} callback for ${topic}`, "info");
     onClose();

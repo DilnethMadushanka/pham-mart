@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Truck, Plus, FileText, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import GoodsReceiptModal from './GoodsReceiptModal';
-import { createPurchaseOrder, updatePurchaseOrderStatus, updateMedicineStock } from '../../services/supabaseService';
+import { createPurchaseOrder, receivePurchaseOrder } from '../../services/supabaseService';
+import { notify, notifyError } from '../../lib/notify';
 
 export default function PurchaseOrders({ 
   purchaseOrders, 
@@ -26,70 +27,45 @@ export default function PurchaseOrders({
 
   const handleCreatePO = async (e) => {
     e.preventDefault();
-    const sup = suppliers.find(s => s.id === newPOSupplierId) || suppliers[0];
-    const med = medicines.find(m => m.id === newPOMedicineId) || medicines[0];
+    const sup = suppliers.find(s => s.id === newPOSupplierId);
+    const med = medicines.find(m => m.id === newPOMedicineId);
     if (!sup || !med) {
-      console.warn("Cannot create PO: No valid supplier or medicine available.");
+      notify("Details needed", "Choose a supplier and a medicine for this order.", "error");
+      return;
+    }
+    if (!(newPOQty > 0)) {
+      notify("Check the quantity", "Order at least 1 unit.", "error");
       return;
     }
 
-    const unitCost = Math.round((med.unitPrice || med.price || 50) * 0.7);
-    const total = unitCost * newPOQty;
-
-    const newPO = {
-      id: `PO-2026-${Math.floor(100 + Math.random() * 900)}`,
-      poNumber: `PO-2026-${Math.floor(100 + Math.random() * 900)}`,
+    const unitCost = Math.round(Number(med.unitPrice ?? 0) * 0.7 * 100) / 100;
+    const { data, error } = await createPurchaseOrder({
       supplierId: sup.id,
-      supplierName: sup.name,
-      orderDate: new Date().toISOString().split('T')[0],
-      status: "Issued",
-      expectedDelivery: new Date(Date.now() + (sup.leadTimeDays || 3) * 86400000).toISOString().split('T')[0],
-      items: [
-        { medicineId: med.id, name: med.name, quantity: newPOQty, unitCost: unitCost, total: total }
-      ],
-      totalAmount: total
-    };
-
-    setPurchaseOrders(prev => [newPO, ...prev]);
-    await createPurchaseOrder(newPO);
-    addAuditLog("Purchase Order Issued", `Issued ${newPO.poNumber} to ${sup.name} for ${med.name} (${newPOQty} units)`, "info");
+      items: [{ medicineId: med.id, quantity: newPOQty, unitCost }]
+    });
+    if (error) {
+      notifyError(error, "Purchase order not issued");
+      return;
+    }
+    setPurchaseOrders(prev => [data, ...prev]);
+    addAuditLog("Purchase Order Issued", `Issued ${data.poNumber} to ${sup.name} for ${med.name} (${newPOQty} units)`, "info");
     setIsCreatePOOpen(false);
   };
 
+  // The server adds the delivered stock and closes the order in one step,
+  // and refuses to receive the same order twice.
   const handleGoodsReceiptConfirmed = async (poId, receivedItems) => {
-    // 1. Update PO Status
-    setPurchaseOrders(prev => prev.map(po => {
-      if (po.id === poId) {
-        return { ...po, status: "Goods Received", receivedDate: new Date().toISOString().split('T')[0] };
-      }
-      return po;
-    }));
-    await updatePurchaseOrderStatus(poId, "Goods Received");
-
-    // 2. Update stock level in medicines list automatically!
-    // Compute the new stock values from the current `medicines` prop first, then apply
-    // the state update and the Supabase writes separately — calling updateMedicineStock
-    // from inside a setState updater is unsafe since React may invoke that updater more
-    // than once, which would issue duplicate/extra writes.
-    const stockUpdates = receivedItems
-      .map(item => {
-        const med = medicines.find(m => m.id === item.medicineId);
-        if (!med) return null;
-        const deliveredQty = Math.max(0, item.quantity);
-        return { id: med.id, newStock: med.stock + deliveredQty };
-      })
-      .filter(Boolean);
-
-    setMedicines(prev => prev.map(m => {
-      const match = stockUpdates.find(u => u.id === m.id);
-      return match ? { ...m, stock: match.newStock } : m;
-    }));
-
-    for (const update of stockUpdates) {
-      await updateMedicineStock(update.id, update.newStock);
+    const { data, error } = await receivePurchaseOrder(poId, receivedItems.map(item => ({
+      medicineId: item.medicineId,
+      quantity: Math.max(0, item.quantity)
+    })));
+    if (error) {
+      notifyError(error, "Goods receipt not saved");
+      return;
     }
-
-    addAuditLog("Goods Receipt Completed", `Stock received for PO ${poId}. Automated inventory stock deduction/addition executed.`, "success");
+    setPurchaseOrders(prev => prev.map(po => po.id === poId ? data.purchaseOrder : po));
+    setMedicines(prev => prev.map(m => data.medicines.find(u => u.id === m.id) || m));
+    addAuditLog("Goods Receipt Completed", `Stock received for PO ${poId}. Inventory levels updated.`, "success");
     setSelectedPOForReceipt(null);
   };
 
@@ -148,14 +124,17 @@ export default function PurchaseOrders({
                 </div>
 
                 <div className="text-xs sm:text-sm text-slate-600 font-semibold">
-                  Supplier: <strong className="text-slate-900 font-semibold">{po.supplierName}</strong> • Order Date: <span className="text-slate-500">{po.orderDate}</span>
+                  Supplier: <strong className="text-slate-900 font-semibold">{po.supplierName}</strong> • Ordered <span className="text-slate-500">{po.orderDate}</span>
+                  {isReceived
+                    ? <> • Received <span className="text-slate-500">{po.receivedDate || "earlier"}</span></>
+                    : po.expectedDelivery && <> • Expected <span className="text-slate-500">{po.expectedDelivery}</span></>}
                 </div>
 
                 {/* Items */}
                 <div className="pt-1 flex flex-wrap gap-2">
                   {po.items.map((item, idx) => (
                     <span key={idx} className="font-bold text-slate-800 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs">
-                      {item.name} × {item.quantity} units (Rs. {item.total.toFixed(2)})
+                      {item.name} × {item.quantity} units (Rs. {Number(item.total).toFixed(2)})
                     </span>
                   ))}
                 </div>
@@ -164,7 +143,7 @@ export default function PurchaseOrders({
               <div className="flex items-center space-x-4 w-full lg:w-auto justify-between lg:justify-end pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div className="text-right">
                   <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Valuation</div>
-                  <div className="text-lg font-semibold text-blue-700">Rs. {po.totalAmount.toFixed(2)}</div>
+                  <div className="text-lg font-semibold text-blue-700">Rs. {Number(po.totalAmount).toFixed(2)}</div>
                 </div>
 
                 {!isReceived ? (

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, ShieldAlert, DollarSign } from 'lucide-react';
+import { notify } from '../../lib/notify';
 
 export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEdit, suppliers }) {
   const [formData, setFormData] = useState({
@@ -13,9 +14,10 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
     expiryDate: '2027-12-31',
     prescriptionRequired: false,
     controlledDrug: false,
-    supplierId: 'SUP-01',
-    supplierName: 'GlaxoSmithKline Pharmaceuticals'
+    supplierId: '',
+    supplierName: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (medicineToEdit) {
@@ -32,8 +34,8 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
         expiryDate: '2027-12-31',
         prescriptionRequired: false,
         controlledDrug: false,
-        supplierId: suppliers[0]?.id || 'SUP-01',
-        supplierName: suppliers[0]?.name || 'GlaxoSmithKline Pharmaceuticals'
+        supplierId: suppliers[0]?.id || '',
+        supplierName: suppliers[0]?.name || ''
       });
     }
   }, [medicineToEdit, isOpen, suppliers]);
@@ -45,17 +47,20 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
     setFormData({
       ...formData,
       supplierId: e.target.value,
-      supplierName: selectedSup ? selectedSup.name : 'Unknown Supplier'
+      supplierName: selectedSup ? selectedSup.name : ''
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSaving) return;
     if (!formData.name || !formData.batchNo) {
-      alert('Please fill in required medicine name and batch number.');
+      notify("Details needed", "Please fill in the medicine name and batch number.", "error");
       return;
     }
-    onSave(formData);
+    setIsSaving(true);
+    await onSave(formData);
+    setIsSaving(false);
   };
 
   return (
@@ -191,10 +196,11 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
           <div>
             <label className="block font-bold text-slate-700 mb-1">Primary Supplier</label>
             <select
-              value={formData.supplierId}
+              value={formData.supplierId || ""}
               onChange={handleSupplierChange}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             >
+              <option value="">No supplier</option>
               {suppliers.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead)</option>
               ))}
@@ -235,9 +241,10 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              disabled={isSaving}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
-              {medicineToEdit ? "Update Medicine" : "Add to Inventory"}
+              {isSaving ? "Saving..." : medicineToEdit ? "Update Medicine" : "Add to Inventory"}
             </button>
           </div>
 

@@ -17,7 +17,8 @@ import {
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
-import { createMedicine, updateMedicine, deleteMedicine } from '../../services/supabaseService';
+import { saveMedicine, deleteMedicine } from '../../services/supabaseService';
+import { confirmDialog, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 import MetricCard from '../../components/MetricCard';
 
@@ -27,9 +28,7 @@ export default function MedicineList({
   purchaseOrders, 
   setPurchaseOrders,
   suppliers,
-  setSuppliers,
-  onAddSupplier,
-  onUpdateSupplier,
+  onSaveSupplier,
   onDeleteSupplier,
   canEdit = false,
   addAuditLog 
@@ -63,49 +62,43 @@ export default function MedicineList({
 
   const categories = Array.from(new Set(medicines.map(m => m.category)));
 
+  // Returns true when saved, so the form stays open (with the user's input) on failure.
   const handleSaveMedicine = async (medData) => {
-    if (!canEdit) return;
+    if (!canEdit) return false;
+    const payload = editingMedicine ? { ...medData, stockBefore: editingMedicine.stock } : medData;
+    const { data, error } = await saveMedicine(payload);
+    if (error) {
+      notifyError(error, "Medicine not saved");
+      return false;
+    }
     if (editingMedicine) {
-      setMedicines(prev => prev.map(m => m.id === medData.id ? medData : m));
-      const { data, error } = await updateMedicine(medData.id, medData);
-      if (error) {
-        console.error("Error updating medicine in DB:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setMedicines(prev => prev.map(m => m.id === medData.id ? { ...m, ...saved } : m));
-      }
-      addAuditLog("Medicine Updated", `Updated record for ${medData.name} (${medData.code})`, "info");
+      setMedicines(prev => prev.map(m => m.id === data.id ? data : m));
+      addAuditLog("Medicine Updated", `Updated record for ${data.name} (${data.code})`, "info");
     } else {
-      const newMed = {
-        ...medData,
-        id: `MED-${Math.floor(200 + Math.random() * 800)}`,
-        code: medData.code || `MED-${(medData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`
-      };
-      setMedicines(prev => [newMed, ...prev]);
-      const { data, error } = await createMedicine(newMed);
-      if (error) {
-        console.error("Error creating medicine in DB:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setMedicines(prev => prev.map(m => m.id === newMed.id ? { ...m, id: saved.id || m.id } : m));
-      }
-      addAuditLog("New Medicine Added", `Added ${newMed.name} to catalogue`, "success");
+      setMedicines(prev => [data, ...prev]);
+      addAuditLog("New Medicine Added", `Added ${data.name} (${data.code}) to catalogue`, "success");
     }
     setIsAddMedicineOpen(false);
     setEditingMedicine(null);
+    return true;
   };
 
-  const handleDeleteMedicine = async (id, name, code) => {
+  const handleDeleteMedicine = async (med) => {
     if (!canEdit) return;
-    if (window.confirm(`Are you sure you want to discontinue ${name}?`)) {
-      setMedicines(prev => prev.filter(m => 
-        String(m.id).toLowerCase() !== String(id).toLowerCase() && 
-        (!code || String(m.code).toLowerCase() !== String(code).toLowerCase()) &&
-        (!name || String(m.name).toLowerCase() !== String(name).toLowerCase())
-      ));
-      await deleteMedicine(id, code, name);
-      addAuditLog("Medicine Discontinued", `Discontinued medication record: ${name}`, "warning");
+    const confirmed = await confirmDialog({
+      title: `Discontinue ${med.name}?`,
+      message: `This removes ${med.name} (${med.code}) from the catalogue. Past sales keep their records.`,
+      confirmLabel: "Discontinue",
+      tone: "danger"
+    });
+    if (!confirmed) return;
+    const { error } = await deleteMedicine(med.id);
+    if (error) {
+      notifyError(error, "Medicine not removed");
+      return;
     }
+    setMedicines(prev => prev.filter(m => m.id !== med.id));
+    addAuditLog("Medicine Discontinued", `Discontinued medication record: ${med.name} (${med.code})`, "warning");
   };
 
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
@@ -168,11 +161,9 @@ export default function MedicineList({
       {activeSubTab === "suppliers" ? (
         <SupplierList
           suppliers={suppliers}
-          setSuppliers={setSuppliers}
           medicines={medicines}
           purchaseOrders={purchaseOrders}
-          onAddSupplier={onAddSupplier}
-          onUpdateSupplier={onUpdateSupplier}
+          onSaveSupplier={onSaveSupplier}
           onDeleteSupplier={onDeleteSupplier}
           addAuditLog={addAuditLog}
         />
@@ -342,7 +333,7 @@ export default function MedicineList({
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDeleteMedicine(med.id, med.name, med.code)}
+                              onClick={() => handleDeleteMedicine(med)}
                               title="Discontinue Product"
                               className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
@@ -365,7 +356,7 @@ export default function MedicineList({
       {/* Add / Edit Medicine Modal */}
       <AddMedicineModal
         isOpen={isAddMedicineOpen}
-        onClose={() => setIsAddMedicineOpen(false)}
+        onClose={() => { setIsAddMedicineOpen(false); setEditingMedicine(null); }}
         onSave={handleSaveMedicine}
         medicineToEdit={editingMedicine}
         suppliers={suppliers}

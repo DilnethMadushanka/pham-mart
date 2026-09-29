@@ -48,7 +48,7 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
               <div key={idx} className="flex justify-between items-center p-3 rounded-xl border border-slate-200 bg-white">
                 <div>
                   <div className="font-bold text-slate-800">{item.name}</div>
-                  <div className="text-[11px] text-slate-400">Unit Cost: Rs. {item.unitCost.toFixed(2)}</div>
+                  <div className="text-[11px] text-slate-400">Unit Cost: Rs. {Number(item.unitCost || 0).toFixed(2)}</div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-slate-500 font-semibold">Qty Delivered:</span>

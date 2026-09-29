@@ -22,8 +22,33 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ReceiptModal from './ReceiptModal';
-import { createCustomer, createTransaction, updateMedicineStock } from '../../services/supabaseService';
+import { saveCustomer, posCheckout } from '../../services/supabaseService';
+import { notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
+
+const needsPrescription = (med) => Boolean(med.prescriptionRequired || med.controlledDrug);
+const localToday = () => new Date().toLocaleDateString("en-CA");
+const isExpired = (med) => Boolean(med.expiryDate && med.expiryDate < localToday());
+
+// Does this prescription list the medicine, and how many units may be dispensed?
+function prescribedQty(rx, med) {
+  const line = (rx.medicines || []).find(m =>
+    (m.medicineId && m.medicineId === med.id) ||
+    (m.name && m.name.toLowerCase() === med.name.toLowerCase())
+  );
+  if (!line) return 0;
+  return Number(line.quantity) > 0 ? Number(line.quantity) : Infinity;
+}
+
+// A customer's history, matched by customer id. Old records saved before ids
+// were stored fall back to an exact (not partial) name match.
+function filterCustomerRecords(records = [], cust) {
+  if (!cust?.id) return [];
+  const name = String(cust.name || "").trim().toLowerCase();
+  return records.filter(r => r.customerId
+    ? r.customerId === cust.id
+    : Boolean(name) && String(r.customerName || "").trim().toLowerCase() === name);
+}
 
 export default function POSTerminal({ 
   medicines, 
@@ -31,18 +56,20 @@ export default function POSTerminal({
   customers, 
   setCustomers,
   prescriptions, 
+  setPrescriptions,
   transactions, 
   setTransactions, 
-  currentRole,
   addAuditLog 
 }) {
   const [cart, setCart] = useState([]);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(customers[0]?.id || "");
+  const [selectedCustomerId, setSelectedCustomerId] = useState("");
+  const [selectedRxId, setSelectedRxId] = useState("");
   const [discountPct, setDiscountPct] = useState(0);
   const [taxPct, setTaxPct] = useState(0);
 
   const [paymentMethod, setPaymentMethod] = useState("Cash");
   const [tenderedCash, setTenderedCash] = useState("");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   
   const [completedTxn, setCompletedTxn] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,29 +82,15 @@ export default function POSTerminal({
 
   const activeCustomer = customers.find(c => c.id === selectedCustomerId) || { name: "Walk-in Customer", id: null };
 
-  const filterCustomerRecords = (records = [], cust) => {
-    if (!cust) return [];
-    const custId = String(cust.id || "").toLowerCase().trim();
-    const custName = String(cust.name || "").toLowerCase().trim();
-    const custEmail = String(cust.email || "").toLowerCase().trim();
-    const custPhone = String(cust.phone || "").toLowerCase().trim();
-    const custNic = String(cust.nic || "").toLowerCase().trim();
-
-    return records.filter(r => {
-      const rId = String(r.customerId || r.patient_id || r.id || "").toLowerCase().trim();
-      const rName = String(r.customerName || r.patient_name || r.name || "").toLowerCase().trim();
-      const rEmail = String(r.email || r.customer_email || "").toLowerCase().trim();
-      const rPhone = String(r.phone || r.customer_phone || "").toLowerCase().trim();
-      const rNic = String(r.nic || r.customer_nic || r.patient_nic || "").toLowerCase().trim();
-
-      if (custId && rId && rId === custId) return true;
-      if (custNic && rNic && custNic !== "google-oauth" && custNic !== "n/a" && rNic === custNic) return true;
-      if (custEmail && rEmail && rEmail === custEmail) return true;
-      if (custPhone && rPhone && rPhone === custPhone) return true;
-      if (custName && rName && (rName === custName || rName.includes(custName) || custName.includes(rName))) return true;
-      return false;
-    });
-  };
+  const today = new Date().toISOString().split('T')[0];
+  const usablePrescriptions = prescriptions.filter(p =>
+    selectedCustomerId &&
+    p.customerId === selectedCustomerId &&
+    p.status === "Approved" &&
+    !p.dispensedAt &&
+    (!p.expiryDate || p.expiryDate >= today)
+  );
+  const linkedRx = usablePrescriptions.find(p => p.id === selectedRxId) || null;
 
   useEffect(() => {
     if (isViewHistoryOpen && activeCustomer) {
@@ -91,182 +104,179 @@ export default function POSTerminal({
     }
   }, [isViewHistoryOpen, selectedCustomerId, transactions, prescriptions]);
 
+  // Prescription items belong to one patient, so switching patient takes them out of the cart.
+  const handleCustomerChange = (nextId) => {
+    const rxItems = cart.filter(needsPrescription);
+    if (rxItems.length > 0) {
+      setCart(prev => prev.filter(item => !needsPrescription(item)));
+      notify("Prescription items removed", "Prescription medicines were removed because the patient changed.", "info");
+    }
+    setSelectedRxId("");
+    setSelectedCustomerId(nextId);
+  };
+
   const handlePOSAddCustomer = async (e) => {
     e.preventDefault();
     if (!newCust.name.trim() || !newCust.nic.trim()) {
-      alert("Please fill in customer name and NIC.");
+      notify("Details needed", "Please fill in the customer's name and NIC.", "error");
       return;
     }
-    const created = {
-      ...newCust,
-      id: `CUST-${Math.floor(300 + Math.random() * 700)}`,
-      historyCount: 0,
-      lastVisit: new Date().toISOString().split('T')[0]
-    };
-    if (setCustomers) {
-      setCustomers(prev => [created, ...prev]);
+    const { data, error } = await saveCustomer(newCust);
+    if (error) {
+      notifyError(error, "Customer not saved");
+      return;
     }
-    await createCustomer(created);
-    setSelectedCustomerId(created.id);
-    if (addAuditLog) {
-      addAuditLog("New Customer Registered via POS", `Cashier registered customer ${created.name} (${created.nic}) at POS Counter`, "success");
-    }
+    setCustomers(prev => [data, ...prev]);
+    handleCustomerChange(data.id);
+    addAuditLog("New Customer Registered via POS", `Registered customer ${data.name} (${data.nic}) at the POS counter`, "success");
     setIsAddCustOpen(false);
     setNewCust({ name: '', nic: '', phone: '', email: '', address: '', allergies: '' });
   };
 
   // Filter medicines for POS grid
+  const term = searchTerm.toLowerCase();
   const availableMedicines = medicines.filter(m => 
-    m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.genericName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    m.code.toLowerCase().includes(searchTerm.toLowerCase())
+    m.name.toLowerCase().includes(term) ||
+    (m.genericName || "").toLowerCase().includes(term) ||
+    (m.code || "").toLowerCase().includes(term)
   );
 
+  // Most units of this item that may go in the cart: stock, and for prescription
+  // items the quantity on the linked prescription.
+  const maxQtyFor = (med, rx = linkedRx) => {
+    const stockCap = med.stock;
+    if (!needsPrescription(med)) return stockCap;
+    return rx ? Math.min(stockCap, prescribedQty(rx, med)) : 0;
+  };
+
   const addToCart = (med) => {
-    // Check if controlled dangerous drug and if approved rx exists
-    const isControlled = med.controlledDrug || med.is_controlled || med.isControlledDrug;
-    if (isControlled) {
-      const approvedRx = prescriptions.find(p => 
-        (p.customerId === selectedCustomerId || p.patient_id === selectedCustomerId) && 
-        p.status === "Approved" && 
-        (p.isControlledDrug || p.controlledDrug || p.is_controlled)
-      );
-      if (!approvedRx) {
-        const proceed = window.confirm(`CONTROLLED DRUG SAFETY WARNING:\n\n"${med.name}" is a Controlled Dangerous Drug!\n\nNo SLMC Pharmacist approved prescription found for ${activeCustomer.name}.\n\nProceed with Pharmacist override / clearance?`);
-        if (!proceed) {
-          addAuditLog("Controlled Drug Dispense Blocked", `Blocked POS addition of controlled drug ${med.name} for ${activeCustomer.name} (No approved Rx)`, "danger");
+    if (isExpired(med)) {
+      notify("Expired stock", `${med.name} expired on ${med.expiryDate} and can't be sold.`, "error");
+      return;
+    }
+    let rx = linkedRx;
+    if (needsPrescription(med)) {
+      const label = med.controlledDrug ? "Controlled drug" : "Prescription medicine";
+      if (!selectedCustomerId) {
+        notify(`${label} needs a patient`, `Select the patient before adding ${med.name}.`, "error");
+        return;
+      }
+      if (!rx || prescribedQty(rx, med) === 0) {
+        const match = usablePrescriptions.find(p => prescribedQty(p, med) > 0 &&
+          cart.filter(needsPrescription).every(item => prescribedQty(p, item) >= item.qty));
+        if (!match) {
+          notify(
+            `${label} blocked`,
+            `${activeCustomer.name} has no approved, unused prescription that lists ${med.name}. A pharmacist must approve one first.`,
+            "error"
+          );
+          addAuditLog("Prescription Item Blocked", `Blocked ${med.name} for ${activeCustomer.name}: no approved prescription on file`, "danger");
           return;
         }
+        rx = match;
+        setSelectedRxId(match.id);
       }
     }
 
-    setCart(prev => {
-      const existing = prev.find(item => item.id === med.id);
-      if (existing) {
-        if (existing.qty >= med.stock) {
-          alert(`Cannot exceed available stock level (${med.stock} units).`);
-          return prev;
-        }
-        return prev.map(item => item.id === med.id ? { ...item, qty: item.qty + 1 } : item);
-      } else {
-        if (med.stock < 1) {
-          alert(`Product out of stock!`);
-          return prev;
-        }
-        return [...prev, { ...med, qty: 1 }];
-      }
-    });
+    const existing = cart.find(item => item.id === med.id);
+    const nextQty = (existing?.qty || 0) + 1;
+    if (med.stock < 1) {
+      notify("Out of stock", `${med.name} is out of stock.`, "error");
+      return;
+    }
+    if (nextQty > maxQtyFor(med, rx)) {
+      notify("Limit reached", needsPrescription(med) && nextQty <= med.stock
+        ? `Prescription ${rx.rxNumber} allows ${prescribedQty(rx, med)} units of ${med.name}.`
+        : `Only ${med.stock} units of ${med.name} in stock.`, "error");
+      return;
+    }
+    setCart(prev => existing
+      ? prev.map(item => item.id === med.id ? { ...item, qty: nextQty } : item)
+      : [...prev, { ...med, qty: 1 }]);
   };
 
   const updateQty = (id, newQty) => {
     if (newQty <= 0) {
-      setCart(prev => prev.filter(item => item.id !== id));
+      removeFromCart(id);
       return;
     }
     const med = medicines.find(m => m.id === id);
-    if (med && newQty > med.stock) {
-      alert(`Cannot exceed available stock level (${med.stock} units).`);
+    if (med && newQty > maxQtyFor(med)) {
+      notify("Limit reached", needsPrescription(med) && newQty <= med.stock && linkedRx
+        ? `Prescription ${linkedRx.rxNumber} allows ${prescribedQty(linkedRx, med)} units of ${med.name}.`
+        : `Only ${med.stock} units of ${med.name} in stock.`, "error");
       return;
     }
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: newQty } : item));
   };
 
   const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
+    setCart(prev => {
+      const next = prev.filter(item => item.id !== id);
+      if (!next.some(needsPrescription)) setSelectedRxId("");
+      return next;
+    });
   };
 
-  // Financial Calculations
+  // Financial Calculations (the server recalculates from catalogue prices at checkout)
   const subtotal = cart.reduce((acc, item) => acc + (item.unitPrice * item.qty), 0);
-  const discountAmt = (subtotal * discountPct) / 100;
+  const discountAmt = Math.round(subtotal * discountPct) / 100;
   const taxableTotal = subtotal - discountAmt;
-  const taxAmt = (taxableTotal * taxPct) / 100;
+  const taxAmt = Math.round(taxableTotal * taxPct) / 100;
   const grandTotal = taxableTotal + taxAmt;
 
   const changeDue = Math.max(0, (parseFloat(tenderedCash) || 0) - grandTotal);
 
   const handleCheckout = async (e) => {
     e.preventDefault();
+    if (isCheckingOut) return;
     if (cart.length === 0) {
-      alert("Cart is empty.");
+      notify("Cart is empty", "Add at least one item.", "error");
       return;
     }
-
     if (grandTotal <= 0) {
-      alert("Grand total must be greater than zero. Please check the discount and tax percentages.");
+      notify("Check the total", "The total must be more than zero. Check the discount and tax.", "error");
       return;
     }
-
     if (paymentMethod === "Cash" && (parseFloat(tenderedCash) || 0) < grandTotal) {
-      alert(`Tendered cash must be at least Rs. ${grandTotal.toFixed(2)}`);
+      notify("Not enough cash", `Tendered cash must be at least Rs. ${grandTotal.toFixed(2)}.`, "error");
       return;
     }
 
-    const newTxn = {
-      id: `TXN-${Math.floor(8800 + Math.random() * 1000)}`,
-      invoice_no: `INV-2026-${Math.floor(8800 + Math.random() * 1000)}`,
-      invoiceNo: `INV-2026-${Math.floor(8800 + Math.random() * 1000)}`,
-      date: new Date().toLocaleString(),
-      customerName: activeCustomer.name,
-      customer_name: activeCustomer.name,
-      cashierName: currentRole === "Cashier" ? "Pathiraja M.M.S" : currentRole === "Pharmacist" ? "Mendis M.M.N" : "Ms. Chathurangika",
-      cashier_name: currentRole === "Cashier" ? "Pathiraja M.M.S" : currentRole === "Pharmacist" ? "Mendis M.M.N" : "Ms. Chathurangika",
-      items: cart.map(item => ({
-        name: item.name,
-        qty: item.qty,
-        price: item.unitPrice,
-        total: item.unitPrice * item.qty
-      })),
-      subtotal: subtotal,
-      discountPct: discountPct,
-      discountAmt: discountAmt,
-      taxPct: taxPct,
-      taxAmt: taxAmt,
-      total: grandTotal,
-      paymentMethod: paymentMethod,
-      payment_method: paymentMethod,
-      paidAmount: paymentMethod === "Cash" ? parseFloat(tenderedCash) : grandTotal,
-      changeAmount: paymentMethod === "Cash" ? changeDue : 0,
-      status: "Completed"
-    };
+    setIsCheckingOut(true);
+    const { data, error } = await posCheckout({
+      items: cart.map(item => ({ medicineId: item.id, qty: item.qty })),
+      customerId: selectedCustomerId || null,
+      prescriptionId: cart.some(needsPrescription) ? selectedRxId || null : null,
+      discountPct,
+      taxPct,
+      paymentMethod,
+      paidAmount: paymentMethod === "Cash" ? parseFloat(tenderedCash) || 0 : null
+    });
+    setIsCheckingOut(false);
 
-    // 1. Update local state immediately (optimistic) so the UI reflects the sale before
-    // any Supabase realtime resync can race with the per-item writes below.
-    setTransactions(prev => [newTxn, ...prev]);
+    if (error) {
+      notifyError(error, "Sale not completed");
+      return;
+    }
 
-    setMedicines(prev => prev.map(m => {
-      const cartItem = cart.find(c => c.id === m.id);
-      if (cartItem) {
-        return { ...m, stock: Math.max(0, m.stock - cartItem.qty) };
-      }
-      return m;
-    }));
+    // The server has already taken the stock off, saved the sale and closed the prescription.
+    const { transaction, medicines: updatedMeds, prescription } = data;
+    setTransactions(prev => [transaction, ...prev]);
+    setMedicines(prev => prev.map(m => updatedMeds.find(u => u.id === m.id) || m));
+    if (prescription && setPrescriptions) {
+      setPrescriptions(prev => prev.map(p => p.id === prescription.id ? prescription : p));
+    }
 
-    // 2. Persist transaction + inventory deduction to Supabase in parallel, minimizing
-    // the window in which a realtime resync could observe only a partial update.
-    await Promise.all([
-      createTransaction(newTxn),
-      ...cart.map(item => {
-        const med = medicines.find(m => m.id === item.id);
-        if (!med) return Promise.resolve();
-        const updatedStock = Math.max(0, med.stock - item.qty);
-        return updateMedicineStock(med.id, updatedStock);
-      })
-    ]);
-
-    // 3. Log audit event
-    addAuditLog(
-      "POS Sale Completed",
-      `Invoice ${newTxn.invoiceNo} issued for ${newTxn.customerName}. Total: LKR ${grandTotal.toFixed(2)}. Inventory stock automatically updated.`,
-      "success"
-    );
-
-    // 4. Trigger celebration confetti
     try {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
-    } catch(err){}
+    } catch {
+      // Decorative only.
+    }
 
-    setCompletedTxn(newTxn);
+    setCompletedTxn(transaction);
     setCart([]);
+    setSelectedRxId("");
     setTenderedCash("");
   };
 
@@ -292,7 +302,7 @@ export default function POSTerminal({
             <span className="font-bold text-slate-700 text-xs shrink-0">Active Customer:</span>
             <select
               value={selectedCustomerId}
-              onChange={(e) => setSelectedCustomerId(e.target.value)}
+              onChange={(e) => handleCustomerChange(e.target.value)}
               className="font-semibold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer min-w-[220px]"
             >
               <option value="">Walk-in Customer (General)</option>
@@ -353,7 +363,8 @@ export default function POSTerminal({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[620px] overflow-y-auto pr-1">
             {availableMedicines.map((med) => {
-              const isOut = med.stock <= 0;
+              const expired = isExpired(med);
+              const isOut = med.stock <= 0 || expired;
 
               return (
                 <div
@@ -370,9 +381,17 @@ export default function POSTerminal({
                       <span className="font-bold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
                         {med.name}
                       </span>
-                      {med.controlledDrug && (
+                      {expired ? (
+                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-300">
+                          Expired
+                        </span>
+                      ) : med.controlledDrug ? (
                         <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
                           Controlled
+                        </span>
+                      ) : med.prescriptionRequired && (
+                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                          Rx only
                         </span>
                       )}
                     </div>
@@ -410,7 +429,7 @@ export default function POSTerminal({
             </h3>
             {cart.length > 0 && (
               <button 
-                onClick={() => setCart([])}
+                onClick={() => { setCart([]); setSelectedRxId(""); }}
                 className="text-xs text-rose-600 hover:underline font-bold"
               >
                 Clear Cart
@@ -461,6 +480,12 @@ export default function POSTerminal({
               ))
             )}
           </div>
+
+          {linkedRx && cart.some(needsPrescription) && (
+            <div className="mb-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 font-medium">
+              Dispensing against prescription <span className="font-mono font-semibold">{linkedRx.rxNumber}</span> for {activeCustomer.name}. It will be marked as used.
+            </div>
+          )}
 
           {/* Discount & Tax Options */}
           <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
@@ -560,7 +585,7 @@ export default function POSTerminal({
             {/* Complete Sale Button */}
             <button
               onClick={handleCheckout}
-              disabled={cart.length === 0}
+              disabled={cart.length === 0 || isCheckingOut}
               className={`w-full py-3 rounded-xl font-semibold text-sm shadow-md transition-all flex items-center justify-center space-x-2 mt-2 ${
                 cart.length > 0 
                   ? "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/20 cursor-pointer" 
@@ -568,7 +593,7 @@ export default function POSTerminal({
               }`}
             >
               <Receipt className="w-4 h-4" />
-              <span>Complete Sale & Issue Receipt</span>
+              <span>{isCheckingOut ? "Completing sale..." : "Complete Sale & Issue Receipt"}</span>
             </button>
 
           </div>

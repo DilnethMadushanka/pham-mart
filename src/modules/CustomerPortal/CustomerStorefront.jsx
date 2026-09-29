@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import {
   Pill,
   Upload,
-  ShoppingCart,
-  Clock,
-  X
+  Clock
 } from 'lucide-react';
 import HeroBanner from './HeroBanner';
 import HowItWorksSection from './HowItWorksSection';
@@ -18,64 +16,15 @@ import GoogleFeedbackModal from '../../components/GoogleFeedbackModal';
 
 export default function CustomerStorefront({ 
   medicines, 
-  customers, 
   prescriptions, 
   setPrescriptions, 
   currentUser, 
+  onRequestSignIn,
   addAuditLog 
 }) {
   const [activePortalTab, setActivePortalTab] = useState("store"); // "store" | "upload_rx" | "my_orders"
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [cart, setCart] = useState([]);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isGoogleFeedbackOpen, setIsGoogleFeedbackOpen] = useState(false);
-
-  // Filter products: Show Consumer/OTC items on Storefront
-  const consumerProducts = medicines.filter(m => m.isConsumerProduct || !m.prescriptionRequired);
-
-  const categories = Array.from(new Set(consumerProducts.map(m => m.category)));
-
-  const filteredProducts = consumerProducts.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.genericName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === "ALL" || m.category === selectedCategory;
-    return matchesSearch && matchesCat;
-  });
-
-  const addToCart = (product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
-      }
-      return [...prev, { ...product, qty: 1 }];
-    });
-  };
-
-  const updateQty = (id, newQty) => {
-    if (newQty <= 0) {
-      setCart(prev => prev.filter(item => item.id !== id));
-      return;
-    }
-    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: newQty } : item));
-  };
-
-  const subtotal = cart.reduce((acc, item) => acc + (item.unitPrice * item.qty), 0);
-  const deliveryFee = subtotal > 2000 ? 0 : 250;
-  const grandTotal = subtotal + deliveryFee;
-
-  const handleOnlineCheckout = (e) => {
-    e.preventDefault();
-    if (cart.length === 0) return;
-
-    alert(`Order placed successfully! Thank you for ordering from PHARMART Pharmacy Store.\n\nTotal: LKR ${grandTotal.toFixed(2)}\nDelivery to: ${currentUser?.address || 'Your Registered Address'}`);
-    
-    addAuditLog("Online Customer Purchase", `Customer ${currentUser?.name || 'Walk-in'} ordered consumer products LKR ${grandTotal.toFixed(2)}`, "info");
-    setCart([]);
-    setIsCheckoutOpen(false);
-  };
 
   const openPortalTab = (tab) => {
     setActivePortalTab(tab);
@@ -127,12 +76,11 @@ export default function CustomerStorefront({
       {/* DYNAMIC PORTAL VIEWS */}
       {activePortalTab === "upload_rx" && (
         <CustomerRxUpload 
-          customers={customers}
           medicines={medicines}
           currentUser={currentUser}
           setPrescriptions={setPrescriptions}
-          onSuccess={() => setActivePortalTab("my_orders")}
-          addAuditLog={addAuditLog}
+          onSuccess={() => setActivePortalTab(currentUser ? "my_orders" : "store")}
+          onRequestSignIn={onRequestSignIn}
         />
       )}
 
@@ -140,6 +88,7 @@ export default function CustomerStorefront({
         <MyOrders 
           prescriptions={prescriptions}
           currentUser={currentUser}
+          onRequestSignIn={onRequestSignIn}
         />
       )}
 
@@ -205,64 +154,6 @@ export default function CustomerStorefront({
           &copy; {new Date().getFullYear()} PHARMART Pharmacy
         </div>
       </footer>
-
-      {/* Online Cart Checkout Modal */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-            
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
-                Consumer Checkout Basket
-              </h3>
-              <button onClick={() => setIsCheckoutOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="max-h-60 overflow-y-auto space-y-2 text-xs">
-              {cart.length === 0 ? (
-                <p className="text-slate-400 text-center py-6">Your cart is empty.</p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <div>
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-[11px] text-blue-700 font-semibold">Rs. {item.unitPrice.toFixed(2)} × {item.qty}</div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <button onClick={() => updateQty(item.id, item.qty - 1)} className="px-2 py-0.5 bg-slate-200 rounded font-bold">-</button>
-                      <span className="font-bold px-2">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, item.qty + 1)} className="px-2 py-0.5 bg-blue-600 text-white rounded font-bold">+</button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <form onSubmit={handleOnlineCheckout} className="space-y-3 pt-2 border-t border-slate-200 text-xs">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex justify-between"><span>Subtotal:</span><span>Rs. {subtotal.toFixed(2)}</span></div>
-                  <div className="flex justify-between text-slate-600"><span>Home Delivery Fee:</span><span>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee}`}</span></div>
-                  <div className="flex justify-between font-semibold text-slate-900 text-sm pt-1 border-t border-slate-200">
-                    <span>Total Amount:</span><span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md text-xs"
-                >
-                  Confirm & Place Delivery Order
-                </button>
-              </form>
-            )}
-
-          </div>
-        </div>
-      )}
 
       {/* Location & Contact Modal */}
       <LocationContactModal 

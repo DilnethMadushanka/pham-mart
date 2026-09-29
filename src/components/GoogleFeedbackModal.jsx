@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Star, CheckCircle2, MessageSquare, Send, Sparkles, User, Mail, ShieldCheck, HeartHandshake } from 'lucide-react';
-import { saveAuditLog } from '../services/supabaseService';
+import { notify } from '../lib/notify';
 
 export default function GoogleFeedbackModal({ 
   isOpen, 
@@ -47,7 +47,7 @@ export default function GoogleFeedbackModal({
   const handleSubmitReview = (e) => {
     e.preventDefault();
     if (!reviewerName.trim() || !reviewText.trim()) {
-      alert("Please enter your name and write a brief review.");
+      notify("Details needed", "Please enter your name and write a short review.", "error");
       return;
     }
 
@@ -64,16 +64,6 @@ export default function GoogleFeedbackModal({
 
     if (addAuditLog) {
       addAuditLog("Google Review Submitted", `Patient ${reviewerName} submitted a ${rating}-star Google review for PHARMART Pharmacy`, "success");
-    } else {
-      saveAuditLog({
-        id: `LOG-${Math.floor(600 + Math.random() * 400)}`,
-        timestamp: new Date().toLocaleString(),
-        user: reviewerName,
-        role: "Customer",
-        action: "Google Review Submitted",
-        details: `Submitted ${rating}-star review: "${reviewText.substring(0, 40)}..."`,
-        severity: "success"
-      });
     }
 
     setIsSubmitted(true);

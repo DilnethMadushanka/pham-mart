@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FileText, 
   CheckCircle2, 
@@ -14,7 +14,8 @@ import {
   Plus
 } from 'lucide-react';
 import NewPrescriptionModal from './NewPrescriptionModal';
-import { createPrescription, updatePrescriptionStatus } from '../../services/supabaseService';
+import { submitPrescription, reviewPrescription, fetchPrescriptionFile } from '../../services/supabaseService';
+import { promptDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 
 export default function PrescriptionVerification({ 
@@ -22,75 +23,120 @@ export default function PrescriptionVerification({
   setPrescriptions, 
   customers, 
   medicines, 
-  currentRole,
-  currentUser,
   canApprove = false,
   addAuditLog 
 }) {
-  const [selectedRx, setSelectedRx] = useState(null);
+  const [selectedRxId, setSelectedRxId] = useState(null);
   const [pharmacistNotes, setPharmacistNotes] = useState("");
-  const [rejectionReason, setRejectionReason] = useState("");
+  const [approvalItems, setApprovalItems] = useState([]);
+  const [addItemId, setAddItemId] = useState("");
+  const [addItemQty, setAddItemQty] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
   const [activeFilter, setActiveFilter] = useState("Pending"); // "Pending" | "Approved" | "Rejected" | "ALL"
   const [isNewRxModalOpen, setIsNewRxModalOpen] = useState(false);
+  const [attachments, setAttachments] = useState({}); // rx id -> data URL (loaded on demand)
 
   const filteredRx = prescriptions.filter(p => {
     if (activeFilter === "ALL") return true;
     return p.status === activeFilter;
   });
 
-  const verifierName = `${currentUser?.name || "Staff"} (${currentRole})`;
+  const selectedRx = prescriptions.find(p => p.id === selectedRxId) || null;
+  const attachment = selectedRx ? attachments[selectedRx.id] : null;
 
-  const handleApprove = async (rxId) => {
-    if (!canApprove) return;
-    setPrescriptions(prev => prev.map(p => {
-      if (p.id === rxId) {
-        const updated = {
-          ...p,
-          status: "Approved",
-          verifiedBy: verifierName,
-          verifiedAt: new Date().toLocaleString(),
-          notes: pharmacistNotes || "Verified against patient dosage & SLMC physician registration."
-        };
-        addAuditLog("Prescription Approved", `Approved RX ${p.rxNumber} for customer ${p.customerName}`, "success");
-        return updated;
-      }
-      return p;
-    }));
-    await updatePrescriptionStatus(rxId, "Approved");
-    setSelectedRx(null);
+  const selectRx = (rx) => {
+    setSelectedRxId(rx.id);
     setPharmacistNotes("");
+    setApprovalItems(rx.medicines || []);
+    setAddItemId("");
+    setAddItemQty(1);
   };
 
-  const handleReject = async (rxId, reason = rejectionReason) => {
-    if (!canApprove) return;
-    if (!reason) {
-      alert("Please provide a reason for rejecting the prescription.");
+  // Prescription photos are private and large, so they load only when opened.
+  useEffect(() => {
+    if (!selectedRx?.hasAttachment || attachments[selectedRx.id] !== undefined) return;
+    let cancelled = false;
+    fetchPrescriptionFile(selectedRx.id).then(({ data, error }) => {
+      if (cancelled) return;
+      if (error) notifyError(error, "Couldn't open the attachment");
+      setAttachments(prev => ({ ...prev, [selectedRx.id]: data || null }));
+    });
+    return () => { cancelled = true; };
+  }, [selectedRx, attachments]);
+
+  const openAttachment = async () => {
+    if (!attachment) return;
+    const blob = await (await fetch(attachment)).blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+
+  // Pharmacists can list the exact catalogue items to dispense (for example from a
+  // photo slip). Only listed items can be sold against this prescription at the POS.
+  const handleAddApprovalItem = () => {
+    const med = medicines.find(m => m.id === addItemId);
+    if (!med || !(addItemQty > 0)) return;
+    setApprovalItems(prev => [...prev, {
+      medicineId: med.id,
+      name: med.name,
+      dosage: med.dosage || med.genericName || "",
+      quantity: addItemQty
+    }]);
+    setAddItemId("");
+    setAddItemQty(1);
+  };
+
+  const applyReviewed = (updated) => {
+    setPrescriptions(prev => prev.map(p => p.id === updated.id ? updated : p));
+  };
+
+  const handleApprove = async (rx) => {
+    if (!canApprove || isSaving) return;
+    setIsSaving(true);
+    const { data, error } = await reviewPrescription(rx.id, "Approved", pharmacistNotes, approvalItems);
+    setIsSaving(false);
+    if (error) {
+      notifyError(error, "Prescription not approved");
       return;
     }
-    setPrescriptions(prev => prev.map(p => {
-      if (p.id === rxId) {
-        const updated = {
-          ...p,
-          status: "Rejected",
-          verifiedBy: verifierName,
-          verifiedAt: new Date().toLocaleString(),
-          notes: `REJECTED: ${reason}`
-        };
-        addAuditLog("Prescription Rejected", `Rejected RX ${p.rxNumber}. Rationale: ${reason}`, "warning");
-        return updated;
-      }
-      return p;
-    }));
-    await updatePrescriptionStatus(rxId, "Rejected", reason);
-    setSelectedRx(null);
-    setRejectionReason("");
+    applyReviewed(data);
+    setPharmacistNotes("");
+    notify("Prescription approved", `${data.rxNumber} can now be dispensed at the counter.`);
+  };
+
+  const handleReject = async (rx) => {
+    if (!canApprove || isSaving) return;
+    const reason = await promptDialog({
+      title: `Reject ${rx.rxNumber}?`,
+      message: "The patient sees this reason in My Orders.",
+      label: "Reason for rejecting",
+      placeholder: "e.g. The slip is unreadable. Please upload a clearer photo.",
+      confirmLabel: "Reject prescription",
+      multiline: true,
+      tone: "danger"
+    });
+    if (!reason) return;
+    setIsSaving(true);
+    const { data, error } = await reviewPrescription(rx.id, "Rejected", reason);
+    setIsSaving(false);
+    if (error) {
+      notifyError(error, "Prescription not rejected");
+      return;
+    }
+    applyReviewed(data);
   };
 
   const handleAddPrescription = async (newRxData) => {
-    setPrescriptions(prev => [newRxData, ...prev]);
-    await createPrescription(newRxData);
-    addAuditLog("New Prescription Uploaded", `Registered prescription ${newRxData.rxNumber} for customer ${newRxData.customerName}`, "info");
+    const { data, error } = await submitPrescription(newRxData);
+    if (error) {
+      notifyError(error, "Prescription not registered");
+      return false;
+    }
+    setPrescriptions(prev => [data, ...prev]);
+    addAuditLog("New Prescription Uploaded", `Registered prescription ${data.rxNumber} for customer ${data.customerName}`, "info");
     setIsNewRxModalOpen(false);
+    return true;
   };
 
   return (
@@ -154,7 +200,7 @@ export default function PrescriptionVerification({
             return (
               <div
                 key={rx.id}
-                onClick={() => setSelectedRx(rx)}
+                onClick={() => selectRx(rx)}
                 className={`p-6 rounded-3xl border transition-all cursor-pointer bg-white ${
                   isSelected 
                     ? "border-blue-500 ring-2 ring-blue-500/20 shadow-lg" 
@@ -166,9 +212,9 @@ export default function PrescriptionVerification({
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono font-semibold text-slate-900 text-base">{rx.rxNumber}</span>
                       <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border ${
-                        rx.prescriptionUrl ? "bg-blue-50 text-blue-800 border-blue-200" : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                        rx.hasAttachment ? "bg-blue-50 text-blue-800 border-blue-200" : "bg-emerald-50 text-emerald-800 border-emerald-200"
                       }`}>
-                        {rx.prescriptionUrl ? "Photo slip" : "Typed order"}
+                        {rx.hasAttachment ? "Photo slip" : "Typed order"}
                       </span>
                       {rx.isControlledDrug && (
                         <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-rose-100 text-rose-800 border border-rose-300 flex items-center">
@@ -197,7 +243,7 @@ export default function PrescriptionVerification({
                 <div className="mt-4 pt-3.5 border-t border-slate-100 text-xs text-slate-600 flex justify-between items-center">
                   <div className="flex items-center font-semibold">
                     <Stethoscope className="w-4 h-4 mr-1.5 text-blue-600" />
-                    <span>{rx.doctorName} ({rx.doctorSlmcNo})</span>
+                    <span>{rx.doctorName}{rx.doctorSlmcNo ? ` (${rx.doctorSlmcNo})` : ""}</span>
                   </div>
                   <span className="text-xs text-slate-400 font-medium">{rx.uploadDate}</span>
                 </div>
@@ -242,33 +288,47 @@ export default function PrescriptionVerification({
                 </div>
               </div>
 
-              {/* Patient Notes & Delivery Address if provided */}
-              {selectedRx.notes && (
-                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 text-xs space-y-1">
+              {/* Patient Notes, Contact & Delivery Address */}
+              {(selectedRx.notes || selectedRx.contactPhone || selectedRx.deliveryAddress) && (
+                <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 text-xs space-y-1.5">
                   <span className="text-blue-900 font-semibold uppercase text-[10.5px] tracking-wider block">
-                    📋 Patient Order Notes & Delivery Address:
+                    Patient contact and notes
                   </span>
-                  <p className="text-slate-800 font-semibold leading-relaxed whitespace-pre-line">
-                    {selectedRx.notes}
-                  </p>
+                  {selectedRx.contactPhone && <p className="text-slate-800"><span className="text-slate-500">Phone:</span> {selectedRx.contactPhone}</p>}
+                  {selectedRx.deliveryAddress && <p className="text-slate-800"><span className="text-slate-500">Deliver to:</span> {selectedRx.deliveryAddress}</p>}
+                  {selectedRx.notes && <p className="text-slate-800 leading-relaxed whitespace-pre-line"><span className="text-slate-500">Notes:</span> {selectedRx.notes}</p>}
                 </div>
               )}
 
               {/* Prescription Slip Photo Preview OR Typed Order Banner */}
-              {selectedRx.prescriptionUrl ? (
+              {selectedRx.hasAttachment ? (
                 <div className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Attached Prescription Photo Slip</span>
-                  <div className="relative rounded-2xl overflow-hidden border border-blue-200 max-h-56 shadow-xs">
-                    <img src={selectedRx.prescriptionUrl} alt="Doctor slip" className="w-full h-48 object-cover" />
-                    <a 
-                      href={selectedRx.prescriptionUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="absolute bottom-2 right-2 px-3 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full text-[10.5px] font-semibold backdrop-blur-xs shadow-md"
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Attached prescription</span>
+                  {attachment === undefined ? (
+                    <div className="h-48 rounded-2xl border border-blue-200 bg-slate-50 flex items-center justify-center text-xs text-slate-500">Loading attachment...</div>
+                  ) : attachment === null ? (
+                    <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 text-xs text-slate-500">The attachment could not be loaded.</div>
+                  ) : attachment.startsWith("data:image/") ? (
+                    <div className="relative rounded-2xl overflow-hidden border border-blue-200 max-h-56 shadow-xs">
+                      <img src={attachment} alt="Doctor's prescription slip" className="w-full h-48 object-cover" />
+                      <button
+                        type="button"
+                        onClick={openAttachment}
+                        className="absolute bottom-2 right-2 px-3 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full text-[10.5px] font-semibold backdrop-blur-xs shadow-md"
+                      >
+                        View full size
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={openAttachment}
+                      className="w-full p-4 rounded-2xl border border-blue-200 bg-blue-50/60 text-xs font-semibold text-blue-800 hover:bg-blue-50 flex items-center justify-center gap-2"
                     >
-                      View Full Size Photo
-                    </a>
-                  </div>
+                      <FileText className="w-4 h-4" />
+                      Open PDF prescription
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs space-y-1">
@@ -276,29 +336,85 @@ export default function PrescriptionVerification({
                     Typed medicine order (direct request)
                   </span>
                   <p className="text-emerald-800 font-medium">
-                    No doctor paper photo slip was uploaded. Patient typed/selected the requested medicines directly online.
+                    No doctor's slip was uploaded. The medicines were typed or picked directly.
                   </p>
                 </div>
               )}
 
               {/* Prescribed Medications & Typed Custom Items */}
-              <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Prescribed / Requested Items & Dosage Instructions
-                </h4>
-                <div className="space-y-2">
-                  {selectedRx.medicines && selectedRx.medicines.map((m, idx) => (
-                    <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs">
-                      <div className="font-semibold text-slate-900 text-sm flex justify-between">
-                        <span>{m.name}</span>
-                        <span className="text-blue-700 font-semibold">{m.quantity} units</span>
-                      </div>
-                      <div className="text-slate-600 mt-1 font-semibold">Dosage / Instructions: {m.dosage}</div>
-                      {m.durationDays && <div className="text-[11px] text-slate-500 mt-0.5 font-medium">{m.durationDays} days supply</div>}
+              {(() => {
+                const editing = selectedRx.status === "Pending" && canApprove;
+                const items = editing ? approvalItems : (selectedRx.medicines || []);
+                return (
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                      {editing ? "Items to dispense" : "Prescribed / requested items"}
+                    </h4>
+                    {editing && (
+                      <p className="text-[11px] text-slate-500 mb-2">
+                        Only catalogue items listed here can be sold against this prescription at the counter. Add items from the photo slip before approving.
+                      </p>
+                    )}
+                    <div className="space-y-2">
+                      {items.length === 0 && (
+                        <div className="p-3 rounded-2xl border border-dashed border-slate-300 text-xs text-slate-500">No items listed yet.</div>
+                      )}
+                      {items.map((m, idx) => (
+                        <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs">
+                          <div className="font-semibold text-slate-900 text-sm flex justify-between gap-3">
+                            <span>{m.name}{!m.medicineId && <span className="ml-2 text-[10px] font-semibold text-amber-700">Not in catalogue</span>}</span>
+                            <span className="flex items-center gap-2 shrink-0">
+                              <span className="text-blue-700 font-semibold">{m.quantity} units</span>
+                              {editing && (
+                                <button
+                                  type="button"
+                                  onClick={() => setApprovalItems(prev => prev.filter((_, i) => i !== idx))}
+                                  className="text-rose-500 hover:text-rose-700 text-[11px] font-semibold"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </span>
+                          </div>
+                          {m.dosage && <div className="text-slate-600 mt-1 font-semibold">Dosage / instructions: {m.dosage}</div>}
+                          {m.durationDays && <div className="text-[11px] text-slate-500 mt-0.5 font-medium">{m.durationDays} days supply</div>}
+                        </div>
+                      ))}
+                      {editing && (
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                          <select
+                            value={addItemId}
+                            onChange={(e) => setAddItemId(e.target.value)}
+                            aria-label="Catalogue medicine to add"
+                            className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs"
+                          >
+                            <option value="">Add a catalogue medicine...</option>
+                            {medicines.map(m => (
+                              <option key={m.id} value={m.id}>{m.name}{m.controlledDrug ? " (controlled)" : m.prescriptionRequired ? " (Rx)" : ""}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            min="1"
+                            value={addItemQty}
+                            onChange={(e) => setAddItemQty(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                            aria-label="Quantity"
+                            className="w-20 px-3 py-2 border border-slate-300 rounded-xl text-xs text-center"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddApprovalItem}
+                            disabled={!addItemId}
+                            className="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white rounded-xl text-xs font-semibold"
+                          >
+                            Add item
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
 
               {/* Interaction & Controlled Drug Warning */}
               {selectedRx.isControlledDrug && (
@@ -308,7 +424,7 @@ export default function PrescriptionVerification({
                     Controlled Substance Safety Protocol
                   </div>
                   <p className="text-[11px] text-rose-800 leading-relaxed">
-                    This prescription contains controlled dangerous drugs. Dispensing is locked at the POS billing counter until Pharmacist approval is recorded.
+                    This prescription contains controlled drugs. The POS will only sell the listed items, once, to this patient, after approval.
                   </p>
                 </div>
               )}
@@ -337,22 +453,18 @@ export default function PrescriptionVerification({
 
                   <div className="flex space-x-3">
                     <button
-                      onClick={() => handleApprove(selectedRx.id)}
-                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
+                      onClick={() => handleApprove(selectedRx)}
+                      disabled={isSaving}
+                      className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 cursor-pointer"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Approve Prescription</span>
+                      <span>{isSaving ? "Saving..." : "Approve Prescription"}</span>
                     </button>
 
                     <button
-                      onClick={() => {
-                        const reason = prompt("Enter rationale for rejecting prescription:");
-                        if (reason) {
-                          setRejectionReason(reason);
-                          handleReject(selectedRx.id, reason);
-                        }
-                      }}
-                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer"
+                      onClick={() => handleReject(selectedRx)}
+                      disabled={isSaving}
+                      className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer"
                     >
                       <XCircle className="w-4 h-4" />
                       <span>Reject</span>
@@ -363,13 +475,21 @@ export default function PrescriptionVerification({
 
               {/* Approved status view */}
               {selectedRx.status === "Approved" && (
-                <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-900">
+                <div className="p-3.5 bg-blue-50 rounded-xl border border-blue-200 text-xs text-blue-900 space-y-0.5">
                   <div className="font-bold flex items-center">
                     <CheckCircle2 className="w-4 h-4 mr-1 text-blue-600" />
-                    Prescription Verified & Linked to Customer Record
+                    {selectedRx.dispensedAt ? `Dispensed on invoice ${selectedRx.dispensedInvoice}` : "Approved and ready to dispense"}
                   </div>
-                  <p className="text-[11px] text-blue-800 mt-1">Verified by: {selectedRx.verifiedBy}</p>
-                  <p className="text-[11px] text-blue-700">Remarks: {selectedRx.notes}</p>
+                  <p className="text-[11px] text-blue-800">Verified by: {selectedRx.verifiedBy}{selectedRx.verifiedAt ? `, ${selectedRx.verifiedAt}` : ""}</p>
+                  {selectedRx.pharmacistNotes && <p className="text-[11px] text-blue-700">Remarks: {selectedRx.pharmacistNotes}</p>}
+                  {selectedRx.expiryDate && <p className="text-[11px] text-blue-700">Valid until {selectedRx.expiryDate}</p>}
+                </div>
+              )}
+
+              {selectedRx.status === "Rejected" && (
+                <div className="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-900 space-y-0.5">
+                  <div className="font-bold">Rejected{selectedRx.verifiedBy ? ` by ${selectedRx.verifiedBy}` : ""}</div>
+                  {selectedRx.rejectionReason && <p className="text-[11px]">Reason: {selectedRx.rejectionReason}</p>}
                 </div>
               )}
 

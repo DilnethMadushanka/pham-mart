@@ -18,14 +18,13 @@ import {
   Building
 } from 'lucide-react';
 import AddSupplierModal from './AddSupplierModal';
+import { confirmDialog } from '../../lib/notify';
 
 export default function SupplierList({ 
   suppliers, 
-  setSuppliers, 
   medicines = [],
   purchaseOrders = [],
-  onAddSupplier,
-  onUpdateSupplier,
+  onSaveSupplier,
   onDeleteSupplier,
   addAuditLog 
 }) {
@@ -41,49 +40,34 @@ export default function SupplierList({
            (s.email && s.email.toLowerCase().includes(term));
   });
 
-  const handleSaveSupplier = (supplierData) => {
+  // The form stays open with the user's input if saving fails.
+  const handleSaveSupplier = async (supplierData) => {
+    const saved = await onSaveSupplier(supplierData);
+    if (!saved) return;
     if (editingSupplier) {
-      if (onUpdateSupplier) {
-        onUpdateSupplier(supplierData.id, supplierData);
-      } else {
-        setSuppliers(prev => prev.map(s => s.id === supplierData.id ? supplierData : s));
-      }
-      if (addAuditLog) {
-        addAuditLog("Supplier Record Updated", `Updated details for supplier: ${supplierData.name}`, "info");
-      }
+      addAuditLog("Supplier Record Updated", `Updated details for supplier: ${saved.name}`, "info");
     } else {
-      const newSup = {
-        ...supplierData,
-        id: supplierData.id || `SUP-${Math.floor(10 + Math.random() * 90)}`
-      };
-      if (onAddSupplier) {
-        onAddSupplier(newSup);
-      } else {
-        setSuppliers(prev => [newSup, ...prev]);
-      }
-      if (addAuditLog) {
-        addAuditLog("New Supplier Registered", `Registered new wholesale supplier: ${newSup.name}`, "success");
-      }
+      addAuditLog("New Supplier Registered", `Registered new wholesale supplier: ${saved.name}`, "success");
     }
     setIsAddModalOpen(false);
     setEditingSupplier(null);
   };
 
-  const handleDelete = (supplier) => {
-    if (window.confirm(`Are you sure you want to remove supplier "${supplier.name}"?`)) {
-      if (onDeleteSupplier) {
-        onDeleteSupplier(supplier.id);
-      } else {
-        setSuppliers(prev => prev.filter(s => s.id !== supplier.id));
-      }
-      if (addAuditLog) {
-        addAuditLog("Supplier Removed", `Deleted supplier record: ${supplier.name}`, "warning");
-      }
+  const handleDelete = async (supplier) => {
+    const confirmed = await confirmDialog({
+      title: `Remove ${supplier.name}?`,
+      message: "Medicines and past purchase orders keep the supplier's name.",
+      confirmLabel: "Remove supplier",
+      tone: "danger"
+    });
+    if (!confirmed) return;
+    if (await onDeleteSupplier(supplier.id)) {
+      addAuditLog("Supplier Removed", `Deleted supplier record: ${supplier.name}`, "warning");
     }
   };
 
   const avgLeadTime = suppliers.length > 0 
-    ? (suppliers.reduce((acc, s) => acc + (s.leadTimeDays || 3), 0) / suppliers.length).toFixed(1)
+    ? (suppliers.reduce((acc, s) => acc + (s.leadTimeDays ?? 3), 0) / suppliers.length).toFixed(1)
     : "3.0";
 
   return (
@@ -245,7 +229,7 @@ export default function SupplierList({
                       </span>
                       <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
                         <Clock className="w-3 h-3 mr-1 text-emerald-600" />
-                        Lead: {supplier.leadTimeDays || 3} Days
+                        Lead: {supplier.leadTimeDays ?? 3} Days
                       </span>
                     </div>
 

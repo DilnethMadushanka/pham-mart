@@ -19,7 +19,8 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
-import { createCustomer, updateCustomer, deleteCustomer } from '../../services/supabaseService';
+import { saveCustomer, deleteCustomer } from '../../services/supabaseService';
+import { confirmDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 
 export default function CustomerList({ 
@@ -36,28 +37,14 @@ export default function CustomerList({
   const [selectedHistoryCustomer, setSelectedHistoryCustomer] = useState(null);
   const [historyTab, setHistoryTab] = useState("purchases"); // "purchases" | "prescriptions"
 
+  // History is matched by customer id. Old records saved before ids were stored
+  // fall back to an exact (not partial) name match.
   const filterCustomerRecords = (records = [], cust) => {
-    if (!cust) return [];
-    const custId = String(cust.id || "").toLowerCase().trim();
-    const custName = String(cust.name || "").toLowerCase().trim();
-    const custEmail = String(cust.email || "").toLowerCase().trim();
-    const custPhone = String(cust.phone || "").toLowerCase().trim();
-    const custNic = String(cust.nic || "").toLowerCase().trim();
-
-    return records.filter(r => {
-      const rId = String(r.customerId || r.patient_id || r.id || "").toLowerCase().trim();
-      const rName = String(r.customerName || r.patient_name || r.name || "").toLowerCase().trim();
-      const rEmail = String(r.email || r.customer_email || "").toLowerCase().trim();
-      const rPhone = String(r.phone || r.customer_phone || "").toLowerCase().trim();
-      const rNic = String(r.nic || r.customer_nic || r.patient_nic || "").toLowerCase().trim();
-
-      if (custId && rId && rId === custId) return true;
-      if (custNic && rNic && custNic !== "google-oauth" && custNic !== "n/a" && rNic === custNic) return true;
-      if (custEmail && rEmail && rEmail === custEmail) return true;
-      if (custPhone && rPhone && rPhone === custPhone) return true;
-      if (custName && rName && (rName === custName || rName.includes(custName) || custName.includes(rName))) return true;
-      return false;
-    });
+    if (!cust?.id) return [];
+    const name = String(cust.name || "").trim().toLowerCase();
+    return records.filter(r => r.customerId
+      ? r.customerId === cust.id
+      : Boolean(name) && String(r.customerName || "").trim().toLowerCase() === name);
   };
 
   useEffect(() => {
@@ -106,68 +93,44 @@ export default function CustomerList({
     setIsAddModalOpen(true);
   };
 
-  const handleDeleteClick = async (id, name, nic) => {
+  const handleDeleteClick = async (cust) => {
     if (!canDelete) return;
-    if (!window.confirm(`Are you sure you want to delete customer profile for "${name}" (${id})?`)) return;
+    const confirmed = await confirmDialog({
+      title: `Delete ${cust.name}?`,
+      message: "This removes the customer profile and their online sign-in. Past invoices keep the name.",
+      confirmLabel: "Delete customer",
+      tone: "danger"
+    });
+    if (!confirmed) return;
 
-    setCustomers(prev => prev.filter(c => c.id !== id));
-    await deleteCustomer(id, nic);
-
-    if (addAuditLog) {
-      addAuditLog("Customer Deleted", `Deleted customer profile for ${name} (${id})`, "warning");
+    const { error } = await deleteCustomer(cust.id);
+    if (error) {
+      notifyError(error, "Customer not deleted");
+      return;
     }
+    setCustomers(prev => prev.filter(c => c.id !== cust.id));
+    addAuditLog("Customer Deleted", `Deleted customer profile for ${cust.name} (${cust.id})`, "warning");
   };
 
   const handleSaveCustomer = async (e) => {
     e.preventDefault();
     if (!newCust.name.trim() || !newCust.nic.trim()) {
-      alert("Please fill in customer name and NIC.");
+      notify("Details needed", "Please fill in the customer's name and NIC.", "error");
+      return;
+    }
+
+    const { data, error } = await saveCustomer(editingCustomer ? { ...newCust, id: editingCustomer.id } : newCust);
+    if (error) {
+      notifyError(error, "Customer not saved");
       return;
     }
 
     if (editingCustomer) {
-      const updatedObj = { ...editingCustomer, ...newCust };
-      setCustomers(prev => prev.map(c => c.id === editingCustomer.id ? updatedObj : c));
-      
-      const { data, error } = await updateCustomer(editingCustomer.id, newCust);
-      if (error) {
-        console.error("Error updating customer in Supabase:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setCustomers(prev => prev.map(c => (c.id === editingCustomer.id || c.id === saved.id) ? {
-          ...c,
-          id: saved.id || c.id,
-          name: saved.name || newCust.name,
-          nic: saved.nic || newCust.nic,
-          phone: saved.phone || newCust.phone,
-          email: saved.email || newCust.email,
-          address: saved.address || newCust.address,
-          allergies: saved.allergies || newCust.allergies
-        } : c));
-      }
-
-      if (addAuditLog) {
-        addAuditLog("Customer Updated", `Updated digital customer profile for ${newCust.name} (ID: ${editingCustomer.id})`, "info");
-      }
+      setCustomers(prev => prev.map(c => c.id === data.id ? data : c));
+      addAuditLog("Customer Updated", `Updated customer profile for ${data.name} (ID: ${data.id})`, "info");
     } else {
-      const created = {
-        ...newCust,
-        id: `CUST-${Math.floor(300 + Math.random() * 700)}`,
-        historyCount: 0,
-        lastVisit: new Date().toISOString().split('T')[0]
-      };
-      setCustomers(prev => [created, ...prev]);
-      const { data, error } = await createCustomer(created);
-      if (error) {
-        console.error("Error creating customer in Supabase:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setCustomers(prev => prev.map(c => c.id === created.id ? { ...c, id: saved.id || c.id } : c));
-      }
-
-      if (addAuditLog) {
-        addAuditLog("New Customer Registered", `Created digital customer profile for ${created.name} (NIC: ${created.nic})`, "success");
-      }
+      setCustomers(prev => [data, ...prev]);
+      addAuditLog("New Customer Registered", `Created customer profile for ${data.name} (NIC: ${data.nic})`, "success");
     }
 
     setIsAddModalOpen(false);
@@ -251,7 +214,7 @@ export default function CustomerList({
                     </button>
                     {canDelete && (
                     <button 
-                      onClick={() => handleDeleteClick(cust.id, cust.name, cust.nic)}
+                      onClick={() => handleDeleteClick(cust)}
                       title="Delete Customer Profile"
                       className="p-1.5 rounded-xl bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 transition-colors cursor-pointer"
                     >

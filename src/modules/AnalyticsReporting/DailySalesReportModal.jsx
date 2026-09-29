@@ -44,8 +44,13 @@ function toYYYYMMDD(dateVal) {
   return str;
 }
 
-export default function DailySalesReportModal({ isOpen, onClose, transactions = [], medicines = [] }) {
+// Hooks can't run after an early return, so the open check lives in this wrapper.
+export default function DailySalesReportModal({ isOpen, ...props }) {
   if (!isOpen) return null;
+  return <DailySalesReport {...props} />;
+}
+
+function DailySalesReport({ onClose, transactions = [], medicines = [] }) {
 
   // Selected date (local timezone YYYY-MM-DD format, defaults to 'ALL')
   const now = new Date();

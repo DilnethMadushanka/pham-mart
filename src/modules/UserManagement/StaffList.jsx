@@ -17,11 +17,12 @@ import {
   UserCheck
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
-import { createStaff, updateStaff } from '../../services/supabaseService';
+import { saveStaff, setStaffPassword } from '../../services/supabaseService';
+import { confirmDialog, promptDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 import MetricCard from '../../components/MetricCard';
 
-export default function StaffList({ staffList, setStaffList, addAuditLog }) {
+export default function StaffList({ staffList, setStaffList, currentUser, addAuditLog }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -39,44 +40,65 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     const targetStaff = staffList.find(s => s.id === id);
     if (!targetStaff) return;
     const newStatus = targetStaff.status === "Active" ? "Inactive" : "Active";
-    setStaffList(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-    await updateStaff(id, { status: newStatus });
+    if (newStatus === "Inactive") {
+      const confirmed = await confirmDialog({
+        title: `Deactivate ${targetStaff.name}?`,
+        message: "They are signed out straight away and can't sign in until reactivated.",
+        confirmLabel: "Deactivate",
+        tone: "danger"
+      });
+      if (!confirmed) return;
+    }
+    const { data, error } = await saveStaff({ ...targetStaff, status: newStatus });
+    if (error) {
+      notifyError(error, "Account not updated");
+      return;
+    }
+    setStaffList(prev => prev.map(s => s.id === id ? data : s));
     addAuditLog(
       `Staff Account ${newStatus === "Active" ? "Activated" : "Deactivated"}`,
-      `Account for ${targetStaff.name} (${targetStaff.username}) was set to ${newStatus}`,
+      `Account for ${data.name} (${data.username}) was set to ${newStatus}`,
       newStatus === "Active" ? "success" : "warning"
     );
   };
 
-  const handleResetPassword = (staff) => {
-    alert(`Password reset link generated & dispatched to ${staff.email} (${staff.name})`);
-    addAuditLog(
-      "Password Reset Requested",
-      `Password reset trigger executed for user ${staff.username}`,
-      "info"
-    );
+  const handleResetPassword = async (staff) => {
+    const password = await promptDialog({
+      title: `Set a new password for ${staff.name}`,
+      message: "They are signed out everywhere and must use the new password. Share it with them in person.",
+      label: "New password",
+      inputType: "text",
+      minLength: 8,
+      confirmLabel: "Set password"
+    });
+    if (!password) return;
+    const { error } = await setStaffPassword(staff.id, password);
+    if (error) {
+      notifyError(error, "Password not changed");
+      return;
+    }
+    notify("Password changed", `${staff.name} can now sign in with the new password.`);
+    addAuditLog("Password Reset", `Owner set a new password for ${staff.username}`, "info");
   };
 
+  // Returns true when saved, so the form keeps the user's input on failure.
   const handleSaveStaff = async (staffData) => {
+    const { password, ...fields } = staffData;
+    const { data, error } = await saveStaff(editingStaff ? { ...fields, id: editingStaff.id } : fields, password);
+    if (error) {
+      notifyError(error, "Staff account not saved");
+      return false;
+    }
     if (editingStaff) {
-      // Merge rather than replace — staffData omits `password` when it wasn't reset,
-      // so a plain replace would wipe the existing password from local state.
-      setStaffList(prev => prev.map(s => s.id === staffData.id ? { ...s, ...staffData } : s));
-      await updateStaff(staffData.id, staffData);
-      addAuditLog("Staff Account Updated", `Updated roles and permissions for ${staffData.name}`, "info");
+      setStaffList(prev => prev.map(s => s.id === data.id ? data : s));
+      addAuditLog("Staff Account Updated", `Updated role and permissions for ${data.name}`, "info");
     } else {
-      const newStaff = {
-        ...staffData,
-        id: `STF-${Math.floor(100 + Math.random() * 900)}`,
-        createdAt: new Date().toISOString().split('T')[0],
-        lastActive: "Never"
-      };
-      setStaffList(prev => [newStaff, ...prev]);
-      await createStaff(newStaff);
-      addAuditLog("New Staff Account Created", `Created new ${newStaff.role} account for ${newStaff.name}`, "success");
+      setStaffList(prev => [data, ...prev]);
+      addAuditLog("New Staff Account Created", `Created new ${data.role} account for ${data.name}`, "success");
     }
     setIsAddModalOpen(false);
     setEditingStaff(null);
+    return true;
   };
 
   return (
@@ -193,7 +215,9 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   <td className="py-4 px-5">
                     <button
                       onClick={() => toggleStaffStatus(staff.id)}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                      disabled={staff.id === currentUser?.id}
+                      title={staff.id === currentUser?.id ? "You can't deactivate your own account" : "Change account status"}
+                      className={`disabled:cursor-not-allowed disabled:opacity-70 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
                         staff.status === "Active" 
                           ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300"
                           : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-emerald-50 hover:text-emerald-800"

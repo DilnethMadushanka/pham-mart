@@ -24,7 +24,7 @@ export default function AddSupplierModal({
         email: supplierToEdit.email || '',
         phone: supplierToEdit.phone || '',
         address: supplierToEdit.address || '',
-        leadTimeDays: supplierToEdit.leadTimeDays || 3
+        leadTimeDays: supplierToEdit.leadTimeDays ?? 3
       });
     } else {
       setFormData({
@@ -44,7 +44,7 @@ export default function AddSupplierModal({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'leadTimeDays' ? parseInt(value) || 1 : value
+      [name]: name === 'leadTimeDays' ? (value === '' ? '' : Math.max(0, parseInt(value, 10) || 0)) : value
     }));
   };
 
@@ -59,7 +59,7 @@ export default function AddSupplierModal({
       email: formData.email.trim(),
       phone: formData.phone.trim(),
       address: formData.address.trim(),
-      leadTimeDays: formData.leadTimeDays
+      leadTimeDays: formData.leadTimeDays === '' ? 3 : formData.leadTimeDays
     });
   };
 
@@ -169,8 +169,8 @@ export default function AddSupplierModal({
               <input 
                 type="number"
                 name="leadTimeDays"
-                min="1"
-                max="60"
+                min="0"
+                max="365"
                 value={formData.leadTimeDays}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
