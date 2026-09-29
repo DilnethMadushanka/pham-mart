@@ -7,6 +7,7 @@ import {
   UserCheck,
   Users
 } from 'lucide-react';
+import { canAccessTab } from '../lib/permissions';
 
 export default function Sidebar({
   activeTab,
@@ -70,7 +71,7 @@ export default function Sidebar({
       </div>
 
       <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-        {menuItems.map((item) => {
+        {menuItems.filter(item => canAccessTab(currentRole, item.id)).map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
 

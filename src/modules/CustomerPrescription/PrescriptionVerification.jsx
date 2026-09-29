@@ -23,6 +23,8 @@ export default function PrescriptionVerification({
   customers, 
   medicines, 
   currentRole,
+  currentUser,
+  canApprove = false,
   addAuditLog 
 }) {
   const [selectedRx, setSelectedRx] = useState(null);
@@ -36,13 +38,16 @@ export default function PrescriptionVerification({
     return p.status === activeFilter;
   });
 
+  const verifierName = `${currentUser?.name || "Staff"} (${currentRole})`;
+
   const handleApprove = async (rxId) => {
+    if (!canApprove) return;
     setPrescriptions(prev => prev.map(p => {
       if (p.id === rxId) {
         const updated = {
           ...p,
           status: "Approved",
-          verifiedBy: currentRole === "Pharmacist" ? "Mendis M.M.N (Pharmacist)" : "Ms. Chathurangika (Admin)",
+          verifiedBy: verifierName,
           verifiedAt: new Date().toLocaleString(),
           notes: pharmacistNotes || "Verified against patient dosage & SLMC physician registration."
         };
@@ -56,8 +61,9 @@ export default function PrescriptionVerification({
     setPharmacistNotes("");
   };
 
-  const handleReject = async (rxId) => {
-    if (!rejectionReason) {
+  const handleReject = async (rxId, reason = rejectionReason) => {
+    if (!canApprove) return;
+    if (!reason) {
       alert("Please provide a reason for rejecting the prescription.");
       return;
     }
@@ -66,16 +72,16 @@ export default function PrescriptionVerification({
         const updated = {
           ...p,
           status: "Rejected",
-          verifiedBy: currentRole === "Pharmacist" ? "Mendis M.M.N (Pharmacist)" : "Ms. Chathurangika (Admin)",
+          verifiedBy: verifierName,
           verifiedAt: new Date().toLocaleString(),
-          notes: `REJECTED: ${rejectionReason}`
+          notes: `REJECTED: ${reason}`
         };
-        addAuditLog("Prescription Rejected", `Rejected RX ${p.rxNumber}. Rationale: ${rejectionReason}`, "warning");
+        addAuditLog("Prescription Rejected", `Rejected RX ${p.rxNumber}. Rationale: ${reason}`, "warning");
         return updated;
       }
       return p;
     }));
-    await updatePrescriptionStatus(rxId, "Rejected", rejectionReason);
+    await updatePrescriptionStatus(rxId, "Rejected", reason);
     setSelectedRx(null);
     setRejectionReason("");
   };
@@ -308,7 +314,13 @@ export default function PrescriptionVerification({
               )}
 
               {/* Action Form if Pending */}
-              {selectedRx.status === "Pending" && (
+              {selectedRx.status === "Pending" && !canApprove && (
+                <p className="pt-3 border-t border-slate-100 text-xs text-slate-500">
+                  Only a pharmacist or the owner can approve or reject prescriptions.
+                </p>
+              )}
+
+              {selectedRx.status === "Pending" && canApprove && (
                 <div className="space-y-3 pt-2 border-t border-slate-100">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1">
@@ -337,7 +349,7 @@ export default function PrescriptionVerification({
                         const reason = prompt("Enter rationale for rejecting prescription:");
                         if (reason) {
                           setRejectionReason(reason);
-                          handleReject(selectedRx.id);
+                          handleReject(selectedRx.id, reason);
                         }
                       }}
                       className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer"

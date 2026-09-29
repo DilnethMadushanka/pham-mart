@@ -43,10 +43,12 @@ function Avatar({ user }) {
 
 export default function Navbar({
   currentRole,
+  availableRoles = [],
   setCurrentRole,
   viewMode,
   setViewMode,
   currentUser,
+  isStaff = false,
   onOpenAuthModal,
   onLogout,
   unreadNotificationCount,
@@ -56,14 +58,12 @@ export default function Navbar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const isStaff = currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer");
-
   const roles = [
     { key: "Owner/Admin", label: "Owner", icon: ShieldCheck },
     { key: "Pharmacist", label: "Pharmacist", icon: Pill },
-    { key: "Cashier", label: "Cashier", icon: UserCheck },
-    { key: "Customer", label: "Customer", icon: Globe }
-  ];
+    { key: "Cashier", label: "Cashier", icon: UserCheck }
+  ].filter(r => availableRoles.includes(r.key))
+    .concat({ key: "Customer", label: "Customer site", icon: Globe });
 
   const siteLinks = [
     { label: "Assortment", target: "assortment-section" },
@@ -167,6 +167,7 @@ export default function Navbar({
 
             {viewMode === "enterprise" && (
               <>
+                {onOpenAuditLogs && (
                 <button
                   onClick={onOpenAuditLogs}
                   title="Audit trail"
@@ -175,6 +176,7 @@ export default function Navbar({
                 >
                   <History className="w-[18px] h-[18px]" />
                 </button>
+                )}
 
                 <button
                   onClick={onOpenNotifications}

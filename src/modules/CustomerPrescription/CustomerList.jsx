@@ -27,6 +27,7 @@ export default function CustomerList({
   setCustomers, 
   prescriptions = [], 
   transactions = [], 
+  canDelete = false,
   addAuditLog 
 }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -106,6 +107,7 @@ export default function CustomerList({
   };
 
   const handleDeleteClick = async (id, name, nic) => {
+    if (!canDelete) return;
     if (!window.confirm(`Are you sure you want to delete customer profile for "${name}" (${id})?`)) return;
 
     setCustomers(prev => prev.filter(c => c.id !== id));
@@ -247,6 +249,7 @@ export default function CustomerList({
                     >
                       <Edit className="w-3.5 h-3.5" />
                     </button>
+                    {canDelete && (
                     <button 
                       onClick={() => handleDeleteClick(cust.id, cust.name, cust.nic)}
                       title="Delete Customer Profile"
@@ -254,6 +257,7 @@ export default function CustomerList({
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
+                    )}
                   </div>
                 </div>
 

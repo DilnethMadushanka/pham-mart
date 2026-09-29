@@ -159,6 +159,10 @@ export default function AuthModal({
     );
 
     if (foundStaff) {
+      if (foundStaff.status === "Inactive") {
+        setLoginError("This staff account is deactivated. Please contact an administrator.");
+        return;
+      }
       if (!foundStaff.password) {
         setLoginError("This staff account has no password set. Please contact an administrator to reset it.");
         return;

@@ -44,12 +44,13 @@ import {
   saveAuditLog,
   subscribeToRealtimeChanges 
 } from './services/supabaseService';
+import { isStaffUser, assumableRoles, canAccessTab, defaultTab, can } from './lib/permissions';
 
 export default function App() {
   // Navigation & View Mode
   const [viewMode, setViewMode] = useState("website"); // "website" | "enterprise"
-  const [currentRole, setCurrentRole] = useState("Owner/Admin");
-  const [activeTab, setActiveTab] = useState("analytics");
+  const [currentRole, setCurrentRole] = useState(null);
+  const [activeTab, setActiveTab] = useState(null);
 
   // User Auth State with LocalStorage Persistence
   const [currentUser, setCurrentUser] = useState(() => {
@@ -161,8 +162,8 @@ export default function App() {
     const newLog = {
       id: `LOG-${Math.floor(600 + Math.random() * 400)}`,
       timestamp: new Date().toLocaleString(),
-      user: currentUser ? currentUser.name : currentRole,
-      role: currentUser ? currentUser.role : currentRole,
+      user: currentUser ? currentUser.name : "Guest",
+      role: currentRole || currentUser?.role || "Guest",
       action: action,
       details: details,
       severity: severity
@@ -171,51 +172,67 @@ export default function App() {
     saveAuditLog(newLog);
   };
 
+  // Resolve the signed-in staff member against the staff directory, so a stale or edited
+  // saved session cannot grant a role the account does not hold (or an inactive account access).
+  const staffRecord = currentUser && currentUser.userType === "staff"
+    ? staffList.find(s => s.id === currentUser.id)
+    : null;
+  const sessionUser = staffRecord
+    ? (staffRecord.status === "Inactive" ? null : { ...currentUser, role: staffRecord.role })
+    : currentUser;
+  const isStaff = isStaffUser(sessionUser);
+  const rolesForUser = assumableRoles(sessionUser);
+  const role = isStaff ? (rolesForUser.includes(currentRole) ? currentRole : sessionUser.role) : null;
+  const tab = role && canAccessTab(role, activeTab) ? activeTab : defaultTab(role);
+  const inConsole = viewMode === "enterprise" && isStaff;
+
+  const goToTab = (nextTab) => {
+    if (!role || !canAccessTab(role, nextTab)) {
+      showToast("Access restricted", "Your role does not have access to that screen.", "error");
+      return;
+    }
+    setActiveTab(nextTab);
+  };
+
   const handleViewModeChange = (targetMode) => {
-    if (targetMode === "enterprise") {
-      const isStaff = currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer");
-      if (!isStaff) {
-        showToast("Access Restricted", "The Enterprise Console is reserved for authorized staff. Please sign in with staff credentials.", "error");
-        setIsAuthModalOpen(true);
-        return;
-      }
+    if (targetMode === "enterprise" && !isStaff) {
+      showToast("Access Restricted", "The Enterprise Console is reserved for authorized staff. Please sign in with staff credentials.", "error");
+      setIsAuthModalOpen(true);
+      return;
     }
     setViewMode(targetMode);
   };
 
   const handleLoginSuccess = (userData) => {
-    setCurrentUser(userData);
+    // Never keep the password in app state or browser storage.
+    const { password: _password, ...safeUser } = userData;
+    setCurrentUser(safeUser);
     try {
-      localStorage.setItem("pharmart_current_user", JSON.stringify(userData));
+      localStorage.setItem("pharmart_current_user", JSON.stringify(safeUser));
     } catch (e) {
       console.warn("Could not save user session:", e);
     }
 
     setIsAuthModalOpen(false);
-    showToast("Signed In Successfully", `Welcome to PHARMART Pharmacy, ${userData.name}!`, "success");
-    
-    if (userData.userType === "customer" || userData.role === "Customer") {
+    showToast("Signed In Successfully", `Welcome to PHARMART Pharmacy, ${safeUser.name}!`, "success");
+
+    if (isStaffUser(safeUser)) {
+      setCurrentRole(safeUser.role);
+      setActiveTab(defaultTab(safeUser.role));
+      setViewMode("enterprise");
+    } else {
       setCustomers(prev => [userData, ...prev.filter(c => c.id !== userData.id && c.email !== userData.email)]);
       setViewMode("website");
-    } else if (userData.userType === "staff" || userData.role !== "Customer") {
-      setCurrentRole(userData.role);
-      setViewMode("enterprise");
-      // Auto-set initial allowed tab for role
-      if (userData.role === "Cashier") {
-        setActiveTab("pos");
-      } else if (userData.role === "Pharmacist") {
-        setActiveTab("prescriptions");
-      } else {
-        setActiveTab("analytics");
-      }
     }
 
-    addAuditLog("User Login", `Authenticated successfully as ${userData.name} (${userData.role})`, "success");
+    addAuditLog("User Login", `Authenticated successfully as ${safeUser.name} (${safeUser.role})`, "success");
   };
 
   const handleLogout = () => {
     addAuditLog("User Logout", `Signed out user session: ${currentUser?.name}`, "info");
     setCurrentUser(null);
+    setCurrentRole(null);
+    setActiveTab(null);
     try {
       localStorage.removeItem("pharmart_current_user");
     } catch (e) {
@@ -225,18 +242,18 @@ export default function App() {
   };
 
   const handleRoleSwitch = (newRole) => {
-    // Only allow switching to a role if current staff has appropriate permissions
-    const isStaff = currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer");
-    if (!isStaff) return;
+    if (newRole === "Customer") {
+      setViewMode("website");
+      return;
+    }
+    // Staff can only preview roles at or below their own.
+    if (!rolesForUser.includes(newRole)) {
+      showToast("Access restricted", `Your account cannot switch to ${newRole}.`, "error");
+      return;
+    }
 
     setCurrentRole(newRole);
     addAuditLog("Role Switch", `Switched active workstation view mode to ${newRole}`, "info");
-
-    if (newRole === "Cashier" && activeTab !== "pos" && activeTab !== "inventory") {
-      setActiveTab("pos");
-    } else if (newRole === "Pharmacist" && activeTab === "staff") {
-      setActiveTab("prescriptions");
-    }
   };
 
   // Notification Counts
@@ -254,20 +271,22 @@ export default function App() {
       
       {/* Top Header Navbar */}
       <Navbar 
-        currentRole={currentRole}
+        currentRole={role}
+        availableRoles={rolesForUser}
         setCurrentRole={handleRoleSwitch}
-        viewMode={viewMode}
+        viewMode={inConsole ? "enterprise" : "website"}
         setViewMode={handleViewModeChange}
-        currentUser={currentUser}
+        currentUser={sessionUser}
+        isStaff={isStaff}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         unreadNotificationCount={unreadCount}
         onOpenNotifications={() => setIsNotificationsOpen(true)}
-        onOpenAuditLogs={() => setIsAuditLogsOpen(true)}
+        onOpenAuditLogs={can(role, "reports_view") ? () => setIsAuditLogsOpen(true) : undefined}
       />
 
       {/* Main Content Area */}
-      {viewMode === "website" ? (
+      {!inConsole ? (
         /* PUBLIC CUSTOMER WEBSITE & E-PHARMACY STORE */
         <main id="main" className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <CustomerStorefront 
@@ -275,9 +294,7 @@ export default function App() {
             customers={customers}
             prescriptions={prescriptions}
             setPrescriptions={setPrescriptions}
-            currentUser={currentUser}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
-            onSwitchToEnterprise={() => setViewMode("enterprise")}
+            currentUser={sessionUser}
             addAuditLog={addAuditLog}
           />
         </main>
@@ -286,16 +303,16 @@ export default function App() {
         <div className="flex-1 flex max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
           
           <Sidebar 
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            currentRole={currentRole}
+            activeTab={tab}
+            setActiveTab={goToTab}
+            currentRole={role}
             lowStockCount={lowStockCount}
             pendingRxCount={pendingRxCount}
             expiredCount={expiredCount}
           />
 
           <main id="main" className="flex-1 min-w-0">
-            {activeTab === "analytics" && (
+            {tab === "analytics" && (
               <AnalyticsDashboard 
                 medicines={medicines}
                 transactions={transactions}
@@ -303,7 +320,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === "pos" && (
+            {tab === "pos" && (
               <POSTerminal 
                 medicines={medicines}
                 setMedicines={setMedicines}
@@ -312,12 +329,13 @@ export default function App() {
                 prescriptions={prescriptions}
                 transactions={transactions}
                 setTransactions={setTransactions}
-                currentRole={currentRole}
+                currentRole={role}
+                currentUser={sessionUser}
                 addAuditLog={addAuditLog}
               />
             )}
 
-            {activeTab === "inventory" && (
+            {tab === "inventory" && (
               <MedicineList 
                 medicines={medicines}
                 setMedicines={setMedicines}
@@ -328,32 +346,36 @@ export default function App() {
                 onAddSupplier={handleAddSupplier}
                 onUpdateSupplier={handleUpdateSupplier}
                 onDeleteSupplier={handleDeleteSupplier}
+                canEdit={can(role, "inventory_edit")}
                 addAuditLog={addAuditLog}
               />
             )}
 
-            {activeTab === "prescriptions" && (
+            {tab === "prescriptions" && (
               <PrescriptionVerification 
                 prescriptions={prescriptions}
                 setPrescriptions={setPrescriptions}
                 customers={customers}
                 medicines={medicines}
-                currentRole={currentRole}
+                currentRole={role}
+                currentUser={sessionUser}
+                canApprove={can(role, "prescription_approve")}
                 addAuditLog={addAuditLog}
               />
             )}
 
-            {activeTab === "customers" && (
+            {tab === "customers" && (
               <CustomerList 
                 customers={customers}
                 setCustomers={setCustomers}
                 prescriptions={prescriptions}
                 transactions={transactions}
+                canDelete={can(role, "customer_delete")}
                 addAuditLog={addAuditLog}
               />
             )}
 
-            {activeTab === "staff" && (
+            {tab === "staff" && (
               <StaffList 
                 staffList={staffList}
                 setStaffList={setStaffList}
@@ -380,7 +402,7 @@ export default function App() {
         onClose={() => setIsNotificationsOpen(false)}
         medicines={medicines}
         prescriptions={prescriptions}
-        onNavigate={(tab) => { setViewMode("enterprise"); setActiveTab(tab); }}
+        onNavigate={(target) => { handleViewModeChange("enterprise"); goToTab(target); }}
       />
 
       {/* Audit Trail Logs Modal */}

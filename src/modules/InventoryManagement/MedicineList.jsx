@@ -31,9 +31,12 @@ export default function MedicineList({
   onAddSupplier,
   onUpdateSupplier,
   onDeleteSupplier,
+  canEdit = false,
   addAuditLog 
 }) {
-  const [activeSubTab, setActiveSubTab] = useState("catalogue"); // "catalogue" | "purchase_orders" | "suppliers"
+  const [selectedSubTab, setActiveSubTab] = useState("catalogue");
+  // Read-only roles only see the catalogue; procurement screens need edit rights.
+  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "purchase_orders" | "suppliers"
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -61,6 +64,7 @@ export default function MedicineList({
   const categories = Array.from(new Set(medicines.map(m => m.category)));
 
   const handleSaveMedicine = async (medData) => {
+    if (!canEdit) return;
     if (editingMedicine) {
       setMedicines(prev => prev.map(m => m.id === medData.id ? medData : m));
       const { data, error } = await updateMedicine(medData.id, medData);
@@ -92,6 +96,7 @@ export default function MedicineList({
   };
 
   const handleDeleteMedicine = async (id, name, code) => {
+    if (!canEdit) return;
     if (window.confirm(`Are you sure you want to discontinue ${name}?`)) {
       setMedicines(prev => prev.filter(m => 
         String(m.id).toLowerCase() !== String(id).toLowerCase() && 
@@ -116,6 +121,7 @@ export default function MedicineList({
         description="Stock levels, batches, expiry alerts and purchase orders in one place."
       />
 
+      {canEdit && (
       <nav aria-label="Inventory sections" className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
           <button
             onClick={() => setActiveSubTab("catalogue")}
@@ -157,6 +163,7 @@ export default function MedicineList({
             <span className="text-xs font-mono text-slate-400">{suppliers.length}</span>
           </button>
       </nav>
+      )}
 
       {activeSubTab === "suppliers" ? (
         <SupplierList
@@ -226,6 +233,7 @@ export default function MedicineList({
                 <option value="EXPIRED">Near Expiry Only</option>
               </select>
 
+              {canEdit && (
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
                 className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
@@ -233,6 +241,7 @@ export default function MedicineList({
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
               </button>
+              )}
 
             </div>
 
@@ -250,7 +259,7 @@ export default function MedicineList({
                     <th className="py-3.5 px-4">Unit Price (LKR)</th>
                     <th className="py-3.5 px-4">Batch & Expiry</th>
                     <th className="py-3.5 px-4">Supplier</th>
-                    <th className="py-3.5 px-4 text-right">Actions</th>
+                    {canEdit && <th className="py-3.5 px-4 text-right">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -322,6 +331,7 @@ export default function MedicineList({
                         </td>
 
                         {/* Actions */}
+                        {canEdit && (
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1">
                             <button
@@ -340,6 +350,7 @@ export default function MedicineList({
                             </button>
                           </div>
                         </td>
+                        )}
 
                       </tr>
                     );
