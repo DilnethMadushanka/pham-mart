@@ -24,9 +24,11 @@ import {
   Tooltip, 
   PieChart, 
   Pie, 
-  Cell 
+  Cell,
+  CartesianGrid
 } from 'recharts';
 import MetricCard from '../../components/MetricCard';
+import PageHeader from '../../components/PageHeader';
 import DailySalesReportModal from './DailySalesReportModal';
 
 export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [] }) {
@@ -62,50 +64,28 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
       
-      {/* Top Glassmorphic Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 sm:p-8 rounded-3xl text-white shadow-xl relative overflow-hidden border border-blue-900/50">
-        <div className="absolute -top-12 -right-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 relative z-10">
-          <div>
-            <div className="flex items-center space-x-2.5 mb-2">
-              <span className="px-3.5 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black border border-blue-400/30 backdrop-blur-md">
-                Executive Analytics Dashboard
-              </span>
-              <span className="flex items-center text-xs font-bold text-blue-400">
-                <Zap className="w-3.5 h-3.5 mr-1 fill-blue-400" />
-                Live Sync
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight font-heading">
-              Pharmacy Analytics & Business Performance
-            </h2>
-            <p className="text-xs sm:text-sm text-blue-100/80 font-medium mt-1">
-              Real-time financial trends, stock turn rates, billing error metrics & operational baseline analytics.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
-            <button
-              onClick={() => setIsReportModalOpen(true)}
-              className="flex items-center justify-center space-x-2 px-5 py-3.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer border border-blue-400/30"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Daily Sales Report</span>
-            </button>
-
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/15 text-right shrink-0 min-w-[180px]">
-              <div className="text-[10px] font-extrabold uppercase tracking-wider text-blue-200">Total Revenue</div>
-              <div className="text-xl sm:text-2xl font-black text-white font-mono mt-0.5">
-                LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-            </div>
+      <PageHeader
+        kicker="Overview"
+        title="Pharmacy performance"
+        description="Revenue, stock turn, billing errors and operating baselines, updated as sales come in."
+      >
+        <div className="text-right pr-1">
+          <div className="text-xs text-slate-500">Total revenue</div>
+          <div className="text-xl font-semibold text-[#0B2545] tabular-nums">
+            LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
-      </div>
+        <button
+          onClick={() => setIsReportModalOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium text-sm rounded-xl shadow-md shadow-[#2563EB]/20"
+        >
+          <Printer className="w-4 h-4" />
+          <span>Daily sales report</span>
+        </button>
+      </PageHeader>
 
       {/* Metric Cards Grid - Expanded 4 Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <MetricCard 
           title="Daily Sales Revenue"
           value={`Rs. ${totalRevenue.toLocaleString()}`}
@@ -152,12 +132,15 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
           <div className="flex justify-between items-center border-b border-slate-100 pb-4">
             <div>
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Weekly Revenue & Transaction Trend</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Live sales synchronization across POS counters</p>
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight font-heading">Weekly revenue</h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Sales across all POS counters, last 7 days</p>
             </div>
-            <span className="px-3.5 py-1.5 bg-blue-50 text-[#2563EB] text-xs font-black rounded-xl border border-blue-200/60 shadow-2xs flex items-center space-x-1.5 shrink-0">
-              <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-ping"></span>
-              <span>Live Feed</span>
+            <span className="status-chip status-chip-blue shrink-0">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inset-0 rounded-full bg-[#2563EB] opacity-60 animate-ping"></span>
+                <span className="relative w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
+              </span>
+              Live
             </span>
           </div>
 
@@ -166,17 +149,19 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
               <AreaChart data={salesChartData}>
                 <defs>
                   <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.35}/>
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.22}/>
                     <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} fontWeight={600} />
-                <YAxis stroke="#94a3b8" fontSize={12} fontWeight={600} />
+                <CartesianGrid vertical={false} stroke="#EEF2F7" />
+                <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} dy={8} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={48} tickFormatter={(v) => `${v / 1000}k`} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 12px 28px -8px rgba(11, 37, 69, 0.18)' }}
+                  cursor={{ stroke: '#CBD5E1', strokeDasharray: '4 4' }}
                   formatter={(val) => [`Rs. ${val.toLocaleString()}`, 'Revenue']}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={3.5} fillOpacity={1} fill="url(#skyGrad)" />
+                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#skyGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -186,8 +171,8 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5 flex flex-col justify-between">
           <div>
             <div className="border-b border-slate-100 pb-4">
-              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight font-heading">Medicine Category Breakdown</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Sales revenue distribution by therapeutic category</p>
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight font-heading">Sales by category</h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">Share of revenue by therapeutic category</p>
             </div>
 
             <div className="h-60 flex justify-center items-center my-2">
@@ -199,7 +184,9 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                     cy="50%"
                     innerRadius={62}
                     outerRadius={92}
-                    paddingAngle={5}
+                    paddingAngle={3}
+                    cornerRadius={4}
+                    stroke="none"
                     dataKey="value"
                   >
                     {categoryData.map((entry, index) => (
@@ -216,10 +203,10 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
             {categoryData.map((cat, idx) => (
               <div key={idx} className="flex justify-between items-center text-xs">
                 <div className="flex items-center space-x-2.5">
-                  <span className="w-3 h-3 rounded-md" style={{ backgroundColor: cat.color }}></span>
+                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: cat.color }}></span>
                   <span className="text-slate-700 font-bold">{cat.name}</span>
                 </div>
-                <span className="font-black text-slate-900 font-mono">{cat.value}%</span>
+                <span className="font-semibold text-slate-900 font-mono">{cat.value}%</span>
               </div>
             ))}
           </div>

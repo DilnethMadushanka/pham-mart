@@ -1,6 +1,13 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
+const TONES = {
+  sky: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
+  emerald: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
+  amber: { icon: "text-[#B45309] bg-[#FFFBEB]", badge: "status-chip-amber" },
+  rose: { icon: "text-[#B91C1C] bg-[#FEF2F2]", badge: "status-chip-red" }
+};
+
 export default function MetricCard({
   title,
   value,
@@ -11,61 +18,40 @@ export default function MetricCard({
   badge,
   colorScheme = "sky"
 }) {
-  const isSky = colorScheme === "sky" || colorScheme === "emerald";
-  const isAmber = colorScheme === "amber";
-  const isRose = colorScheme === "rose";
+  const tone = TONES[colorScheme] || { icon: "text-[#64748B] bg-slate-100", badge: "status-chip-gray" };
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
+    <div className="group bg-white rounded-2xl p-5 ring-1 ring-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-300 flex flex-col h-full min-h-[148px]">
 
-      {/* Card Header (Title & Icon) */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <h4 className="text-xs font-bold text-[#64748B] leading-snug break-words">
+      <div className="flex items-center justify-between gap-2">
+        <h4 className="text-[13px] font-medium text-slate-500 leading-snug">
           {title}
         </h4>
         {Icon && (
-          <div className={`p-2.5 rounded-xl shrink-0 ${
-            isSky ? "bg-[#EFF6FF] text-[#2563EB]" :
-            isAmber ? "bg-[#FFFBEB] text-[#B45309]" :
-            isRose ? "bg-[#FEF2F2] text-[#B91C1C]" :
-            "bg-slate-100 text-[#64748B]"
-          }`}>
-            <Icon className="w-5 h-5" />
-          </div>
+          <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tone.icon}`}>
+            <Icon className="w-4 h-4" strokeWidth={2} />
+          </span>
         )}
       </div>
 
-      {/* Main Value & Trend Pill */}
-      <div className="flex flex-wrap items-baseline justify-between gap-2 my-2">
-        <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <div className="flex flex-wrap items-center gap-2.5 mt-4 mb-1">
+        <div className="text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
           {value}
         </div>
 
         {trendValue ? (
-          <div className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${
-            trend === "up" ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"
-          }`}>
-            {trend === "up" ? <ArrowUpRight className="w-4 h-4 mr-0.5" /> : <ArrowDownRight className="w-4 h-4 mr-0.5" />}
+          <span className={`status-chip ${trend === "up" ? "status-chip-green" : "status-chip-red"}`}>
+            {trend === "up" ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
             {trendValue}
-          </div>
-        ) : badge ? (
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-            isAmber ? "bg-[#FFFBEB] text-[#B45309]" :
-            isRose ? "bg-[#FEF2F2] text-[#B91C1C]" :
-            "bg-slate-100 text-[#64748B]"
-          }`}>
-            {badge}
           </span>
+        ) : badge ? (
+          <span className={`status-chip ${tone.badge}`}>{badge}</span>
         ) : null}
       </div>
 
-      {/* Subtitle Footer */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between mt-auto">
-        <p className="text-xs text-[#64748B] font-medium">
-          {subtitle}
-        </p>
-      </div>
-
+      <p className="text-xs text-slate-500 mt-auto pt-3">
+        {subtitle}
+      </p>
     </div>
   );
 }

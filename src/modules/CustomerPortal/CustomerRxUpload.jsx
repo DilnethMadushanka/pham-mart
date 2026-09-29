@@ -211,10 +211,10 @@ export default function CustomerRxUpload({
         </div>
 
         <div className="text-center space-y-2">
-          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 text-xs font-extrabold rounded-full border border-blue-300">
+          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 text-xs font-semibold rounded-full border border-blue-300">
             Pharmacist Verification Pending
           </span>
-          <h2 className="text-2xl font-black text-slate-900">Order & Prescription Submitted!</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">Order & Prescription Submitted!</h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto font-medium">
             Your medicine request has been safely received. Our duty Pharmacist will review your order details and prepare your medication.
           </p>
@@ -224,7 +224,7 @@ export default function CustomerRxUpload({
         <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 text-xs">
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
             <span className="text-slate-500 font-medium">Order Reference No:</span>
-            <span className="font-mono font-black text-blue-800 text-sm">{submittedRx.rxNumber}</span>
+            <span className="font-mono font-semibold text-blue-800 text-sm">{submittedRx.rxNumber}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Patient Name:</span>
@@ -245,7 +245,7 @@ export default function CustomerRxUpload({
             {submittedRx.medicines.map((m, idx) => (
               <div key={idx} className="font-bold text-slate-800 flex justify-between bg-white p-2 rounded-lg border border-slate-200">
                 <span>{m.name}</span>
-                <span className="text-blue-700 font-black">{m.quantity} units</span>
+                <span className="text-blue-700 font-semibold">{m.quantity} units</span>
               </div>
             ))}
           </div>
@@ -283,8 +283,8 @@ export default function CustomerRxUpload({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-black text-slate-900">Order Medicines & Upload Prescription</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-extrabold border border-blue-200">
+              <h2 className="text-xl font-semibold text-slate-900">Order Medicines & Upload Prescription</h2>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-semibold border border-blue-200">
                 Patient Portal
               </span>
             </div>
@@ -300,7 +300,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("both")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "both"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -313,7 +313,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("typed")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "typed"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -326,7 +326,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("photo")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "photo"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -343,11 +343,11 @@ export default function CustomerRxUpload({
         {(orderMethod === "typed" || orderMethod === "both") && (
           <div className="bg-blue-50/60 p-5 rounded-3xl border border-blue-200/80 space-y-3">
             <div className="flex justify-between items-center">
-              <label className="font-black text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
+              <label className="font-semibold text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
                 <Pencil className="w-4 h-4 text-blue-600" />
                 <span>Type Required Medicine Names & Quantities</span>
               </label>
-              <span className="text-[10.5px] font-extrabold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
+              <span className="text-[10.5px] font-semibold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
                 Custom Order
               </span>
             </div>
@@ -357,7 +357,7 @@ export default function CustomerRxUpload({
               <select
                 value={selectedQuickMedicine}
                 onChange={(e) => setSelectedQuickMedicine(e.target.value)}
-                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               >
                 <option value="">-- Select from Medicine Catalog --</option>
                 {medicines.map(m => (
@@ -372,7 +372,7 @@ export default function CustomerRxUpload({
                   max="100"
                   value={quickQty}
                   onChange={(e) => setQuickQty(parseInt(e.target.value) || 1)}
-                  className="w-20 px-3 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-black text-center"
+                  className="w-20 px-3 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-center"
                   placeholder="Qty"
                 />
 
@@ -399,7 +399,7 @@ export default function CustomerRxUpload({
                       <span className="text-slate-400 font-normal ml-2">({item.dosage})</span>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-blue-700 font-black">{item.quantity} units</span>
+                      <span className="text-blue-700 font-semibold">{item.quantity} units</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveTypedItem(idx)}
@@ -423,7 +423,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. Paracetamol 500mg (2 strips), Cetirizine 10mg (1 box), Vitamin C 500mg..."
                 value={typedMedicinesText}
                 onChange={(e) => setTypedMedicinesText(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -516,7 +516,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. K. A. Sunil Shantha"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
             </div>
           </div>
@@ -531,7 +531,7 @@ export default function CustomerRxUpload({
                 placeholder="+94 77 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
             </div>
           </div>
@@ -547,7 +547,7 @@ export default function CustomerRxUpload({
               placeholder="e.g. 12/A, High Level Road, Nugegoda"
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
             />
           </div>
         </div>
@@ -563,7 +563,7 @@ export default function CustomerRxUpload({
             placeholder="e.g. Please send 1 month supply, or call before dispatching..."
             value={patientNotes}
             onChange={(e) => setPatientNotes(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
           />
         </div>
 
@@ -571,7 +571,7 @@ export default function CustomerRxUpload({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
+          className="w-full py-4 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-[#2563EB]/25 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
         >
           {isSubmitting ? (
             <>
@@ -580,7 +580,7 @@ export default function CustomerRxUpload({
             </>
           ) : (
             <>
-              <span>SUBMIT ORDER TO PHARMACIST</span>
+              <span>Send to pharmacist</span>
               <ArrowRight className="w-5 h-5" />
             </>
           )}

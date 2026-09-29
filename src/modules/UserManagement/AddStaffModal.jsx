@@ -78,13 +78,13 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
       <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-blue-50/60 flex justify-between items-center">
+        <div className="p-5 border-b border-blue-100 bg-white flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">
+              <h3 className="text-base font-semibold text-slate-900">
                 {staffToEdit ? "Edit Staff Account" : "Register New Staff Account"}
               </h3>
               <p className="text-xs text-slate-500 font-medium">Assign role permissions & workstation privileges</p>
@@ -109,7 +109,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               placeholder="e.g. Dr. K. A. Perera"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -122,7 +122,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="e.g. perera_k"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -131,7 +131,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               >
                 <option value="Owner/Admin">Owner / Admin</option>
                 <option value="Pharmacist">Pharmacist</option>
@@ -152,7 +152,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder={staffToEdit ? "Leave blank to keep existing password" : "e.g. Pharma@2026!"}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="staff@pharmart.lk"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -177,7 +177,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="+94 77 000 0000"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -214,7 +214,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer"
+              className="px-6 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer"
             >
               {staffToEdit ? "Update Account" : "Create Staff Account"}
             </button>

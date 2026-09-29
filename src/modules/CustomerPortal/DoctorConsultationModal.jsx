@@ -28,18 +28,18 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
       <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-5 text-white flex justify-between items-center">
+        <div className="p-5 sm:p-6 border-b border-slate-100 flex justify-between items-center">
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-2xl bg-white/20 backdrop-blur-md">
-              <Stethoscope className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-[#EFF6FF] flex items-center justify-center">
+              <Stethoscope className="w-5 h-5 text-[#2563EB]" />
             </div>
             <div>
-              <h3 className="text-base font-black">Talk to a Pharmacist / Doctor</h3>
-              <p className="text-xs text-blue-100">Licensed Tele-pharmacy Consultation</p>
+              <h3 className="text-base font-semibold text-[#0B2545]">Talk to a pharmacist or doctor</h3>
+              <p className="text-xs text-slate-500">Licensed tele-pharmacy consultation</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 cursor-pointer">
-            <X className="w-5 h-5 text-white" />
+          <button onClick={onClose} aria-label="Close" className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-[#0B2545] hover:bg-slate-100">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -91,7 +91,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
               placeholder="e.g. K. A. Sunil Shantha"
               value={patientName}
               onChange={(e) => setPatientName(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -103,7 +103,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
               placeholder="+94 77 123 4567"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
             <select
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             >
               <option value="Prescription Dosage Inquiry">Prescription Dosage Inquiry</option>
               <option value="Controlled Drug Verification">Controlled Drug Verification</option>
@@ -128,7 +128,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
               placeholder="Detail your health query or existing medications..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -139,7 +139,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
           >
             Request Instant Callback
           </button>

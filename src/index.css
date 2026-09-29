@@ -1,4 +1,42 @@
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
 @import "tailwindcss";
+
+/*
+  PHARMART design system
+  - Colors: unchanged brand tokens (navy #0B2545, royal blue #2563EB / #1D4ED8, slate neutrals, status set).
+  - Type: Geist for UI and display, Geist Mono for codes and figures.
+  - Shape rule: containers 16-20px (2xl/3xl), controls 10-12px (lg/xl), status chips and avatars full.
+  - Depth: one light source from above, shadows tinted with the navy brand hue instead of black.
+*/
+@theme {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Calmer weight scale: hierarchy from size + color, not shouting */
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 650;
+  --font-weight-black: 700;
+
+  /* Tighter, consistent radius scale */
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+
+  /* Navy-tinted shadows */
+  --shadow-2xs: 0 1px 0 rgb(11 37 69 / 0.04);
+  --shadow-xs: 0 1px 2px 0 rgb(11 37 69 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(11 37 69 / 0.06), 0 1px 2px -1px rgb(11 37 69 / 0.06);
+  --shadow: 0 1px 3px 0 rgb(11 37 69 / 0.07), 0 1px 2px -1px rgb(11 37 69 / 0.07);
+  --shadow-md: 0 4px 12px -2px rgb(11 37 69 / 0.08), 0 2px 4px -2px rgb(11 37 69 / 0.05);
+  --shadow-lg: 0 12px 28px -8px rgb(11 37 69 / 0.14), 0 4px 8px -4px rgb(11 37 69 / 0.06);
+  --shadow-xl: 0 24px 48px -16px rgb(11 37 69 / 0.18), 0 8px 16px -8px rgb(11 37 69 / 0.08);
+  --shadow-2xl: 0 32px 64px -20px rgb(11 37 69 / 0.28);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: fadeIn 0.35s var(--ease-out-expo) both;
+  --animate-rise: rise 0.7s var(--ease-out-expo) both;
+}
 
 @layer base {
   :root {
@@ -15,70 +53,192 @@
     --status-amber: #F59E0B;
     --status-red: #EF4444;
     --status-gray: #64748B;
+
+    /* z-index scale */
+    --z-sticky: 40;
+    --z-overlay: 50;
+    --z-toast: 60;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     background-color: #F8FAFC;
     color: #0f172a;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  h1, h2, h3, .font-heading, .font-display {
-    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  h1, h2, h3, h4, .font-heading, .font-display {
+    font-family: var(--font-sans);
+    letter-spacing: -0.022em;
+    text-wrap: balance;
+  }
+
+  h1 { letter-spacing: -0.035em; }
+
+  p { text-wrap: pretty; }
+
+  /* Figures line up in tables, prices and codes */
+  table, .font-mono, input[type="number"], [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-mono { letter-spacing: -0.01em; }
+
+  ::selection {
+    background: #2563EB;
+    color: #fff;
+  }
+
+  /* Interaction states on every control */
+  button, a, [role="button"], input, select, textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 180ms;
+    transition-timing-function: var(--ease-out-expo);
+  }
+
+  button:not(:disabled), [role="button"] {
+    cursor: pointer;
+  }
+
+  button:not(:disabled):active, a:active {
+    transform: translateY(1px) scale(0.985);
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  :focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none;
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #94A3B8;
+    opacity: 1;
+  }
+
+  img {
+    color: transparent;
   }
 }
 
-/* PHARMART status pill chips */
-.status-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 700;
-  font-size: 11px;
-  padding: 0.25rem 0.65rem;
-  border-radius: 9999px;
-  border-width: 1px;
-}
-.status-chip-green { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
-.status-chip-amber { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
-.status-chip-red { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
-.status-chip-gray { background: #F8FAFC; color: #64748B; border-color: #E2E8F0; }
-.status-chip-blue { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
+@layer components {
+  /* PHARMART status chips */
+  .status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 600;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    border-width: 1px;
+  }
+  .status-chip-green { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+  .status-chip-amber { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
+  .status-chip-red { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+  .status-chip-gray { background: #F8FAFC; color: #64748B; border-color: #E2E8F0; }
+  .status-chip-blue { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
 
-/* Background Crossfade Animation */
-.bg-slide-transition {
-  transition: background-image 1s ease-in-out;
+  /* Shared page header used by the console modules */
+  .page-kicker {
+    font-size: 12px;
+    font-weight: 500;
+    color: #2563EB;
+  }
+
+  /* Staggered entrance for list/section groups */
+  .stagger > * {
+    animation: rise 0.7s var(--ease-out-expo) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .bg-slide-transition {
+    transition: background-image 1s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: rise 0.5s var(--ease-out-expo) both;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2.5s infinite;
+  }
 }
 
-/* Dynamic Animated Text */
-@keyframes slideUpFade {
-  0% { opacity: 0; transform: translateY(16px); }
-  100% { opacity: 1; transform: translateY(0); }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.4); }
-  50% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35); }
+  50% { box-shadow: 0 0 0 8px rgba(37, 99, 235, 0); }
 }
 
-.animate-slide-up {
-  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Scrollbar: quiet slate, brand blue on hover */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 transparent;
 }
-
-.animate-pulse-glow {
-  animation: pulseGlow 2.5s infinite;
-}
-
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2563EB;
+  background: #CBD5E1;
   border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563EB;
+  background-clip: padding-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Data tables: quiet headers, comfortable rows */
+@layer components {
+  table thead th {
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #64748B;
+  }
+  table thead {
+    background-color: #F8FAFC;
+  }
+  table tbody tr {
+    transition: background-color 150ms ease;
+  }
 }

@@ -107,7 +107,7 @@ export default function PurchaseOrders({
               {purchaseOrders.length} Orders Issued
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center">
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900 flex items-center">
             <Truck className="w-6 h-6 mr-2 text-blue-600" />
             Supplier Purchase Orders & Goods Receipt Processing
           </h2>
@@ -118,7 +118,7 @@ export default function PurchaseOrders({
 
         <button
           onClick={handleOpenCreateModal}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>New Purchase Order</span>
@@ -137,8 +137,8 @@ export default function PurchaseOrders({
             >
               <div className="space-y-2 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="font-mono font-black text-slate-900 text-base">{po.poNumber}</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
+                  <span className="font-mono font-semibold text-slate-900 text-base">{po.poNumber}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
                     isReceived 
                       ? "bg-emerald-100 text-emerald-900 border-emerald-300"
                       : "bg-amber-100 text-amber-900 border-amber-300"
@@ -148,7 +148,7 @@ export default function PurchaseOrders({
                 </div>
 
                 <div className="text-xs sm:text-sm text-slate-600 font-semibold">
-                  Supplier: <strong className="text-slate-900 font-black">{po.supplierName}</strong> • Order Date: <span className="text-slate-500">{po.orderDate}</span>
+                  Supplier: <strong className="text-slate-900 font-semibold">{po.supplierName}</strong> • Order Date: <span className="text-slate-500">{po.orderDate}</span>
                 </div>
 
                 {/* Items */}
@@ -164,18 +164,18 @@ export default function PurchaseOrders({
               <div className="flex items-center space-x-4 w-full lg:w-auto justify-between lg:justify-end pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
                 <div className="text-right">
                   <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Total Valuation</div>
-                  <div className="text-lg font-black text-blue-700">Rs. {po.totalAmount.toFixed(2)}</div>
+                  <div className="text-lg font-semibold text-blue-700">Rs. {po.totalAmount.toFixed(2)}</div>
                 </div>
 
                 {!isReceived ? (
                   <button
                     onClick={() => setSelectedPOForReceipt(po)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer"
+                    className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer"
                   >
                     Receive Goods
                   </button>
                 ) : (
-                  <div className="flex items-center text-xs font-black text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-2xl border border-emerald-300">
+                  <div className="flex items-center text-xs font-semibold text-emerald-800 bg-emerald-50 px-3.5 py-2 rounded-2xl border border-emerald-300">
                     <CheckCircle2 className="w-4 h-4 mr-1.5 text-emerald-600" />
                     Stock Updated
                   </div>

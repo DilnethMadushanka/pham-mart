@@ -2,7 +2,7 @@
 
 export const REPORT_INFO = {
   title: "Business Architecture Assessment Report",
-  module: "IE3121 – Enterprise Architecture",
+  module: "IE3121 - Enterprise Architecture",
   project: "Information Systems Project 2026",
   group: "ISE_WD_0101_03",
   submissionDate: "18/08/2026",

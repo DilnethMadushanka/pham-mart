@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import NewPrescriptionModal from './NewPrescriptionModal';
 import { createPrescription, updatePrescriptionStatus } from '../../services/supabaseService';
+import PageHeader from '../../components/PageHeader';
 
 export default function PrescriptionVerification({ 
   prescriptions, 
@@ -89,39 +90,25 @@ export default function PrescriptionVerification({
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Top Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
-              Clinical Workstation
-            </span>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-              {prescriptions.filter(p => p.status === "Pending").length} Pending RX
-            </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            Prescription Verification & Pharmacist Console
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
-            Structured drug interaction checks, dosage validation, SLMC physician record linking & controlled drug clearance.
-          </p>
-        </div>
-
+      <PageHeader
+        kicker="Pharmacist console"
+        title="Prescription verification"
+        description="Check interactions and dosage, link the prescribing doctor's SLMC record, and clear controlled drugs."
+      >
         <button
           onClick={() => setIsNewRxModalOpen(true)}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-medium text-sm shadow-md shadow-[#2563EB]/20 shrink-0"
         >
           <Plus className="w-4 h-4" />
-          <span>Upload / Register Prescription</span>
+          <span>Register prescription</span>
         </button>
-      </div>
+      </PageHeader>
 
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-2 bg-slate-100 p-2 rounded-2xl w-fit border border-slate-200/80">
         <button
           onClick={() => setActiveFilter("ALL")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
             activeFilter === "ALL" ? "bg-white text-blue-800 shadow-xs border border-slate-200/60" : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -129,18 +116,18 @@ export default function PrescriptionVerification({
         </button>
         <button
           onClick={() => setActiveFilter("Pending")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center space-x-2 cursor-pointer ${
-            activeFilter === "Pending" ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900"
+          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-2 cursor-pointer ${
+            activeFilter === "Pending" ? "bg-[#2563EB] text-white shadow-md shadow-blue-500/20" : "text-slate-600 hover:text-slate-900"
           }`}
         >
           <span>Pending Verification</span>
-          <span className="px-2 py-0.5 rounded-full bg-white text-blue-900 text-[10px] font-black">
+          <span className="px-2 py-0.5 rounded-full bg-white text-blue-900 text-[10px] font-semibold">
             {prescriptions.filter(p => p.status === "Pending").length}
           </span>
         </button>
         <button
           onClick={() => setActiveFilter("Approved")}
-          className={`px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+          className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
             activeFilter === "Approved" ? "bg-white text-blue-800 shadow-xs border border-slate-200/60" : "text-slate-600 hover:text-slate-900"
           }`}
         >
@@ -171,25 +158,25 @@ export default function PrescriptionVerification({
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono font-black text-slate-900 text-base">{rx.rxNumber}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-extrabold border ${
+                      <span className="font-mono font-semibold text-slate-900 text-base">{rx.rxNumber}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border ${
                         rx.prescriptionUrl ? "bg-blue-50 text-blue-800 border-blue-200" : "bg-emerald-50 text-emerald-800 border-emerald-200"
                       }`}>
-                        {rx.prescriptionUrl ? "📷 Photo Slip" : "📝 Typed Order"}
+                        {rx.prescriptionUrl ? "Photo slip" : "Typed order"}
                       </span>
                       {rx.isControlledDrug && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-black bg-rose-100 text-rose-800 border border-rose-300 flex items-center">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-rose-100 text-rose-800 border border-rose-300 flex items-center">
                           <ShieldAlert className="w-3 h-3 mr-1" /> Controlled Drug
                         </span>
                       )}
                     </div>
-                    <div className="text-sm font-black text-slate-800 mt-1 flex items-center">
+                    <div className="text-sm font-semibold text-slate-800 mt-1 flex items-center">
                       <User className="w-4 h-4 mr-1.5 text-blue-600" />
                       {rx.customerName}
                     </div>
                   </div>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold border shrink-0 ${
                     isPending 
                       ? "bg-amber-100 text-amber-900 border-amber-300"
                       : isApproved 
@@ -220,12 +207,12 @@ export default function PrescriptionVerification({
               
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div>
-                  <span className="text-xs font-black uppercase text-blue-600 tracking-wider">
+                  <span className="text-xs font-semibold uppercase text-blue-600 tracking-wider">
                     Pharmacist Verification Workstation
                   </span>
-                  <h3 className="text-xl font-black text-slate-900 mt-1">{selectedRx.rxNumber}</h3>
+                  <h3 className="text-xl font-semibold text-slate-900 mt-1">{selectedRx.rxNumber}</h3>
                 </div>
-                <span className={`px-3.5 py-1 rounded-full text-xs font-black border ${
+                <span className={`px-3.5 py-1 rounded-full text-xs font-semibold border ${
                   selectedRx.status === "Approved" 
                     ? "bg-emerald-100 text-emerald-900 border-emerald-300" 
                     : selectedRx.status === "Pending"
@@ -240,11 +227,11 @@ export default function PrescriptionVerification({
               <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
                 <div>
                   <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Patient Name</span>
-                  <span className="font-black text-slate-900 text-sm">{selectedRx.customerName}</span>
+                  <span className="font-semibold text-slate-900 text-sm">{selectedRx.customerName}</span>
                 </div>
                 <div>
                   <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Order / Physician Type</span>
-                  <span className="font-black text-slate-900 text-sm">{selectedRx.doctorName}</span>
+                  <span className="font-semibold text-slate-900 text-sm">{selectedRx.doctorName}</span>
                   <span className="text-[11px] text-blue-700 block font-mono font-bold">{selectedRx.orderType || "SLMC Reg: " + selectedRx.doctorSlmcNo}</span>
                 </div>
               </div>
@@ -252,7 +239,7 @@ export default function PrescriptionVerification({
               {/* Patient Notes & Delivery Address if provided */}
               {selectedRx.notes && (
                 <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 text-xs space-y-1">
-                  <span className="text-blue-900 font-extrabold uppercase text-[10.5px] tracking-wider block">
+                  <span className="text-blue-900 font-semibold uppercase text-[10.5px] tracking-wider block">
                     📋 Patient Order Notes & Delivery Address:
                   </span>
                   <p className="text-slate-800 font-semibold leading-relaxed whitespace-pre-line">
@@ -271,7 +258,7 @@ export default function PrescriptionVerification({
                       href={selectedRx.prescriptionUrl} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="absolute bottom-2 right-2 px-3 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full text-[10.5px] font-extrabold backdrop-blur-xs shadow-md"
+                      className="absolute bottom-2 right-2 px-3 py-1 bg-slate-900/80 hover:bg-slate-900 text-white rounded-full text-[10.5px] font-semibold backdrop-blur-xs shadow-md"
                     >
                       View Full Size Photo
                     </a>
@@ -279,8 +266,8 @@ export default function PrescriptionVerification({
                 </div>
               ) : (
                 <div className="p-4 bg-emerald-50/80 border border-emerald-200/80 rounded-2xl text-xs space-y-1">
-                  <span className="text-emerald-900 font-extrabold text-xs block flex items-center">
-                    📝 Typed Medicine Custom Order (Direct Request)
+                  <span className="text-emerald-900 font-semibold text-xs block flex items-center">
+                    Typed medicine order (direct request)
                   </span>
                   <p className="text-emerald-800 font-medium">
                     No doctor paper photo slip was uploaded. Patient typed/selected the requested medicines directly online.
@@ -296,9 +283,9 @@ export default function PrescriptionVerification({
                 <div className="space-y-2">
                   {selectedRx.medicines && selectedRx.medicines.map((m, idx) => (
                     <div key={idx} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 text-xs">
-                      <div className="font-black text-slate-900 text-sm flex justify-between">
+                      <div className="font-semibold text-slate-900 text-sm flex justify-between">
                         <span>{m.name}</span>
-                        <span className="text-blue-700 font-black">{m.quantity} units</span>
+                        <span className="text-blue-700 font-semibold">{m.quantity} units</span>
                       </div>
                       <div className="text-slate-600 mt-1 font-semibold">Dosage / Instructions: {m.dosage}</div>
                       {m.durationDays && <div className="text-[11px] text-slate-500 mt-0.5 font-medium">{m.durationDays} days supply</div>}
@@ -332,7 +319,7 @@ export default function PrescriptionVerification({
                       placeholder="Enter verification remarks or SLMC checks..."
                       value={pharmacistNotes}
                       onChange={(e) => setPharmacistNotes(e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-hidden"
+                      className="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
                     />
                   </div>
 

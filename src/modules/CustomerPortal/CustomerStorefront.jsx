@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Pill, 
-  Upload, 
-  ShoppingCart, 
-  Search, 
-  ShieldCheck, 
-  Truck, 
-  Clock, 
-  CheckCircle2, 
-  FileText, 
-  Plus, 
-  Minus, 
-  X,
-  MapPin
+import {
+  Pill,
+  Upload,
+  ShoppingCart,
+  Clock,
+  X
 } from 'lucide-react';
 import HeroBanner from './HeroBanner';
 import HowItWorksSection from './HowItWorksSection';
@@ -30,8 +22,6 @@ export default function CustomerStorefront({
   prescriptions, 
   setPrescriptions, 
   currentUser, 
-  onOpenAuth,
-  onSwitchToEnterprise,
   addAuditLog 
 }) {
   const [activePortalTab, setActivePortalTab] = useState("store"); // "store" | "upload_rx" | "my_orders"
@@ -87,65 +77,52 @@ export default function CustomerStorefront({
     setIsCheckoutOpen(false);
   };
 
+  const openPortalTab = (tab) => {
+    setActivePortalTab(tab);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("portal-nav");
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
+  const portalTabs = [
+    { id: "store", label: "Wellness store", icon: Pill },
+    { id: "upload_rx", label: "Upload prescription", icon: Upload },
+    { id: "my_orders", label: "My orders", icon: Clock }
+  ];
+
   return (
-    <div className="space-y-12 animate-fade-in pb-16">
-      
-      {/* Full-Screen Hero Banner (Matched to Reference Screenshot 1) */}
-      <HeroBanner 
-        onUploadRx={() => setActivePortalTab("upload_rx")}
-        onOpenAuth={onOpenAuth}
-        onShop={() => setActivePortalTab("store")}
-        onHowItWorks={() => {
-          const el = document.getElementById("how-it-works-section");
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
-        }}
+    <div className="animate-fade-in pb-8">
+
+      <HeroBanner
+        onUploadRx={() => openPortalTab("upload_rx")}
         onOpenLocation={() => setIsLocationOpen(true)}
         onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)}
       />
 
-      {/* Portal Secondary Navigation Bar */}
-      <div className="flex flex-wrap justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-xs gap-3">
-        
-        <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl text-xs font-bold">
-          <button
-            onClick={() => setActivePortalTab("store")}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              activePortalTab === "store" ? "bg-white text-blue-800 shadow-xs" : "text-slate-600"
-            }`}
-          >
-            Wellness & Baby Care Store
-          </button>
-          <button
-            onClick={() => setActivePortalTab("upload_rx")}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-1.5 ${
-              activePortalTab === "upload_rx" ? "bg-blue-600 text-white shadow-xs" : "text-slate-600"
-            }`}
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Doctor Prescription</span>
-          </button>
-          <button
-            onClick={() => setActivePortalTab("my_orders")}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-1.5 ${
-              activePortalTab === "my_orders" ? "bg-white text-blue-800 shadow-xs" : "text-slate-600"
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>My Orders & Rx Status</span>
-          </button>
+      {/* Portal navigation */}
+      <nav id="portal-nav" aria-label="Customer portal" className="scroll-mt-20 mt-16 sm:mt-20 mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200">
+        <div className="flex items-center gap-1 -mb-px overflow-x-auto">
+          {portalTabs.map(({ id, label, icon: Icon }) => {
+            const isActive = activePortalTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActivePortalTab(id)}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 ${
+                  isActive
+                    ? "border-[#2563EB] text-[#0B2545]"
+                    : "border-transparent text-slate-500 hover:text-[#0B2545] hover:border-slate-300"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-[#2563EB]" : ""}`} />
+                {label}
+              </button>
+            );
+          })}
         </div>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsLocationOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl shadow-xs transition-colors"
-          >
-            <MapPin className="w-3.5 h-3.5 text-blue-600" />
-            <span>Where to find us?</span>
-          </button>
-        </div>
-
-      </div>
+      </nav>
 
       {/* DYNAMIC PORTAL VIEWS */}
       {activePortalTab === "upload_rx" && (
@@ -167,36 +144,67 @@ export default function CustomerStorefront({
       )}
 
       {activePortalTab === "store" && (
-        <div className="space-y-12">
-          
-          {/* Pharmacy Services & Wide Selection Spotlight Section */}
-          <div id="assortment-section">
+        <div className="space-y-24 sm:space-y-32">
+          <div id="assortment-section" className="scroll-mt-24">
             <PharmacyServicesSection 
               onOpenLocation={() => setIsLocationOpen(true)}
             />
           </div>
 
-          {/* Patient Testimonials Section */}
-          <PatientTestimonialsSection />
+          <PatientTestimonialsSection onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)} />
 
-          {/* Location & Contact Section Anchor */}
-          <div id="location-section" className="pt-4">
-            <div id="contact-section"></div>
-          </div>
-
-          {/* How It Works Section */}
-          <div id="how-it-works-section">
+          <div id="how-it-works-section" className="scroll-mt-24">
             <HowItWorksSection 
-              onUploadRx={() => setActivePortalTab("upload_rx")}
-              onShop={() => setActivePortalTab("store")}
+              onUploadRx={() => openPortalTab("upload_rx")}
+              onShop={() => {
+                const el = document.getElementById("assortment-section");
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
           </div>
 
-          {/* FAQs Accordion Section */}
           <FaqAccordion />
-
         </div>
       )}
+
+      {/* Contact footer */}
+      <footer id="location-section" className="scroll-mt-24 mt-24 sm:mt-32 pt-12 border-t border-slate-200">
+        <div id="contact-section" className="grid grid-cols-1 md:grid-cols-12 gap-10">
+          <div className="md:col-span-5 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white relative" aria-hidden>
+                <span className="absolute w-3.5 h-1 bg-white rounded-full"></span>
+                <span className="absolute h-3.5 w-1 bg-white rounded-full"></span>
+              </span>
+              <span className="text-base font-semibold tracking-tight text-[#0B2545]">PHARMART Pharmacy</span>
+            </div>
+            <p className="text-sm text-slate-500 max-w-[40ch]">
+              Licensed community pharmacy. Prescriptions reviewed by registered pharmacists.
+            </p>
+          </div>
+          <dl className="md:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm">
+            <div className="space-y-1">
+              <dt className="text-slate-500">Visit</dt>
+              <dd>
+                <button onClick={() => setIsLocationOpen(true)} className="font-medium text-[#0B2545] hover:text-[#2563EB] text-left">
+                  Main Street Healthcare Hub, City Center
+                </button>
+              </dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-slate-500">Hours</dt>
+              <dd className="font-medium text-[#0B2545]">Mon - Fri 7:30 AM - 8:00 PM<br />Sat - Sun 8:00 AM - 6:00 PM</dd>
+            </div>
+            <div className="space-y-1">
+              <dt className="text-slate-500">Call</dt>
+              <dd><a href="tel:055-222-8292" className="font-medium text-[#0B2545] hover:text-[#2563EB]">055-222-8292</a></dd>
+            </div>
+          </dl>
+        </div>
+        <div className="mt-12 pt-6 border-t border-slate-200 text-xs text-slate-400">
+          &copy; {new Date().getFullYear()} PHARMART Pharmacy
+        </div>
+      </footer>
 
       {/* Online Cart Checkout Modal */}
       {isCheckoutOpen && (
@@ -238,14 +246,14 @@ export default function CustomerStorefront({
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
                   <div className="flex justify-between"><span>Subtotal:</span><span>Rs. {subtotal.toFixed(2)}</span></div>
                   <div className="flex justify-between text-slate-600"><span>Home Delivery Fee:</span><span>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee}`}</span></div>
-                  <div className="flex justify-between font-black text-slate-900 text-sm pt-1 border-t border-slate-200">
+                  <div className="flex justify-between font-semibold text-slate-900 text-sm pt-1 border-t border-slate-200">
                     <span>Total Amount:</span><span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md text-xs"
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md text-xs"
                 >
                   Confirm & Place Delivery Order
                 </button>

@@ -247,7 +247,10 @@ export default function App() {
   const unreadCount = lowStockCount + expiredCount + pendingRxCount;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased selection:bg-blue-500 selection:text-white">
+    <div className="min-h-[100dvh] bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:shadow-lg focus:text-sm focus:font-semibold focus:text-[#0B2545]">
+        Skip to content
+      </a>
       
       {/* Top Header Navbar */}
       <Navbar 
@@ -266,7 +269,7 @@ export default function App() {
       {/* Main Content Area */}
       {viewMode === "website" ? (
         /* PUBLIC CUSTOMER WEBSITE & E-PHARMACY STORE */
-        <div className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-6">
+        <main id="main" className="flex-1 max-w-[1320px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <CustomerStorefront 
             medicines={medicines}
             customers={customers}
@@ -277,10 +280,10 @@ export default function App() {
             onSwitchToEnterprise={() => setViewMode("enterprise")}
             addAuditLog={addAuditLog}
           />
-        </div>
+        </main>
       ) : (
         /* INTERNAL PHARMACY ENTERPRISE MANAGEMENT CONSOLE */
-        <div className="flex-1 flex max-w-[1700px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6">
+        <div className="flex-1 flex max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
           
           <Sidebar 
             activeTab={activeTab}
@@ -291,7 +294,7 @@ export default function App() {
             expiredCount={expiredCount}
           />
 
-          <main className="flex-1 min-w-0">
+          <main id="main" className="flex-1 min-w-0">
             {activeTab === "analytics" && (
               <AnalyticsDashboard 
                 medicines={medicines}

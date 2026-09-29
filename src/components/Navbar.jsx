@@ -14,169 +14,176 @@ import {
   Search
 } from 'lucide-react';
 
-export default function Navbar({ 
-  currentRole, 
-  setCurrentRole, 
+const scrollToId = (id) => {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth' });
+};
+
+function Avatar({ user }) {
+  const [failed, setFailed] = useState(false);
+  const initials = (user.name || "?").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase();
+  return (
+    <span className="relative shrink-0">
+      {user.avatar && !failed ? (
+        <img
+          src={user.avatar}
+          alt=""
+          onError={() => setFailed(true)}
+          className="w-9 h-9 rounded-xl object-cover ring-1 ring-slate-200"
+        />
+      ) : (
+        <span className="w-9 h-9 rounded-xl bg-[#0B2545] text-white text-xs font-semibold flex items-center justify-center">
+          {initials}
+        </span>
+      )}
+      <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#10B981] ring-2 ring-white" aria-label="Online"></span>
+    </span>
+  );
+}
+
+export default function Navbar({
+  currentRole,
+  setCurrentRole,
   viewMode,
   setViewMode,
   currentUser,
   onOpenAuthModal,
   onLogout,
-  unreadNotificationCount, 
+  unreadNotificationCount,
   onOpenNotifications,
   onOpenAuditLogs
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const isStaff = currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer");
+
   const roles = [
-    { key: "Owner/Admin", label: "Owner / Admin", icon: ShieldCheck },
+    { key: "Owner/Admin", label: "Owner", icon: ShieldCheck },
     { key: "Pharmacist", label: "Pharmacist", icon: Pill },
     { key: "Cashier", label: "Cashier", icon: UserCheck },
-    { key: "Customer", label: "Customer Portal", icon: Globe }
+    { key: "Customer", label: "Customer", icon: Globe }
+  ];
+
+  const siteLinks = [
+    { label: "Assortment", target: "assortment-section" },
+    { label: "Location", target: "location-section" },
+    { label: "Contact", target: "contact-section" }
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-blue-100 shadow-xs font-sans">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          
-          {/* Brand Logo */}
-          <div className="flex items-center space-x-4 sm:space-x-8">
-            <div className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer" onClick={() => setViewMode("website")}>
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#2563EB]/20 shrink-0">
-                {/* Light Blue Medical Cross Icon */}
-                <div className="relative w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                  <div className="absolute w-4 sm:w-5 h-1 sm:h-1.5 bg-white rounded-full"></div>
-                  <div className="absolute h-4 sm:h-5 w-1 sm:w-1.5 bg-white rounded-full"></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center space-x-1.5 sm:space-x-2">
-                  <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 font-heading">
-                    PHARMART<span className="text-[#2563EB]">.</span>
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] font-semibold px-1.5 sm:px-2 py-0.5 rounded-full bg-[#EFF6FF] text-[#2563EB] border border-[#2563EB]/20">
-                    Healthcare
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-500 hidden md:block font-medium">
-                  {viewMode === "website" ? "Professional Medical & Pharmacy Portal" : "Enterprise Management System"}
-                </p>
-              </div>
-            </div>
+    <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-200/80">
+      <div className={`${viewMode === "website" ? "max-w-[1320px]" : "max-w-[1600px]"} mx-auto px-4 sm:px-6 lg:px-8`}>
+        <div className="flex justify-between h-16 items-center gap-4">
 
-            {/* Desktop Navigation Links */}
+          {/* Brand */}
+          <div className="flex items-center gap-8 min-w-0">
+            <button
+              className="flex items-center gap-2.5 shrink-0"
+              onClick={() => setViewMode("website")}
+              aria-label="PHARMART home"
+            >
+              <span className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center text-white shadow-md shadow-[#2563EB]/25 relative" aria-hidden>
+                <span className="absolute w-4 h-1.5 bg-white rounded-full"></span>
+                <span className="absolute h-4 w-1.5 bg-white rounded-full"></span>
+              </span>
+              <span className="text-lg font-semibold tracking-tight text-[#0B2545]">
+                PHARMART<span className="text-[#2563EB]">.</span>
+              </span>
+              {viewMode === "enterprise" && (
+                <span className="hidden sm:inline text-xs font-medium text-slate-400 pl-2.5 ml-0.5 border-l border-slate-200">Console</span>
+              )}
+            </button>
+
             {viewMode === "website" && (
-              <nav className="hidden lg:flex items-center space-x-7 text-sm font-medium text-slate-700">
-                <a 
-                  href="#assortment" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const el = document.getElementById("assortment-section");
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-[#2563EB] transition-colors"
-                >
-                  Assortment
-                </a>
-                <a 
-                  href="#location" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (onOpenNotifications) onOpenNotifications();
-                    const el = document.getElementById("location-section");
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-[#2563EB] transition-colors"
-                >
-                  Location
-                </a>
-                <a 
-                  href="#contact" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    const el = document.getElementById("contact-section");
-                    if (el) el.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="hover:text-[#2563EB] transition-colors"
-                >
-                  Contact
-                </a>
-                {/* Enterprise Console Link - Only for Staff Users */}
-                {currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer") && (
-                  <button
-                    onClick={() => setViewMode("enterprise")}
-                    className="text-slate-600 hover:text-[#2563EB] transition-colors flex items-center space-x-1.5 font-bold"
+              <nav aria-label="Main" className="hidden lg:flex items-center gap-1 text-sm font-medium text-slate-600">
+                {siteLinks.map(link => (
+                  <a
+                    key={link.target}
+                    href={`#${link.target}`}
+                    onClick={(e) => { e.preventDefault(); scrollToId(link.target); }}
+                    className="px-3 py-2 rounded-lg hover:text-[#0B2545] hover:bg-slate-100"
                   >
-                    <LayoutDashboard className="w-3.5 h-3.5" />
-                    <span>Enterprise Console</span>
-                  </button>
-                )}
+                    {link.label}
+                  </a>
+                ))}
               </nav>
             )}
           </div>
 
-          {/* Global Search Bar (Enterprise Console) */}
+          {/* Global search (console) */}
           {viewMode === "enterprise" && (
-            <div className="hidden md:flex flex-1 max-w-sm mx-4">
-              <div className="relative w-full">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <div className="hidden md:flex flex-1 max-w-md">
+              <label className="relative w-full">
+                <span className="sr-only">Search</span>
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search medicines, orders, customers..."
-                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#F1F5F9] border border-transparent focus:border-[#2563EB]/40 focus:bg-white focus:ring-2 focus:ring-[#2563EB]/15 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition-all"
+                  placeholder="Search medicines, orders, customers"
+                  className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-100 border border-transparent focus:border-[#2563EB]/40 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/10 text-sm text-slate-800 outline-none"
                 />
+              </label>
+            </div>
+          )}
+
+          {/* Right side */}
+          <div className="flex items-center gap-2">
+
+            {viewMode === "enterprise" && (
+              <div className="hidden xl:flex items-center bg-slate-100 p-1 rounded-xl mr-2" role="group" aria-label="Workstation role">
+                {roles.map((r) => {
+                  const Icon = r.icon;
+                  const isActive = currentRole === r.key;
+                  return (
+                    <button
+                      key={r.key}
+                      onClick={() => setCurrentRole(r.key)}
+                      aria-pressed={isActive}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                        isActive
+                          ? "bg-white text-[#0B2545] shadow-sm"
+                          : "text-slate-500 hover:text-[#0B2545]"
+                      }`}
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${isActive ? "text-[#2563EB]" : ""}`} />
+                      <span>{r.label}</span>
+                    </button>
+                  );
+                })}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Role Switcher (When in Enterprise Console) */}
-          {viewMode === "enterprise" && (
-            <div className="hidden xl:flex items-center bg-slate-50 p-1 rounded-xl border border-slate-200">
-              {roles.map((r) => {
-                const Icon = r.icon;
-                const isActive = currentRole === r.key;
-                return (
-                  <button
-                    key={r.key}
-                    onClick={() => setCurrentRole(r.key)}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                      isActive
-                        ? "bg-[#2563EB] text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{r.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            {viewMode === "website" && isStaff && (
+              <button
+                onClick={() => setViewMode("enterprise")}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-[#0B2545] hover:bg-slate-100"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Enterprise Console</span>
+              </button>
+            )}
 
-          {/* Right Action Buttons & Mobile Hamburger Button */}
-          <div className="flex items-center space-x-2.5 sm:space-x-3">
-            
             {viewMode === "enterprise" && (
               <>
                 <button
                   onClick={onOpenAuditLogs}
-                  title="System Audit Trail"
-                  className="p-2 text-slate-600 hover:text-[#2563EB] hover:bg-blue-50 rounded-xl border border-slate-200 transition-colors"
+                  title="Audit trail"
+                  aria-label="Audit trail"
+                  className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-[#0B2545] hover:bg-slate-100 rounded-xl"
                 >
-                  <History className="w-4 h-4" />
+                  <History className="w-[18px] h-[18px]" />
                 </button>
 
                 <button
                   onClick={onOpenNotifications}
-                  className="p-2 text-slate-600 hover:text-[#2563EB] hover:bg-blue-50 rounded-xl border border-slate-200 transition-colors relative"
+                  aria-label={`Notifications${unreadNotificationCount ? `, ${unreadNotificationCount} unread` : ""}`}
+                  className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-[#0B2545] hover:bg-slate-100 rounded-xl relative"
                 >
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-[18px] h-[18px]" />
                   {unreadNotificationCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#EF4444] text-white text-[10px] font-bold flex items-center justify-center animate-pulse">
+                    <span className="absolute top-0.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-[#EF4444] text-white text-[10px] font-semibold flex items-center justify-center ring-2 ring-white font-mono">
                       {unreadNotificationCount}
                     </span>
                   )}
@@ -184,31 +191,18 @@ export default function Navbar({
               </>
             )}
 
-            {/* Auth Account Button / Logged In User Pill */}
             {currentUser ? (
-              <div className="flex items-center space-x-2 pl-2 border-l border-slate-200">
-                <div className="relative shrink-0">
-                  <img
-                    src={
-                      currentUser.avatar ||
-                      `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=2563EB&color=fff&bold=true&rounded=true`
-                    }
-                    alt={currentUser.name}
-                    className="w-8.5 h-8.5 rounded-full border-2 border-[#2563EB] object-cover shadow-sm"
-                    onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=2563EB&color=fff&bold=true`;
-                    }}
-                  />
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-[#10B981] border-2 border-white"></span>
+              <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-slate-200">
+                <Avatar user={currentUser} />
+                <div className="hidden md:block text-left leading-tight">
+                  <div className="text-sm font-medium text-[#0B2545]">{currentUser.name}</div>
+                  <div className="text-xs text-slate-500">{currentUser.role || "Customer"}</div>
                 </div>
-                <div className="hidden md:block text-left">
-                  <div className="text-xs font-bold text-slate-900 leading-tight">{currentUser.name}</div>
-                  <div className="text-[10px] text-[#2563EB] font-semibold">{currentUser.role || "Customer"}</div>
-                </div>
-                <button 
+                <button
                   onClick={onLogout}
-                  title="Sign Out"
-                  className="p-1.5 text-slate-400 hover:text-rose-600 transition-colors"
+                  title="Sign out"
+                  aria-label="Sign out"
+                  className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-[#EF4444] hover:bg-red-50"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -216,87 +210,58 @@ export default function Navbar({
             ) : (
               <button
                 onClick={onOpenAuthModal}
-                className="flex items-center space-x-1.5 px-3.5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+                className="flex items-center gap-2 px-4 py-2 bg-[#0B2545] hover:bg-[#091E3A] text-white font-medium text-sm rounded-xl"
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Sign In / Register</span>
-                <span className="sm:hidden">Sign In</span>
+                <LogIn className="w-4 h-4" />
+                <span>Sign in</span>
               </button>
             )}
 
-            {/* Mobile Navigation Toggle Button */}
             {viewMode === "website" && (
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-slate-700 hover:text-[#2563EB] lg:hidden rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors"
+                className="w-9 h-9 flex items-center justify-center text-slate-700 lg:hidden rounded-xl hover:bg-slate-100"
                 aria-label="Toggle menu"
+                aria-expanded={isMobileMenuOpen}
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             )}
-
           </div>
-
         </div>
 
-        {/* Mobile Navigation Dropdown Drawer */}
+        {/* Mobile menu */}
         {viewMode === "website" && isMobileMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-slate-100 space-y-3 animate-fade-in text-sm font-medium text-slate-800">
-            <a 
-              href="#assortment"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsMobileMenuOpen(false);
-                const el = document.getElementById("assortment-section");
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="block px-3 py-2 rounded-xl hover:bg-blue-50 hover:text-[#2563EB] transition-colors"
-            >
-              Assortment
-            </a>
+          <nav aria-label="Mobile" className="lg:hidden py-3 border-t border-slate-100 space-y-1 animate-fade-in text-base font-medium text-slate-800">
+            {siteLinks.map(link => (
+              <a
+                key={link.target}
+                href={`#${link.target}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  scrollToId(link.target);
+                }}
+                className="block px-3 py-2.5 rounded-xl hover:bg-slate-100"
+              >
+                {link.label}
+              </a>
+            ))}
 
-            <a 
-              href="#location"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsMobileMenuOpen(false);
-                if (onOpenNotifications) onOpenNotifications();
-                const el = document.getElementById("location-section");
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="block px-3 py-2 rounded-xl hover:bg-blue-50 hover:text-[#2563EB] transition-colors"
-            >
-              Location
-            </a>
-
-            <a 
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                setIsMobileMenuOpen(false);
-                const el = document.getElementById("contact-section");
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="block px-3 py-2 rounded-xl hover:bg-blue-50 hover:text-[#2563EB] transition-colors"
-            >
-              Contact
-            </a>
-
-            {currentUser && (currentUser.userType === "staff" || currentUser.role !== "Customer") && (
+            {isStaff && (
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   setViewMode("enterprise");
                 }}
-                className="w-full text-left px-3 py-2 rounded-xl bg-slate-100 hover:bg-[#2563EB] hover:text-white transition-colors flex items-center space-x-2 font-bold"
+                className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-slate-100 flex items-center gap-2"
               >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Switch to Enterprise Console</span>
+                <LayoutDashboard className="w-4 h-4 text-[#2563EB]" />
+                <span>Enterprise Console</span>
               </button>
             )}
-          </div>
+          </nav>
         )}
-
       </div>
     </header>
   );

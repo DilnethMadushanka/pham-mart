@@ -23,7 +23,7 @@ export default function ArchitectureAssessment() {
         <div className="absolute right-0 top-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
         <div className="relative z-10 space-y-3">
           <div className="flex items-center space-x-2">
-            <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-black tracking-wide border border-white/30 uppercase">
+            <span className="px-3 py-1 rounded-full bg-white/20 text-white text-[11px] font-semibold tracking-wide border border-white/30 uppercase">
               {REPORT_INFO.module}
             </span>
             <span className="text-blue-200 text-xs font-bold">
@@ -31,7 +31,7 @@ export default function ArchitectureAssessment() {
             </span>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">{REPORT_INFO.title}</h2>
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight leading-tight">{REPORT_INFO.title}</h2>
           <p className="text-xs sm:text-sm text-blue-100/90 max-w-3xl leading-relaxed">
             Client Organization: <strong className="text-white">{REPORT_INFO.client}</strong> • Submitted to: <strong className="text-white">{REPORT_INFO.lecturer}</strong> ({REPORT_INFO.submissionDate})
           </p>
@@ -57,7 +57,7 @@ export default function ArchitectureAssessment() {
           <button
             key={tab.id}
             onClick={() => setActiveSection(tab.id)}
-            className={`px-4 py-2.5 rounded-xl transition-all cursor-pointer font-extrabold ${
+            className={`px-4 py-2.5 rounded-xl transition-all cursor-pointer font-semibold ${
               activeSection === tab.id
                 ? "bg-white text-blue-800 shadow-sm border border-slate-200/60"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
@@ -72,7 +72,7 @@ export default function ArchitectureAssessment() {
       {activeSection === "overview" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-4">
-            <h3 className="font-black text-slate-900 text-lg flex items-center">
+            <h3 className="font-semibold text-slate-900 text-lg flex items-center">
               <BookOpen className="w-5 h-5 mr-2.5 text-blue-600" />
               Executive Summary & Context
             </h3>
@@ -85,22 +85,22 @@ export default function ArchitectureAssessment() {
           </div>
 
           <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-4">
-            <h3 className="font-black text-slate-900 text-lg flex items-center">
+            <h3 className="font-semibold text-slate-900 text-lg flex items-center">
               <Award className="w-5 h-5 mr-2.5 text-blue-600" />
               Organizational Blueprint
             </h3>
             <div className="space-y-3 text-xs sm:text-sm">
               <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex justify-between items-center">
                 <span className="font-semibold text-slate-500">Client Name:</span>
-                <span className="font-black text-slate-900">PHARMART Pharmacy</span>
+                <span className="font-semibold text-slate-900">PHARMART Pharmacy</span>
               </div>
               <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex justify-between items-center">
                 <span className="font-semibold text-slate-500">Industry Sector:</span>
-                <span className="font-black text-slate-900">Healthcare & Retail Pharmacy</span>
+                <span className="font-semibold text-slate-900">Healthcare & Retail Pharmacy</span>
               </div>
               <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 flex justify-between items-center">
                 <span className="font-semibold text-blue-800">System Modules Covered:</span>
-                <span className="font-black text-blue-900">All Modules Fully Digitized</span>
+                <span className="font-semibold text-blue-900">All Modules Fully Digitized</span>
               </div>
             </div>
           </div>
@@ -109,7 +109,7 @@ export default function ArchitectureAssessment() {
 
       {activeSection === "problems" && (
         <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
-          <h3 className="text-lg font-black text-slate-900 flex items-center">
+          <h3 className="text-lg font-semibold text-slate-900 flex items-center">
             <AlertTriangle className="w-5 h-5 mr-2.5 text-amber-600" />
             As-Is Manual Operational Inefficiencies & Business Impact
           </h3>
@@ -123,9 +123,9 @@ export default function ArchitectureAssessment() {
               { issue: "Disconnected Data Records", evidence: "Prescriptions, sales & stock kept in physical folders.", impact: "Management compilation of business reports requires 4.5+ hours." }
             ].map((p, idx) => (
               <div key={idx} className="p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2">
-                <div className="font-black text-slate-900 text-sm flex justify-between items-center">
+                <div className="font-semibold text-slate-900 text-sm flex justify-between items-center">
                   <span>{p.issue}</span>
-                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-black border border-rose-200">Bottleneck</span>
+                  <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold border border-rose-200">Bottleneck</span>
                 </div>
                 <p className="text-slate-600 text-xs"><strong>As-Is Evidence:</strong> {p.evidence}</p>
                 <p className="text-blue-800 text-xs"><strong>Business Impact:</strong> {p.impact}</p>
@@ -137,7 +137,7 @@ export default function ArchitectureAssessment() {
 
       {activeSection === "stakeholders" && (
         <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
-          <h3 className="text-lg font-black text-slate-900 flex items-center">
+          <h3 className="text-lg font-semibold text-slate-900 flex items-center">
             <Users className="w-5 h-5 mr-2.5 text-blue-600" />
             Stakeholder Classification & Engagement Strategy
           </h3>
@@ -146,8 +146,8 @@ export default function ArchitectureAssessment() {
             {REPORT_SECTIONS[3].stakeholders.map((s, idx) => (
               <div key={idx} className="p-4 sm:p-5 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-2.5">
                 <div className="flex justify-between items-center">
-                  <span className="font-black text-slate-900 text-sm">{s.name}</span>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                  <span className="font-semibold text-slate-900 text-sm">{s.name}</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                     s.type === "Internal" ? "bg-blue-100 text-blue-800 border-blue-300" : "bg-blue-100 text-blue-800 border-blue-300"
                   }`}>
                     {s.type}
@@ -167,7 +167,7 @@ export default function ArchitectureAssessment() {
 
       {activeSection === "swimlanes" && (
         <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-sm space-y-5">
-          <h3 className="text-lg font-black text-slate-900 flex items-center">
+          <h3 className="text-lg font-semibold text-slate-900 flex items-center">
             <GitBranch className="w-5 h-5 mr-2.5 text-blue-600" />
             Swimlane Responsibilities Across System Modules
           </h3>
@@ -180,7 +180,7 @@ export default function ArchitectureAssessment() {
               { module: "Sales, Payment & POS Terminal", roles: "Customer, Cashier, Payment Gateway / Bank, Owner/Admin, System Engine" }
             ].map((sw, idx) => (
               <div key={idx} className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                <span className="font-black text-slate-900">{sw.module}</span>
+                <span className="font-semibold text-slate-900">{sw.module}</span>
                 <span className="text-blue-800 font-bold bg-blue-50 px-3 py-1 rounded-xl border border-blue-200/80 w-fit">{sw.roles}</span>
               </div>
             ))}

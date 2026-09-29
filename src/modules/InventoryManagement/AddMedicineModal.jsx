@@ -94,7 +94,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin 500mg Capsules"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -105,7 +105,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin Trihydrate"
               value={formData.genericName}
               onChange={(e) => setFormData({...formData, genericName: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -115,7 +115,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               >
                 <option value="Antibiotics">Antibiotics</option>
                 <option value="Analgesics">Analgesics</option>
@@ -135,7 +135,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.unitPrice}
                 onChange={(e) => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -159,7 +159,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.reorderLevel}
                 onChange={(e) => setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.batchNo}
                 onChange={(e) => setFormData({...formData, batchNo: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -183,7 +183,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -193,7 +193,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
             <select
               value={formData.supplierId}
               onChange={handleSupplierChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             >
               {suppliers.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead)</option>

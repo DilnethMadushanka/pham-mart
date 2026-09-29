@@ -1,93 +1,87 @@
 import React, { useState } from 'react';
-import { ChevronDown, HelpCircle } from 'lucide-react';
+import { Plus, Phone } from 'lucide-react';
+
+const FAQS = [
+  {
+    q: "Can I buy medicines without a prescription?",
+    a: "Over-the-counter products, yes. Prescription medicines always need a valid doctor's prescription. You can upload yours here for a pharmacist to review."
+  },
+  {
+    q: "How do I upload my prescription?",
+    a: "Choose Upload prescription, fill in the patient details and your doctor's registration number, attach a clear photo or PDF, and submit. A licensed pharmacist will review it."
+  },
+  {
+    q: "How are controlled drugs handled?",
+    a: "Controlled drugs need a pharmacist's authorisation. Dispensing stays locked until a licensed pharmacist has checked the prescription against safety protocols."
+  },
+  {
+    q: "What are the delivery times and charges?",
+    a: "We deliver the same day across the area, with express dispatch within 24 hours. Delivery is free on orders over Rs. 2,000, otherwise Rs. 250."
+  },
+  {
+    q: "How do you avoid billing mistakes?",
+    a: "Prices, discounts and taxes are calculated by the system when a prescription is approved, and stock is deducted at the same time, so nothing is added up by hand."
+  }
+];
 
 export default function FaqAccordion() {
   const [openIndex, setOpenIndex] = useState(0);
 
-  const faqs = [
-    {
-      q: "Can I buy medicines without a prescription on PHARMART Pharmacy?",
-      a: "No. In accordance with healthcare regulations and safety standards, all prescription medications require a valid doctor prescription. You can easily upload your prescription on our online portal for fast Pharmacist review and clearance."
-    },
-    {
-      q: "How do I upload my doctor prescription to PHARMART Pharmacy?",
-      a: "Click on 'Upload Doctor Rx', fill in patient details and your doctor's medical registration number, attach a clear photograph or PDF scan of your prescription, and submit it. Our licensed Pharmacists will verify and process it within minutes."
-    },
-    {
-      q: "How are controlled dangerous drugs verified & handled?",
-      a: "Controlled drugs require mandatory Pharmacist authorization. Our system strictly locks medication dispensing until a licensed Pharmacist approves the prescription credentials against official safety protocols."
-    },
-    {
-      q: "What are the home delivery times and charges?",
-      a: "We offer same-day direct delivery across the wider area and express 24-hour dispatch. Home delivery is completely FREE for all medicine orders above $20."
-    },
-    {
-      q: "How does PHARMART Pharmacy prevent billing & pricing errors?",
-      a: "Our automated system calculates discounts, applicable taxes, and real-time inventory deductions upon prescription clearance, ensuring 100% accurate billing without manual calculation errors."
-    }
-  ];
-
   return (
-    <section className="bg-[#F8F9FA] rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-sm space-y-8 w-full">
-      
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-6 gap-4">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-[#2563EB] text-white flex items-center justify-center shadow-md shadow-[#2563EB]/20">
-            <HelpCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Frequently Asked Questions (FAQs)<span className="text-[#2563EB]">.</span>
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
-              Prescription fulfillment, pharmacy services & direct delivery guidelines
-            </p>
-          </div>
-        </div>
+    <section aria-labelledby="faq-title" className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 w-full">
 
-        <div className="px-3.5 py-1.5 rounded-full bg-blue-100 text-[#2563EB] text-xs font-black border border-blue-200">
-          PHARMART Help Center
-        </div>
+      <div className="lg:col-span-4 space-y-4 lg:sticky lg:top-28 self-start">
+        <h2 id="faq-title" className="text-3xl sm:text-4xl font-semibold text-[#0B2545]">
+          Common questions
+        </h2>
+        <p className="text-base text-slate-600 leading-relaxed">
+          Can't find your answer? Call the duty pharmacist.
+        </p>
+        <a
+          href="tel:055-222-8292"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-[#2563EB] hover:text-[#1D4ED8]"
+        >
+          <Phone className="w-4 h-4" />
+          055-222-8292
+        </a>
       </div>
 
-      {/* Accordion Questions List */}
-      <div className="space-y-4 w-full">
-        {faqs.map((faq, idx) => {
+      <div className="lg:col-span-8 divide-y divide-slate-200 border-y border-slate-200">
+        {FAQS.map((faq, idx) => {
           const isOpen = openIndex === idx;
-
+          const panelId = `faq-panel-${idx}`;
           return (
-            <div 
-              key={idx}
-              className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
-                isOpen 
-                  ? "border-[#2563EB] bg-white shadow-md ring-1 ring-[#2563EB]/30" 
-                  : "border-slate-200 bg-white hover:border-blue-300 hover:shadow-xs"
-              }`}
-            >
-              <button
-                onClick={() => setOpenIndex(isOpen ? null : idx)}
-                className="w-full p-5 sm:p-6 text-left font-extrabold text-slate-900 text-sm sm:text-base flex justify-between items-center space-x-4 group"
+            <div key={faq.q}>
+              <h3>
+                <button
+                  onClick={() => setOpenIndex(isOpen ? null : idx)}
+                  aria-expanded={isOpen}
+                  aria-controls={panelId}
+                  className="w-full py-6 text-left flex justify-between items-center gap-6 group"
+                >
+                  <span className={`text-base sm:text-lg font-medium ${isOpen ? "text-[#2563EB]" : "text-[#0B2545] group-hover:text-[#2563EB]"}`}>
+                    {faq.q}
+                  </span>
+                  <Plus
+                    className={`w-5 h-5 shrink-0 transition-transform duration-300 ${isOpen ? "rotate-45 text-[#2563EB]" : "text-slate-400 group-hover:text-[#2563EB]"}`}
+                  />
+                </button>
+              </h3>
+              <div
+                id={panelId}
+                role="region"
+                className={`grid transition-[grid-template-rows] duration-300 ease-out ${isOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
               >
-                <span className="flex items-center space-x-3">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 transition-colors ${isOpen ? "bg-[#2563EB]" : "bg-slate-300 group-hover:bg-blue-500"}`}></span>
-                  <span className={isOpen ? "text-[#2563EB]" : "text-slate-900"}>{faq.q}</span>
-                </span>
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all ${isOpen ? "bg-blue-50 text-[#2563EB]" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"}`}>
-                  <ChevronDown className={`w-5 h-5 transition-transform duration-300 ${isOpen ? "transform rotate-180" : ""}`} />
+                <div className="overflow-hidden">
+                  <p className="pb-6 pr-10 text-sm sm:text-base text-slate-600 leading-relaxed max-w-[65ch]">
+                    {faq.a}
+                  </p>
                 </div>
-              </button>
-
-              {isOpen && (
-                <div className="px-6 pb-6 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4 animate-slide-up font-medium">
-                  {faq.a}
-                </div>
-              )}
+              </div>
             </div>
           );
         })}
       </div>
-
     </section>
   );
 }

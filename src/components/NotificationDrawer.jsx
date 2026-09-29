@@ -105,7 +105,7 @@ export default function NotificationDrawer({
                 <div key={m.id} className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 text-xs">
                   <div className="flex justify-between font-bold text-slate-800">
                     <span>{m.name}</span>
-                    <span className="text-amber-800 font-extrabold">{m.stock} units left</span>
+                    <span className="text-amber-800 font-semibold">{m.stock} units left</span>
                   </div>
                   <p className="text-[11px] text-amber-700 mt-0.5">Reorder Level: {m.reorderLevel} units | Supplier: {m.supplierName}</p>
                 </div>

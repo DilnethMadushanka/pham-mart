@@ -6,7 +6,7 @@ import {
   Filter, 
   AlertTriangle, 
   Clock, 
-  ShieldAlert, 
+  ShieldCheck, 
   Edit, 
   Trash2, 
   Truck, 
@@ -18,6 +18,8 @@ import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
 import { createMedicine, updateMedicine, deleteMedicine } from '../../services/supabaseService';
+import PageHeader from '../../components/PageHeader';
+import MetricCard from '../../components/MetricCard';
 
 export default function MedicineList({ 
   medicines, 
@@ -108,60 +110,53 @@ export default function MedicineList({
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Top Header */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
-              Inventory Management
-            </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            Medicine Catalogue & Inventory Management
-          </h2>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
-            Real-time stock level monitoring, batch tracking, expiry date alerts, and purchase order workflow.
-          </p>
-        </div>
+      <PageHeader
+        kicker="Inventory"
+        title="Medicines and stock"
+        description="Stock levels, batches, expiry alerts and purchase orders in one place."
+      />
 
-        {/* Sub-tab buttons */}
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0">
+      <nav aria-label="Inventory sections" className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
           <button
             onClick={() => setActiveSubTab("catalogue")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            aria-current={activeSubTab === "catalogue" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "catalogue"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
-            Medicine Catalogue ({medicines.length})
+            <Package className="w-4 h-4" />
+            <span>Catalogue</span>
+            <span className="text-xs font-mono text-slate-400">{medicines.length}</span>
           </button>
-
           <button
             onClick={() => setActiveSubTab("purchase_orders")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+            aria-current={activeSubTab === "purchase_orders" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "purchase_orders"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
             <Truck className="w-4 h-4" />
-            <span>Purchase Orders ({purchaseOrders.length})</span>
+            <span>Purchase orders</span>
+            <span className="text-xs font-mono text-slate-400">{purchaseOrders.length}</span>
           </button>
-
           <button
             onClick={() => setActiveSubTab("suppliers")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+            aria-current={activeSubTab === "suppliers" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "suppliers"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
             <Building className="w-4 h-4" />
-            <span>Suppliers ({suppliers.length})</span>
+            <span>Suppliers</span>
+            <span className="text-xs font-mono text-slate-400">{suppliers.length}</span>
           </button>
-        </div>
-      </div>
+      </nav>
 
       {activeSubTab === "suppliers" ? (
         <SupplierList
@@ -186,38 +181,11 @@ export default function MedicineList({
       ) : (
         <>
           {/* Summary Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Catalogue Items</span>
-              <div className="text-3xl font-black text-slate-900 mt-1">{medicines.length}</div>
-              <span className="text-xs text-blue-700 font-extrabold mt-1 block">100% Digital Tracking</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-amber-200/90 bg-amber-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-amber-800 font-bold uppercase tracking-wider flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-1 text-amber-600" />
-                Low Stock Threshold
-              </span>
-              <div className="text-3xl font-black text-amber-700 mt-1">{lowStockCount}</div>
-              <span className="text-xs text-amber-800 font-bold mt-1 block">Reorder recommended</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-rose-200/90 bg-rose-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-rose-800 font-bold uppercase tracking-wider flex items-center">
-                <Clock className="w-4 h-4 mr-1 text-rose-600" />
-                Expiring Medicine Risk
-              </span>
-              <div className="text-3xl font-black text-rose-700 mt-1">{expiredCount}</div>
-              <span className="text-xs text-rose-800 font-bold mt-1 block">Flagged for inspection</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-blue-200/90 bg-blue-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-blue-800 font-bold uppercase tracking-wider">Controlled Drugs</span>
-              <div className="text-3xl font-black text-blue-800 mt-1">
-                {medicines.filter(m => m.controlledDrug).length}
-              </div>
-              <span className="text-xs text-blue-700 font-bold mt-1 block">Strict Verification</span>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />
+            <MetricCard title="Low stock" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} badge="Reorder" colorScheme="amber" />
+            <MetricCard title="Expiring within 90 days" value={expiredCount} subtitle="Flagged for inspection" icon={Clock} badge="Inspect" colorScheme="rose" />
+            <MetricCard title="Controlled drugs" value={medicines.filter(m => m.controlledDrug).length} subtitle="Pharmacist sign-off required" icon={ShieldCheck} />
           </div>
 
           {/* Controls & Search */}
@@ -230,7 +198,7 @@ export default function MedicineList({
                 placeholder="Search medicine name, code or batch..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               />
             </div>
 
@@ -239,7 +207,7 @@ export default function MedicineList({
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -250,7 +218,7 @@ export default function MedicineList({
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="LOW_STOCK">Low Stock Only</option>
@@ -260,7 +228,7 @@ export default function MedicineList({
 
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
@@ -308,14 +276,14 @@ export default function MedicineList({
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                            {med.genericName} • {med.code}
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            {med.genericName} <span className="font-mono text-slate-400">{med.code}</span>
                           </div>
                         </td>
 
                         {/* Category */}
                         <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700">
+                          <span className="px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 whitespace-nowrap">
                             {med.category}
                           </span>
                         </td>
@@ -323,7 +291,7 @@ export default function MedicineList({
                         {/* Stock Level */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center space-x-2">
-                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-blue-700"}`}>
+                            <span className={`font-medium text-sm whitespace-nowrap tabular-nums ${isLowStock ? "text-rose-600" : "text-slate-900"}`}>
                               {med.stock} units
                             </span>
                             {isLowStock && (
@@ -335,14 +303,14 @@ export default function MedicineList({
                         </td>
 
                         {/* Price */}
-                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap tabular-nums">
                           Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                         </td>
 
                         {/* Batch & Expiry */}
                         <td className="py-3.5 px-4">
-                          <div className="text-slate-800 font-mono font-semibold">{med.batchNo}</div>
-                          <div className={`text-[11px] flex items-center ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
+                          <div className="text-slate-800 font-mono whitespace-nowrap">{med.batchNo}</div>
+                          <div className={`text-[11px] flex items-center whitespace-nowrap ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
                             <Clock className="w-3 h-3 mr-1" />
                             Exp: {med.expiryDate}
                           </div>

@@ -42,7 +42,7 @@ export default function ToastNotification({
           )}
 
           <div>
-            <h4 className="font-extrabold text-xs text-white">
+            <h4 className="font-semibold text-xs text-white">
               {toast.title || (isSuccess ? "Success" : isError ? "Error" : "Notification")}
             </h4>
             <p className="text-xs text-slate-200 font-medium truncate mt-0.5">

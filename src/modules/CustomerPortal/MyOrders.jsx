@@ -9,7 +9,7 @@ export default function MyOrders({ prescriptions, currentUser }) {
       
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-black text-slate-900">My Orders & Prescription Status</h2>
+          <h2 className="text-xl font-semibold text-slate-900">My Orders & Prescription Status</h2>
           <p className="text-xs text-slate-500 mt-0.5">Live tracking for pharmacist review, dispensing, and home delivery</p>
         </div>
 
@@ -33,7 +33,7 @@ export default function MyOrders({ prescriptions, currentUser }) {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono font-black text-slate-900 text-sm">{rx.rxNumber}</span>
+                      <span className="font-mono font-semibold text-slate-900 text-sm">{rx.rxNumber}</span>
                       {rx.isControlledDrug && (
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
                           Controlled Drug

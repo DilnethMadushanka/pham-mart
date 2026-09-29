@@ -31,7 +31,7 @@ export default function ReceiptModal({ txn, onClose }) {
           
           {/* Pharmacy Header */}
           <div className="text-center border-b border-dashed border-slate-300 pb-4">
-            <div className="flex justify-center items-center space-x-1 font-sans font-black text-xl text-[#2563EB]">
+            <div className="flex justify-center items-center space-x-1 font-sans font-semibold text-xl text-[#2563EB]">
               <Pill className="w-5 h-5" />
               <span>PHARMART PHARMACY</span>
             </div>
@@ -95,7 +95,7 @@ export default function ReceiptModal({ txn, onClose }) {
                 <span>+ Rs. {txn.taxAmt.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between font-black text-sm text-slate-900 border-t border-slate-300 pt-2 mt-2">
+            <div className="flex justify-between font-semibold text-sm text-slate-900 border-t border-slate-300 pt-2 mt-2">
               <span>TOTAL PAID ({txn.paymentMethod}):</span>
               <span>Rs. {txn.total.toFixed(2)}</span>
             </div>
