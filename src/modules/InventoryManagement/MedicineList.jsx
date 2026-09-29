@@ -179,7 +179,7 @@ export default function MedicineList({
       ) : (
         <>
           {/* Summary Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />
             <MetricCard title="Low stock" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} badge="Reorder" colorScheme="amber" />
             <MetricCard title="Expiring within 90 days" value={expiredCount} subtitle="Flagged for inspection" icon={Clock} badge="Inspect" colorScheme="rose" />
@@ -241,8 +241,8 @@ export default function MedicineList({
           {/* Medicines Grid Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+              <table className="w-full text-left text-xs block md:table">
+                <thead className="hidden md:table-header-group bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
                   <tr>
                     <th className="py-3.5 px-4">Medicine & Generic Info</th>
                     <th className="py-3.5 px-4">Category</th>
@@ -253,17 +253,17 @@ export default function MedicineList({
                     {canEdit && <th className="py-3.5 px-4 text-right">Actions</th>}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="block md:table-row-group divide-y divide-slate-100">
                   {filteredMedicines.map((med) => {
                     const isLowStock = med.stock <= med.reorderLevel;
                     const isNearExpiry = med.expiryDate && new Date(med.expiryDate) <= ninetyDaysThreshold;
 
                     return (
-                      <tr key={med.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={med.id} className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-4 md:table-row md:p-0 hover:bg-slate-50/80 transition-colors">
                         
                         {/* Name & Generic */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 flex items-center space-x-2">
+                        <td className="col-span-2 md:py-3.5 md:px-4">
+                          <div className="font-bold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span>{med.name}</span>
                             {med.controlledDrug && (
                               <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
@@ -282,14 +282,14 @@ export default function MedicineList({
                         </td>
 
                         {/* Category */}
-                        <td className="py-3.5 px-4">
+                        <td className="md:py-3.5 md:px-4">
                           <span className="px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 whitespace-nowrap">
                             {med.category}
                           </span>
                         </td>
 
                         {/* Stock Level */}
-                        <td className="py-3.5 px-4">
+                        <td className="justify-self-end md:justify-self-auto md:py-3.5 md:px-4">
                           <div className="flex items-center space-x-2">
                             <span className={`font-medium text-sm whitespace-nowrap tabular-nums ${isLowStock ? "text-rose-600" : "text-slate-900"}`}>
                               {med.stock} units
@@ -303,27 +303,27 @@ export default function MedicineList({
                         </td>
 
                         {/* Price */}
-                        <td className="py-3.5 px-4 font-medium text-slate-900 whitespace-nowrap tabular-nums">
+                        <td className="self-center md:py-3.5 md:px-4 font-medium text-slate-900 whitespace-nowrap tabular-nums">
                           Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                         </td>
 
                         {/* Batch & Expiry */}
-                        <td className="py-3.5 px-4">
+                        <td className="justify-self-end text-right md:text-left md:justify-self-auto md:py-3.5 md:px-4">
                           <div className="text-slate-800 font-mono whitespace-nowrap">{med.batchNo}</div>
-                          <div className={`text-[11px] flex items-center whitespace-nowrap ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
+                          <div className={`text-[11px] flex items-center justify-end md:justify-start whitespace-nowrap ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
                             <Clock className="w-3 h-3 mr-1" />
                             Exp: {med.expiryDate}
                           </div>
                         </td>
 
                         {/* Supplier */}
-                        <td className="py-3.5 px-4 text-slate-600 truncate max-w-[160px]">
+                        <td className="self-center md:py-3.5 md:px-4 text-slate-600 truncate md:max-w-[160px] min-w-0">
                           {med.supplierName}
                         </td>
 
                         {/* Actions */}
                         {canEdit && (
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="md:py-3.5 md:px-4 text-right">
                           <div className="flex items-center justify-end space-x-1">
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}

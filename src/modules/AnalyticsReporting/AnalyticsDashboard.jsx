@@ -85,7 +85,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
       </PageHeader>
 
       {/* Metric Cards Grid - Expanded 4 Columns */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard 
           title="Daily Sales Revenue"
           value={`Rs. ${totalRevenue.toLocaleString()}`}

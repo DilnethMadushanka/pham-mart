@@ -149,6 +149,16 @@ export default function POSTerminal({
     return rx ? Math.min(stockCap, prescribedQty(rx, med)) : 0;
   };
 
+  // Hides the phone basket shortcut while the basket itself is on screen.
+  const [basketInView, setBasketInView] = useState(false);
+  useEffect(() => {
+    const el = document.getElementById("pos-basket");
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(([entry]) => setBasketInView(entry.isIntersecting), { threshold: 0.15 });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const addToCart = (med) => {
     if (isExpired(med)) {
       notify("Expired stock", `${med.name} expired on ${med.expiryDate} and can't be sold.`, "error");
@@ -295,15 +305,15 @@ export default function POSTerminal({
       </PageHeader>
 
       {/* Expanded Dedicated Customer Toolbar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-          <div className="flex items-center space-x-2.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200/80">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col xl:flex-row justify-between items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
+          <div className="flex items-center space-x-2.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200/80 w-full sm:w-auto min-w-0">
             <UserCheck className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-            <span className="font-bold text-slate-700 text-xs shrink-0">Active Customer:</span>
+            <span className="font-bold text-slate-700 text-xs shrink-0"><span className="hidden sm:inline">Active </span>Customer:</span>
             <select
               value={selectedCustomerId}
               onChange={(e) => handleCustomerChange(e.target.value)}
-              className="font-semibold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer min-w-[220px]"
+              className="font-semibold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer flex-1 min-w-0 sm:flex-none sm:min-w-[220px]"
             >
               <option value="">Walk-in Customer (General)</option>
               {customers.map(c => (
@@ -321,7 +331,7 @@ export default function POSTerminal({
           )}
         </div>
 
-        <div className="flex items-center space-x-2.5 w-full md:w-auto justify-end">
+        <div className="flex items-center space-x-2.5 w-full xl:w-auto justify-end">
           <button
             onClick={() => setIsAddCustOpen(true)}
             title="Register new customer profile"
@@ -361,7 +371,7 @@ export default function POSTerminal({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[620px] overflow-y-auto pr-1">
+          <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
             {availableMedicines.map((med) => {
               const expired = isExpired(med);
               const isOut = med.stock <= 0 || expired;
@@ -370,15 +380,15 @@ export default function POSTerminal({
                 <div
                   key={med.id}
                   onClick={() => !isOut && addToCart(med)}
-                  className={`p-4 bg-white rounded-2xl border transition-all text-xs flex flex-col justify-between ${
+                  className={`p-3 sm:p-4 bg-white rounded-2xl border transition-all text-xs flex flex-col justify-between min-w-0 ${
                     isOut 
                       ? "opacity-50 cursor-not-allowed border-slate-200" 
                       : "border-slate-200 hover:border-blue-400 hover:shadow-md cursor-pointer group"
                   }`}
                 >
                   <div>
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
+                    <div className="flex flex-col-reverse items-start gap-1 sm:flex-row sm:justify-between">
+                      <span className="font-bold text-slate-900 text-[13px] sm:text-sm leading-snug group-hover:text-blue-700 transition-colors break-words">
                         {med.name}
                       </span>
                       {expired ? (
@@ -395,10 +405,10 @@ export default function POSTerminal({
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 font-mono mt-0.5">{med.genericName}</p>
+                    <p className="text-[11px] text-slate-400 font-mono mt-0.5 line-clamp-2 break-words">{med.genericName}</p>
                   </div>
 
-                  <div className="mt-4 pt-2 border-t border-slate-100 flex justify-between items-end">
+                  <div className="mt-3 sm:mt-4 pt-2 border-t border-slate-100 flex flex-wrap justify-between items-end gap-x-2 gap-y-1">
                     <div>
                       <span className="text-[11px] text-slate-400 block font-medium">Stock Level</span>
                       <span className={`font-semibold text-xs ${med.stock <= med.reorderLevel ? "text-rose-600" : "text-blue-700"}`}>
@@ -407,7 +417,7 @@ export default function POSTerminal({
                     </div>
 
                     <div className="text-right">
-                      <span className="text-base font-semibold text-slate-900">
+                      <span className="text-sm sm:text-base font-semibold text-slate-900 whitespace-nowrap">
                         Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                       </span>
                     </div>
@@ -419,8 +429,23 @@ export default function POSTerminal({
 
         </div>
 
+        {/* Phones and tablets: the basket is below the list, so keep a shortcut to it on screen. */}
+        {cart.length > 0 && !basketInView && (
+          <button
+            type="button"
+            onClick={() => document.getElementById("pos-basket")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            className="lg:hidden fixed inset-x-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-6 z-30 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-[#2563EB] text-white text-sm font-semibold shadow-xl shadow-[#2563EB]/30"
+          >
+            <span className="flex items-center gap-2">
+              <ShoppingCart className="w-4 h-4" />
+              View basket ({cart.reduce((a, c) => a + c.qty, 0)})
+            </span>
+            <span className="tabular-nums">Rs. {grandTotal.toFixed(2)}</span>
+          </button>
+        )}
+
         {/* Right Column: Checkout Billing Counter */}
-        <div className="lg:col-span-5 bg-white p-5 rounded-2xl border border-blue-200 shadow-xl flex flex-col h-full sticky top-20">
+        <div id="pos-basket" className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-blue-200 shadow-xl flex flex-col h-full scroll-mt-20 lg:sticky lg:top-20">
           
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-base font-semibold text-slate-900 flex items-center">

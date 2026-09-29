@@ -21,7 +21,7 @@ export default function MetricCard({
   const tone = TONES[colorScheme] || { icon: "text-[#64748B] bg-slate-100", badge: "status-chip-gray" };
 
   return (
-    <div className="group bg-white rounded-2xl p-5 ring-1 ring-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-300 flex flex-col h-full min-h-[148px]">
+    <div className="group bg-white rounded-2xl p-4 sm:p-5 ring-1 ring-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-300 flex flex-col h-full min-h-[128px] sm:min-h-[148px]">
 
       <div className="flex items-center justify-between gap-2">
         <h4 className="text-[13px] font-medium text-slate-500 leading-snug">
@@ -34,8 +34,8 @@ export default function MetricCard({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 mt-4 mb-1">
-        <div className="text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
+      <div className="flex flex-wrap items-center gap-2.5 mt-3 sm:mt-4 mb-1">
+        <div className="text-2xl sm:text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
           {value}
         </div>
 
@@ -49,7 +49,7 @@ export default function MetricCard({
         ) : null}
       </div>
 
-      <p className="text-xs text-slate-500 mt-auto pt-3">
+      <p className="text-xs text-slate-500 mt-auto pt-3 line-clamp-2">
         {subtitle}
       </p>
     </div>

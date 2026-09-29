@@ -318,7 +318,7 @@ export default function App() {
             expiredCount={expiredCount}
           />
 
-          <main id="main" className="flex-1 min-w-0">
+          <main id="main" className="flex-1 min-w-0 pb-24 md:pb-0">
             {tab === "analytics" && (
               <AnalyticsDashboard
                 medicines={medicines}

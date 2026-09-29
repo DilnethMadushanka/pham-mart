@@ -119,10 +119,12 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
       </PageHeader>
 
       {/* Quick Role Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
         <MetricCard title="Staff accounts" value={staffList.length} subtitle="Everyone with console access" icon={Users} />
         <MetricCard title="Active accounts" value={staffList.filter(s => s.status === "Active").length} subtitle="Ready for the current shift" icon={UserCheck} />
-        <MetricCard title="Average provisioning time" value="1.5 min" subtitle="Target under 2 minutes" icon={ShieldCheck} badge="On target" colorScheme="sky" />
+        <div className="col-span-2 sm:col-span-1">
+          <MetricCard title="Average provisioning time" value="1.5 min" subtitle="Target under 2 minutes" icon={ShieldCheck} badge="On target" colorScheme="sky" />
+        </div>
       </div>
 
       {/* Filter & Search Bar */}
@@ -157,8 +159,8 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
       {/* Staff Table */}
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-semibold">
+          <table className="w-full text-left text-xs block md:table">
+            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-semibold">
               <tr>
                 <th className="py-4 px-5">Staff Member</th>
                 <th className="py-4 px-5">Assigned Role</th>
@@ -168,12 +170,12 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                 <th className="py-4 px-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block md:table-row-group divide-y divide-slate-100">
               {filteredStaff.map((staff) => (
-                <tr key={staff.id} className="hover:bg-blue-50/40 transition-colors">
+                <tr key={staff.id} className="grid grid-cols-2 gap-x-3 gap-y-3 p-4 md:table-row md:p-0 hover:bg-blue-50/40 transition-colors">
                   
                   {/* Name & ID */}
-                  <td className="py-4 px-5">
+                  <td className="col-span-2 md:py-4 md:px-5">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 rounded-2xl bg-[#EFF6FF] text-[#1D4ED8] font-semibold flex items-center justify-center text-xs shadow-md shadow-blue-500/15 shrink-0">
                         {staff.name.substring(0, 2).toUpperCase()}
@@ -186,7 +188,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                   </td>
 
                   {/* Role Badge */}
-                  <td className="py-4 px-5">
+                  <td className="md:py-4 md:px-5">
                     <span className={`inline-flex items-center px-3 py-1.5 rounded-xl font-semibold text-xs border ${
                       staff.role === "Owner/Admin" 
                         ? "bg-slate-100 text-[#0B2545] border-slate-300"
@@ -200,10 +202,10 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                   </td>
 
                   {/* Contact */}
-                  <td className="py-4 px-5 space-y-1">
+                  <td className="col-span-2 row-start-3 md:py-4 md:px-5 space-y-1 min-w-0">
                     <div className="flex items-center text-slate-700 font-medium">
                       <Mail className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
-                      <span>{staff.email}</span>
+                      <span className="truncate">{staff.email}</span>
                     </div>
                     <div className="flex items-center text-slate-500 font-medium">
                       <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
@@ -212,7 +214,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                   </td>
 
                   {/* Status */}
-                  <td className="py-4 px-5">
+                  <td className="justify-self-end md:justify-self-auto md:py-4 md:px-5">
                     <button
                       onClick={() => toggleStaffStatus(staff.id)}
                       disabled={staff.id === currentUser?.id}
@@ -229,7 +231,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                   </td>
 
                   {/* Last Active */}
-                  <td className="py-4 px-5 text-slate-600 font-medium">
+                  <td className="self-center md:py-4 md:px-5 text-slate-600 font-medium">
                     <div className="flex items-center">
                       <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
                       {staff.lastActive}
@@ -237,7 +239,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
                   </td>
 
                   {/* Actions */}
-                  <td className="py-4 px-5 text-right">
+                  <td className="md:py-4 md:px-5 text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleResetPassword(staff)}

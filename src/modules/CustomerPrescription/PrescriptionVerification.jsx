@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, 
   CheckCircle2, 
@@ -44,8 +44,14 @@ export default function PrescriptionVerification({
   const selectedRx = prescriptions.find(p => p.id === selectedRxId) || null;
   const attachment = selectedRx ? attachments[selectedRx.id] : null;
 
+  const reviewRef = useRef(null);
+
   const selectRx = (rx) => {
     setSelectedRxId(rx.id);
+    // On phones the review panel sits below the list, so bring it into view.
+    if (window.matchMedia("(max-width: 1023px)").matches) {
+      requestAnimationFrame(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
     setPharmacistNotes("");
     setApprovalItems(rx.medicines || []);
     setAddItemId("");
@@ -253,9 +259,9 @@ export default function PrescriptionVerification({
         </div>
 
         {/* Selected Prescription Review Workstation */}
-        <div className="lg:col-span-6">
+        <div ref={reviewRef} className="lg:col-span-6 scroll-mt-20">
           {selectedRx ? (
-            <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-200 shadow-xl space-y-5 sticky top-20">
+            <div className="bg-white p-5 sm:p-7 rounded-3xl border border-blue-200 shadow-xl space-y-5 lg:sticky lg:top-20">
               
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div>
@@ -386,7 +392,7 @@ export default function PrescriptionVerification({
                             value={addItemId}
                             onChange={(e) => setAddItemId(e.target.value)}
                             aria-label="Catalogue medicine to add"
-                            className="flex-1 px-3 py-2 border border-slate-300 rounded-xl text-xs"
+                            className="flex-1 min-w-0 px-3 py-2 border border-slate-300 rounded-xl text-xs"
                           >
                             <option value="">Add a catalogue medicine...</option>
                             {medicines.map(m => (
@@ -495,7 +501,7 @@ export default function PrescriptionVerification({
 
             </div>
           ) : (
-            <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400 space-y-2">
+            <div className="hidden lg:block bg-white p-12 rounded-2xl border border-slate-200 text-center text-slate-400 space-y-2">
               <FileText className="w-12 h-12 mx-auto text-slate-300" />
               <div className="font-bold text-slate-700">Select a Prescription to Review</div>
               <p className="text-xs text-slate-500">

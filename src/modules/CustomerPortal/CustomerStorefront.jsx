@@ -35,9 +35,9 @@ export default function CustomerStorefront({
   };
 
   const portalTabs = [
-    { id: "store", label: "Wellness store", icon: Pill },
-    { id: "upload_rx", label: "Upload prescription", icon: Upload },
-    { id: "my_orders", label: "My orders", icon: Clock }
+    { id: "store", label: "Wellness store", short: "Store", icon: Pill },
+    { id: "upload_rx", label: "Upload prescription", short: "Upload Rx", icon: Upload },
+    { id: "my_orders", label: "My orders", short: "My orders", icon: Clock }
   ];
 
   return (
@@ -51,22 +51,24 @@ export default function CustomerStorefront({
 
       {/* Portal navigation */}
       <nav id="portal-nav" aria-label="Customer portal" className="scroll-mt-20 mt-16 sm:mt-20 mb-12 flex flex-wrap items-center justify-between gap-4 border-b border-slate-200">
-        <div className="flex items-center gap-1 -mb-px overflow-x-auto">
-          {portalTabs.map(({ id, label, icon: Icon }) => {
+        <div className="flex w-full sm:w-auto items-center gap-1 -mb-px overflow-x-auto">
+          {portalTabs.map(({ id, label, short, icon: Icon }) => {
             const isActive = activePortalTab === id;
             return (
               <button
                 key={id}
                 onClick={() => setActivePortalTab(id)}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex items-center gap-2 px-4 py-3.5 text-sm font-medium whitespace-nowrap border-b-2 ${
+                aria-label={label}
+                className={`flex flex-1 sm:flex-none justify-center items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-3.5 text-[13px] sm:text-sm font-medium whitespace-nowrap border-b-2 ${
                   isActive
                     ? "border-[#2563EB] text-[#0B2545]"
                     : "border-transparent text-slate-500 hover:text-[#0B2545] hover:border-slate-300"
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? "text-[#2563EB]" : ""}`} />
-                {label}
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#2563EB]" : ""}`} />
+                <span className="sm:hidden">{short}</span>
+                <span className="hidden sm:inline">{label}</span>
               </button>
             );
           })}

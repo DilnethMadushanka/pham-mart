@@ -21,18 +21,21 @@ export default function Sidebar({
     {
       id: "analytics",
       label: "Home",
+      shortLabel: "Home",
       sublabel: "Analytics & Executive Overview",
       icon: LayoutDashboard
     },
     {
       id: "pos",
       label: "Sales & Billing",
+      shortLabel: "Sales",
       sublabel: "POS Billing Counter",
       icon: ShoppingCart
     },
     {
       id: "inventory",
       label: "Inventory",
+      shortLabel: "Stock",
       sublabel: "Purchases & Suppliers",
       icon: Package,
       badge: (lowStockCount + expiredCount) > 0 ? (lowStockCount + expiredCount) : null,
@@ -41,6 +44,7 @@ export default function Sidebar({
     {
       id: "prescriptions",
       label: "Prescriptions",
+      shortLabel: "Rx",
       sublabel: "Verification Station",
       icon: FileText,
       badge: pendingRxCount > 0 ? pendingRxCount : null,
@@ -49,18 +53,23 @@ export default function Sidebar({
     {
       id: "customers",
       label: "Customers",
+      shortLabel: "Customers",
       sublabel: "Patients & Directory",
       icon: UserCheck
     },
     {
       id: "staff",
       label: "Settings",
+      shortLabel: "Settings",
       sublabel: "User Access & Staff",
       icon: Users
     }
   ];
 
+  const visibleItems = menuItems.filter(item => canAccessTab(currentRole, item.id));
+
   return (
+    <>
     <aside
       aria-label="Console navigation"
       className="hidden md:flex w-60 lg:w-64 flex-col h-[calc(100dvh-7rem)] sticky top-[5.5rem] shrink-0 rounded-3xl bg-[#0B2545] overflow-hidden shadow-xl shadow-[#0B2545]/15"
@@ -71,7 +80,7 @@ export default function Sidebar({
       </div>
 
       <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
-        {menuItems.filter(item => canAccessTab(currentRole, item.id)).map((item) => {
+        {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
 
@@ -120,5 +129,41 @@ export default function Sidebar({
         </p>
       </div>
     </aside>
+
+    {/* Phones: the sidebar is hidden, so the same tabs sit in a bar at the bottom. */}
+    <nav
+      aria-label="Console navigation"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0B2545] border-t border-white/10 pb-[env(safe-area-inset-bottom)]"
+    >
+      <div className="flex">
+        {visibleItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              aria-current={isActive ? "page" : undefined}
+              aria-label={item.label}
+              className={`relative flex-1 min-w-0 flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] ${
+                isActive ? "text-white font-medium" : "text-slate-400"
+              }`}
+            >
+              {isActive && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full bg-[#2563EB]" />}
+              <span className="relative">
+                <Icon className={`w-5 h-5 ${isActive ? "text-blue-300" : ""}`} strokeWidth={1.75} />
+                {item.badge && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-[#2563EB] text-white text-[10px] font-semibold font-mono flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+              </span>
+              <span className="truncate max-w-full px-0.5">{item.shortLabel}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+    </>
   );
 }

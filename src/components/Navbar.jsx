@@ -74,7 +74,7 @@ export default function Navbar({
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl backdrop-saturate-150 border-b border-slate-200/80">
       <div className={`${viewMode === "website" ? "max-w-[1320px]" : "max-w-[1600px]"} mx-auto px-4 sm:px-6 lg:px-8`}>
-        <div className="flex justify-between h-16 items-center gap-4">
+        <div className="flex justify-between h-16 items-center gap-2 sm:gap-4">
 
           {/* Brand */}
           <div className="flex items-center gap-8 min-w-0">
@@ -87,7 +87,7 @@ export default function Navbar({
                 <span className="absolute w-4 h-1.5 bg-white rounded-full"></span>
                 <span className="absolute h-4 w-1.5 bg-white rounded-full"></span>
               </span>
-              <span className="text-lg font-semibold tracking-tight text-[#0B2545]">
+              <span className={`text-lg font-semibold tracking-tight text-[#0B2545] ${viewMode === "enterprise" ? "hidden sm:inline" : ""}`}>
                 PHARMART<span className="text-[#2563EB]">.</span>
               </span>
               {viewMode === "enterprise" && (
@@ -129,7 +129,7 @@ export default function Navbar({
           )}
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
 
             {viewMode === "enterprise" && (
               <div className="hidden xl:flex items-center bg-slate-100 p-1 rounded-xl mr-2" role="group" aria-label="Workstation role">
@@ -153,6 +153,21 @@ export default function Navbar({
                   );
                 })}
               </div>
+            )}
+
+            {viewMode === "enterprise" && (
+              <label className="xl:hidden">
+                <span className="sr-only">Workstation role</span>
+                <select
+                  value={currentRole}
+                  onChange={(e) => setCurrentRole(e.target.value)}
+                  className="max-w-[8.5rem] pl-2.5 pr-7 py-2 rounded-xl bg-slate-100 border border-transparent text-xs font-medium text-[#0B2545] focus:border-[#2563EB]/40 focus:ring-4 focus:ring-[#2563EB]/10 outline-none"
+                >
+                  {roles.map(r => (
+                    <option key={r.key} value={r.key}>{r.label}</option>
+                  ))}
+                </select>
+              </label>
             )}
 
             {viewMode === "website" && isStaff && (
@@ -194,7 +209,7 @@ export default function Navbar({
             )}
 
             {currentUser ? (
-              <div className="flex items-center gap-2.5 pl-3 ml-1 border-l border-slate-200">
+              <div className="flex items-center gap-2 sm:gap-2.5 pl-2 sm:pl-3 ml-0.5 sm:ml-1 border-l border-slate-200">
                 <Avatar user={currentUser} />
                 <div className="hidden md:block text-left leading-tight">
                   <div className="text-sm font-medium text-[#0B2545]">{currentUser.name}</div>
