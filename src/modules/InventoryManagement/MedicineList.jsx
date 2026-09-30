@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Package, 
   Plus, 
@@ -12,11 +12,15 @@ import {
   Truck, 
   CheckCircle,
   FileCheck,
-  Building
+  Building,
+  TrendingDown,
+  ArrowRight
 } from 'lucide-react';
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
+import ReorderSuggestions from './ReorderSuggestions';
+import { buildReorderSuggestions } from '../../lib/reorder';
 import { saveMedicine, deleteMedicine } from '../../services/supabaseService';
 import { confirmDialog, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
@@ -30,12 +34,28 @@ export default function MedicineList({
   suppliers,
   onSaveSupplier,
   onDeleteSupplier,
+  transactions = [],
+  focusSection = null,
+  onFocusHandled,
   canEdit = false,
   addAuditLog 
 }) {
   const [selectedSubTab, setActiveSubTab] = useState("catalogue");
+
+  // Another screen (for example the notifications) can open a section directly.
+  useEffect(() => {
+    if (!focusSection) return;
+    setActiveSubTab(focusSection);
+    onFocusHandled?.();
+  }, [focusSection, onFocusHandled]);
+
+  const reorderSuggestions = useMemo(
+    () => buildReorderSuggestions({ medicines, transactions, purchaseOrders, suppliers }),
+    [medicines, transactions, purchaseOrders, suppliers]
+  );
+  const toReorder = reorderSuggestions.filter(s => s.openOrders.length === 0).length;
   // Read-only roles only see the catalogue; procurement screens need edit rights.
-  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "purchase_orders" | "suppliers"
+  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "purchase_orders" | "suppliers"
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -130,6 +150,23 @@ export default function MedicineList({
             <span className="text-xs font-mono text-slate-400">{medicines.length}</span>
           </button>
           <button
+            onClick={() => setActiveSubTab("reorder")}
+            aria-current={activeSubTab === "reorder" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              activeSubTab === "reorder"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            <TrendingDown className="w-4 h-4" />
+            <span>Reorder suggestions</span>
+            {toReorder > 0 ? (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold font-mono flex items-center justify-center">{toReorder}</span>
+            ) : (
+              <span className="text-xs font-mono text-slate-400">0</span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveSubTab("purchase_orders")}
             aria-current={activeSubTab === "purchase_orders" ? "page" : undefined}
             className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
@@ -158,7 +195,17 @@ export default function MedicineList({
       </nav>
       )}
 
-      {activeSubTab === "suppliers" ? (
+      {activeSubTab === "reorder" ? (
+        <ReorderSuggestions
+          medicines={medicines}
+          transactions={transactions}
+          purchaseOrders={purchaseOrders}
+          setPurchaseOrders={setPurchaseOrders}
+          suppliers={suppliers}
+          addAuditLog={addAuditLog}
+          onViewOrders={() => setActiveSubTab("purchase_orders")}
+        />
+      ) : activeSubTab === "suppliers" ? (
         <SupplierList
           suppliers={suppliers}
           medicines={medicines}
@@ -178,6 +225,32 @@ export default function MedicineList({
         />
       ) : (
         <>
+          {toReorder > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-3">
+                <TrendingDown className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">
+                    {toReorder === 1 ? "1 medicine needs reordering" : `${toReorder} medicines need reordering`}
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    {reorderSuggestions.filter(s => s.openOrders.length === 0).slice(0, 3).map(s => s.medicine.name).join(", ")}
+                    {toReorder > 3 ? ` and ${toReorder - 3} more` : ""}
+                    {canEdit ? "" : ". Let a pharmacist or the owner know."}
+                  </p>
+                </div>
+              </div>
+              {canEdit && (
+                <button
+                  onClick={() => setActiveSubTab("reorder")}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-amber-300 text-amber-900 rounded-xl text-sm font-medium hover:bg-amber-100 shrink-0"
+                >
+                  View suggestions <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Summary Stat Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />

@@ -92,10 +92,10 @@ export default function NotificationDrawer({
               </h4>
               {lowStock.length > 0 && (
                 <button 
-                  onClick={() => { onNavigate("inventory"); onClose(); }} 
+                  onClick={() => { onNavigate("inventory:reorder"); onClose(); }} 
                   className="text-xs text-blue-700 hover:underline font-semibold flex items-center"
                 >
-                  Create PO <ArrowRight className="w-3 h-3 ml-0.5" />
+                  Reorder suggestions <ArrowRight className="w-3 h-3 ml-0.5" />
                 </button>
               )}
             </div>

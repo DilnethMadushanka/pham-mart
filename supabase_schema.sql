@@ -135,6 +135,21 @@ create table if not exists public.audit_logs (
   created_at timestamptz default current_timestamp
 );
 
+-- Registered doctors. Pharmacists check each prescription's doctor against this list.
+create table if not exists public.doctors (
+  id text primary key,
+  name text not null,
+  slmc_no text not null,
+  specialty text,
+  phone text,
+  email text,
+  hospital text,
+  notes text,
+  status text not null default 'Active' check (status in ('Active', 'Inactive')),
+  created_at timestamptz default current_timestamp,
+  updated_at timestamptz default current_timestamp
+);
+
 -- --------------------------------------------------------------------
 -- 2. Columns the app needs but the old schema did not store
 -- --------------------------------------------------------------------
@@ -166,6 +181,7 @@ alter table public.prescriptions add column if not exists expiry_date date;
 alter table public.prescriptions add column if not exists has_attachment boolean default false;
 alter table public.prescriptions add column if not exists dispensed_at timestamptz;
 alter table public.prescriptions add column if not exists dispensed_txn text;
+alter table public.prescriptions add column if not exists doctor_id text;
 
 alter table public.transactions add column if not exists paid_amount numeric(10,2) default 0;
 alter table public.transactions add column if not exists change_amount numeric(10,2) default 0;
@@ -182,6 +198,8 @@ create index if not exists customers_nic_idx on public.customers (upper(nic));
 create index if not exists prescriptions_patient_idx on public.prescriptions (patient_id);
 create index if not exists transactions_customer_idx on public.transactions (customer_id);
 create index if not exists audit_logs_created_idx on public.audit_logs (created_at desc);
+create unique index if not exists doctors_slmc_idx on public.doctors (upper(slmc_no));
+create index if not exists prescriptions_doctor_idx on public.prescriptions (doctor_id);
 
 -- Stock can never go negative (NOT VALID keeps any odd historic rows untouched).
 do $$
@@ -315,7 +333,7 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs'] loop
+  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors'] loop
     execute format('drop trigger if exists bump_data_version on public.%I', t);
     execute format('create trigger bump_data_version after insert or update or delete on public.%I
                     for each statement execute function app_private.bump_data_version()', t);
@@ -582,6 +600,26 @@ as $$
   )
 $$;
 
+create or replace function app_private.doctor_json(d public.doctors)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', d.id,
+    'name', d.name,
+    'slmcNo', d.slmc_no,
+    'specialty', d.specialty,
+    'phone', d.phone,
+    'email', d.email,
+    'hospital', d.hospital,
+    'notes', d.notes,
+    'status', d.status,
+    'createdAt', d.created_at,
+    'prescriptionCount', (select count(*) from public.prescriptions r where r.doctor_id = d.id)
+  )
+$$;
+
 create or replace function app_private.prescription_json(r public.prescriptions)
 returns jsonb
 language sql
@@ -594,6 +632,7 @@ as $$
     'customerName', r.patient_name,
     'doctorName', r.doctor_name,
     'doctorSlmcNo', coalesce(r.doctor_reg, ''),
+    'doctorId', r.doctor_id,
     'createdAt', r.created_at,
     'expiryDate', r.expiry_date,
     'medicines', app_private.as_array(r.medications),
@@ -895,7 +934,7 @@ set search_path = public, extensions, app_private
 as $$
 declare
   p record;
-  v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs'];
+  v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors'];
   v_want text[] := coalesce(p_tables, v_all);
   v_is_staff boolean;
   v_can_stock boolean;
@@ -956,6 +995,13 @@ begin
     v_out := v_out || jsonb_build_object('transactions', case
       when v_is_staff then
         (select coalesce(jsonb_agg(app_private.transaction_json(t) order by t.created_at desc), '[]'::jsonb) from public.transactions t)
+      else '[]'::jsonb end);
+  end if;
+
+  if 'doctors' = any (v_want) then
+    v_out := v_out || jsonb_build_object('doctors', case
+      when v_is_staff then
+        (select coalesce(jsonb_agg(app_private.doctor_json(d) order by d.name), '[]'::jsonb) from public.doctors d)
       else '[]'::jsonb end);
   end if;
 
@@ -1463,9 +1509,22 @@ declare
   v_med public.medicines;
   v_controlled boolean := false;
   v_id text;
+  v_doctor public.doctors;
   r public.prescriptions;
 begin
   select * into p from app_private.session_principal(p_token);
+
+  -- Link a registered doctor: staff pick one directly; otherwise match the
+  -- registration number the patient typed.
+  if p.kind = 'staff' and app_private.clean_text(p_rx ->> 'doctorId', 60) is not null then
+    select * into v_doctor from public.doctors where id = p_rx ->> 'doctorId';
+    if not found then
+      raise exception 'That doctor is not in the doctor database.';
+    end if;
+  elsif app_private.clean_text(p_rx ->> 'doctorSlmcNo', 40) is not null then
+    select * into v_doctor from public.doctors
+    where upper(slmc_no) = upper(btrim(p_rx ->> 'doctorSlmcNo')) and status = 'Active';
+  end if;
 
   if p.kind = 'staff' then
     select * into v_customer from public.customers where id = p_rx ->> 'customerId';
@@ -1521,13 +1580,13 @@ begin
 
   v_id := 'RX-' || to_char(now(), 'YYYY') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
 
-  insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_name, doctor_reg, status,
+  insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,
                                     medications, notes, contact_phone, delivery_address, order_type,
                                     is_controlled, expiry_date, has_attachment)
-  values (v_id, v_id, v_patient_id, v_patient_name,
-          coalesce(app_private.clean_text(p_rx ->> 'doctorName', 160),
+  values (v_id, v_id, v_patient_id, v_patient_name, v_doctor.id,
+          coalesce(v_doctor.name, app_private.clean_text(p_rx ->> 'doctorName', 160),
                    case when p_file is not null then 'Doctor prescription (photo)' else 'Patient direct order' end),
-          coalesce(app_private.clean_text(p_rx ->> 'doctorSlmcNo', 40),
+          coalesce(v_doctor.slmc_no, app_private.clean_text(p_rx ->> 'doctorSlmcNo', 40),
                    case when p_file is not null then 'VERIFY-SLMC' else 'DIRECT-ORDER' end),
           'Pending', v_items,
           app_private.clean_text(p_rx ->> 'notes', 1000),
@@ -1554,8 +1613,110 @@ begin
   return app_private.prescription_json(r);
 end $$;
 
+-- Doctor database: the owner adds and edits doctors; every staff member can read it.
+create or replace function public.save_doctor(p_token text, p_doctor jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  v_id text := app_private.clean_text(p_doctor ->> 'id', 60);
+  v_name text := app_private.clean_text(p_doctor ->> 'name', 160);
+  v_slmc text := upper(app_private.clean_text(p_doctor ->> 'slmcNo', 40));
+  v_status text := coalesce(app_private.clean_text(p_doctor ->> 'status', 20), 'Active');
+  v_email text := lower(app_private.clean_text(p_doctor ->> 'email', 160));
+  v_next int;
+  d public.doctors;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin']);
+  if v_name is null then
+    raise exception 'Enter the doctor''s name.';
+  end if;
+  if v_slmc is null then
+    raise exception 'Enter the doctor''s SLMC registration number.';
+  end if;
+  if v_status not in ('Active', 'Inactive') then
+    raise exception 'Status must be Active or Inactive.';
+  end if;
+  if v_email is not null and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then
+    raise exception 'Enter a valid email address or leave it empty.';
+  end if;
+  if exists (select 1 from public.doctors where upper(slmc_no) = v_slmc and id is distinct from v_id) then
+    raise exception 'Another doctor already has registration number %.', v_slmc;
+  end if;
+
+  if v_id is null then
+    -- Readable ids in order: DOC001, DOC002, ...
+    perform pg_advisory_xact_lock(hashtext('public.doctors'));
+    select coalesce(max(substring(id from 4)::int), 0) + 1 into v_next
+    from public.doctors where id ~ '^DOC[0-9]+$';
+    insert into public.doctors (id, name, slmc_no, specialty, phone, email, hospital, notes, status)
+    values ('DOC' || lpad(v_next::text, 3, '0'), v_name, v_slmc,
+            app_private.clean_text(p_doctor ->> 'specialty', 120),
+            app_private.clean_text(p_doctor ->> 'phone', 40),
+            v_email,
+            app_private.clean_text(p_doctor ->> 'hospital', 200),
+            app_private.clean_text(p_doctor ->> 'notes', 1000),
+            v_status)
+    returning * into d;
+    perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Doctor Added',
+      'Added ' || d.name || ' (' || d.id || ', SLMC ' || d.slmc_no || ') to the doctor database', 'info');
+  else
+    update public.doctors set
+      name = v_name,
+      slmc_no = v_slmc,
+      specialty = app_private.clean_text(p_doctor ->> 'specialty', 120),
+      phone = app_private.clean_text(p_doctor ->> 'phone', 40),
+      email = v_email,
+      hospital = app_private.clean_text(p_doctor ->> 'hospital', 200),
+      notes = app_private.clean_text(p_doctor ->> 'notes', 1000),
+      status = v_status,
+      updated_at = now()
+    where id = v_id
+    returning * into d;
+    if not found then
+      raise exception 'This doctor no longer exists. Refresh the page and try again.';
+    end if;
+    -- Keep linked prescriptions showing the current name and number.
+    update public.prescriptions set doctor_name = d.name, doctor_reg = d.slmc_no where doctor_id = d.id;
+    perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Doctor Updated',
+      'Updated ' || d.name || ' (' || d.id || '), status ' || d.status, 'info');
+  end if;
+
+  return app_private.doctor_json(d);
+end $$;
+
+create or replace function public.delete_doctor(p_token text, p_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  d public.doctors;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin']);
+  select * into d from public.doctors where id = p_id;
+  if not found then
+    raise exception 'This doctor no longer exists.';
+  end if;
+  if exists (select 1 from public.prescriptions where doctor_id = p_id) then
+    raise exception '% is linked to prescriptions, so the record must stay. Mark the doctor Inactive instead.', d.name;
+  end if;
+  delete from public.doctors where id = p_id;
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Doctor Removed',
+    'Removed ' || d.name || ' (' || d.id || ') from the doctor database', 'warning');
+end $$;
+
+-- The review now also records which registered doctor wrote the prescription.
+drop function if exists public.review_prescription(text, text, text, text, jsonb);
+
 create or replace function public.review_prescription(
-  p_token text, p_rx_id text, p_decision text, p_notes text default null, p_medicines jsonb default null
+  p_token text, p_rx_id text, p_decision text, p_notes text default null, p_medicines jsonb default null,
+  p_doctor_id text default null
 )
 returns jsonb
 language plpgsql
@@ -1569,6 +1730,8 @@ declare
   v_item jsonb;
   v_med public.medicines;
   v_controlled boolean := false;
+  v_needs_rx boolean := false;
+  v_doctor public.doctors;
 begin
   select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
 
@@ -1593,11 +1756,34 @@ begin
     if found and coalesce(v_med.is_controlled, false) then
       v_controlled := true;
     end if;
+    if found and (coalesce(v_med.is_prescription, false) or coalesce(v_med.is_controlled, false)) then
+      v_needs_rx := true;
+    end if;
   end loop;
+
+  -- The doctor must be in the doctor database before Rx-only or controlled
+  -- medicines can be approved.
+  if app_private.clean_text(coalesce(p_doctor_id, r.doctor_id), 60) is not null then
+    select * into v_doctor from public.doctors where id = coalesce(p_doctor_id, r.doctor_id);
+    if not found then
+      raise exception 'That doctor is not in the doctor database.';
+    end if;
+  end if;
+  if p_decision = 'Approved' and v_needs_rx then
+    if v_doctor.id is null then
+      raise exception 'Pick the prescribing doctor from the doctor database before approving prescription medicines. If the doctor is missing, ask the owner to add them.';
+    end if;
+    if v_doctor.status <> 'Active' then
+      raise exception '% is marked Inactive in the doctor database. Prescriptions from this doctor can''t be approved.', v_doctor.name;
+    end if;
+  end if;
 
   update public.prescriptions set
     status = p_decision,
     medications = v_items,
+    doctor_id = coalesce(v_doctor.id, doctor_id),
+    doctor_name = coalesce(v_doctor.name, doctor_name),
+    doctor_reg = coalesce(v_doctor.slmc_no, doctor_reg),
     is_controlled = v_controlled,
     verified_by = s.display_name || ' (' || s.role || ')',
     verified_at = now(),
@@ -1610,6 +1796,7 @@ begin
   perform app_private.write_audit(s.principal_id, s.display_name, s.role,
     'Prescription ' || p_decision,
     p_decision || ' ' || r.rx_number || ' for ' || r.patient_name
+      || coalesce('. Doctor: ' || v_doctor.name || ' (' || v_doctor.id || ')', '')
       || coalesce('. Reason: ' || r.rejection_reason, ''),
     case when p_decision = 'Approved' then 'success' else 'warning' end);
 
@@ -1785,7 +1972,7 @@ declare
   t text;
   pol record;
 begin
-  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','data_versions'] loop
+  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors','data_versions'] loop
     execute format('alter table public.%I enable row level security', t);
     -- Remove any older "allow everything" policies.
     for pol in select policyname from pg_policies where schemaname = 'public' and tablename = t loop
@@ -1812,7 +1999,7 @@ declare
                         'get_prescription_file','add_audit_log','save_medicine','delete_medicine','save_supplier',
                         'delete_supplier','create_purchase_order','receive_purchase_order','save_customer',
                         'delete_customer','save_staff','staff_set_password','submit_prescription',
-                        'review_prescription','pos_checkout'];
+                        'review_prescription','pos_checkout','save_doctor','delete_doctor'];
 begin
   for f in
     select p.oid::regprocedure as sig, p.proname

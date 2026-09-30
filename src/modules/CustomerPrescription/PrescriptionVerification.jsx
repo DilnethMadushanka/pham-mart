@@ -11,9 +11,12 @@ import {
   FileCheck,
   Bell,
   Stethoscope,
-  Plus
+  Plus,
+  BadgeCheck
 } from 'lucide-react';
 import NewPrescriptionModal from './NewPrescriptionModal';
+import DoctorDatabase from './DoctorDatabase';
+import { findDoctorForPrescription, doctorLabel } from '../../lib/doctors';
 import { submitPrescription, reviewPrescription, fetchPrescriptionFile } from '../../services/supabaseService';
 import { promptDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
@@ -23,9 +26,14 @@ export default function PrescriptionVerification({
   setPrescriptions, 
   customers, 
   medicines, 
+  doctors = [],
+  setDoctors,
+  canManageDoctors = false,
   canApprove = false,
   addAuditLog 
 }) {
+  const [section, setSection] = useState("queue"); // "queue" | "doctors"
+  const [selectedDoctorId, setSelectedDoctorId] = useState("");
   const [selectedRxId, setSelectedRxId] = useState(null);
   const [pharmacistNotes, setPharmacistNotes] = useState("");
   const [approvalItems, setApprovalItems] = useState([]);
@@ -53,6 +61,7 @@ export default function PrescriptionVerification({
       requestAnimationFrame(() => reviewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
     }
     setPharmacistNotes("");
+    setSelectedDoctorId(findDoctorForPrescription(rx, doctors).doctor?.id || "");
     setApprovalItems(rx.medicines || []);
     setAddItemId("");
     setAddItemQty(1);
@@ -100,7 +109,7 @@ export default function PrescriptionVerification({
   const handleApprove = async (rx) => {
     if (!canApprove || isSaving) return;
     setIsSaving(true);
-    const { data, error } = await reviewPrescription(rx.id, "Approved", pharmacistNotes, approvalItems);
+    const { data, error } = await reviewPrescription(rx.id, "Approved", pharmacistNotes, approvalItems, selectedDoctorId);
     setIsSaving(false);
     if (error) {
       notifyError(error, "Prescription not approved");
@@ -124,7 +133,7 @@ export default function PrescriptionVerification({
     });
     if (!reason) return;
     setIsSaving(true);
-    const { data, error } = await reviewPrescription(rx.id, "Rejected", reason);
+    const { data, error } = await reviewPrescription(rx.id, "Rejected", reason, null, selectedDoctorId);
     setIsSaving(false);
     if (error) {
       notifyError(error, "Prescription not rejected");
@@ -162,6 +171,30 @@ export default function PrescriptionVerification({
         </button>
       </PageHeader>
 
+      <nav aria-label="Prescription sections" className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
+        {[
+          { id: "queue", label: "Verification queue", count: prescriptions.filter(p => p.status === "Pending").length },
+          { id: "doctors", label: "Doctor database", count: doctors.length }
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setSection(t.id)}
+            aria-current={section === t.id ? "page" : undefined}
+            className={`flex items-center gap-2 pb-3 -mb-px border-b-2 text-sm font-medium whitespace-nowrap ${
+              section === t.id ? "border-[#2563EB] text-[#0B2545]" : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            {t.id === "doctors" ? <Stethoscope className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+            {t.label}
+            <span className="text-xs font-mono text-slate-400">{t.count}</span>
+          </button>
+        ))}
+      </nav>
+
+      {section === "doctors" ? (
+        <DoctorDatabase doctors={doctors} setDoctors={setDoctors} canManage={canManageDoctors} />
+      ) : (
+      <>
       {/* Tabs */}
       <div className="flex flex-wrap items-center gap-2 bg-slate-100 p-2 rounded-2xl w-fit border border-slate-200/80">
         <button
@@ -246,12 +279,18 @@ export default function PrescriptionVerification({
                 </div>
 
                 {/* Doctor details */}
-                <div className="mt-4 pt-3.5 border-t border-slate-100 text-xs text-slate-600 flex justify-between items-center">
-                  <div className="flex items-center font-semibold">
-                    <Stethoscope className="w-4 h-4 mr-1.5 text-blue-600" />
-                    <span>{rx.doctorName}{rx.doctorSlmcNo ? ` (${rx.doctorSlmcNo})` : ""}</span>
+                <div className="mt-4 pt-3.5 border-t border-slate-100 text-xs text-slate-600 flex flex-wrap justify-between items-center gap-2">
+                  <div className="flex items-center font-semibold min-w-0">
+                    <Stethoscope className="w-4 h-4 mr-1.5 text-blue-600 shrink-0" />
+                    <span className="truncate">{rx.doctorName}{rx.doctorSlmcNo ? ` (${rx.doctorSlmcNo})` : ""}</span>
                   </div>
                   <span className="text-xs text-slate-400 font-medium">{rx.uploadDate}</span>
+                  {(() => {
+                    const { doctor, how } = findDoctorForPrescription(rx, doctors);
+                    if (doctor && how === "linked") return <span className="status-chip status-chip-green"><BadgeCheck className="w-3.5 h-3.5" /> Doctor verified</span>;
+                    if (doctor) return <span className="status-chip status-chip-blue">Possible match: {doctor.id}</span>;
+                    return <span className="status-chip status-chip-amber">Doctor not in database</span>;
+                  })()}
                 </div>
               </div>
             );
@@ -293,6 +332,74 @@ export default function PrescriptionVerification({
                   <span className="text-[11px] text-blue-700 block font-mono font-bold">{selectedRx.orderType || "SLMC Reg: " + selectedRx.doctorSlmcNo}</span>
                 </div>
               </div>
+
+              {/* Doctor database check */}
+              {(() => {
+                const match = findDoctorForPrescription(selectedRx, doctors);
+                const editing = selectedRx.status === "Pending" && canApprove;
+                const chosen = doctors.find(d => d.id === (editing ? selectedDoctorId : selectedRx.doctorId)) || null;
+                const needsDoctor = (editing ? approvalItems : (selectedRx.medicines || [])).some(item => {
+                  const med = medicines.find(m => m.id === item.medicineId);
+                  return med && (med.prescriptionRequired || med.controlledDrug);
+                });
+                const tone = chosen && chosen.status === "Active" ? "emerald" : "amber";
+                return (
+                  <div className={`p-4 rounded-2xl border text-xs space-y-2.5 ${tone === "emerald" ? "bg-emerald-50/70 border-emerald-200" : "bg-amber-50/70 border-amber-200"}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-semibold uppercase text-[10.5px] tracking-wider text-slate-700">Doctor database check</span>
+                      {chosen ? (
+                        chosen.status === "Active"
+                          ? <span className="status-chip status-chip-green"><BadgeCheck className="w-3.5 h-3.5" /> Record found</span>
+                          : <span className="status-chip status-chip-red">Doctor inactive</span>
+                      ) : (
+                        <span className="status-chip status-chip-amber">No record linked</span>
+                      )}
+                    </div>
+                    <p className="text-slate-600">
+                      On the prescription: <span className="font-semibold text-slate-900">{selectedRx.doctorName}</span>
+                      {selectedRx.doctorSlmcNo && <span className="font-mono"> · {selectedRx.doctorSlmcNo}</span>}
+                    </p>
+                    {chosen && (
+                      <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-0.5">
+                        <div className="font-semibold text-slate-900 text-sm">{chosen.name} <span className="font-mono text-[11px] text-slate-500">{chosen.id}</span></div>
+                        <div className="text-slate-600"><span className="font-mono">{chosen.slmcNo}</span>{chosen.specialty ? ` · ${chosen.specialty}` : ""}{chosen.hospital ? ` · ${chosen.hospital}` : ""}</div>
+                        {chosen.phone && <a href={`tel:${chosen.phone}`} className="text-[#2563EB] font-medium">Call to confirm: {chosen.phone}</a>}
+                      </div>
+                    )}
+                    {editing && (
+                      <label className="block space-y-1">
+                        <span className="block font-semibold text-slate-700">
+                          Prescribing doctor{needsDoctor ? " (required to approve prescription medicines)" : ""}
+                        </span>
+                        <select
+                          value={selectedDoctorId}
+                          onChange={(e) => setSelectedDoctorId(e.target.value)}
+                          className="w-full min-w-0 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs"
+                        >
+                          <option value="">Not in the doctor database</option>
+                          {doctors.map(d => (
+                            <option key={d.id} value={d.id} disabled={d.status !== "Active"}>
+                              {doctorLabel(d)}{d.status !== "Active" ? " (inactive)" : ""}
+                            </option>
+                          ))}
+                        </select>
+                        {match.doctor && match.how !== "linked" && selectedDoctorId === match.doctor.id && (
+                          <span className="block text-[11px] text-slate-500">
+                            Suggested from the {match.how === "registration" ? "registration number" : "doctor's name"} on the prescription. Check it against the slip.
+                          </span>
+                        )}
+                        {!selectedDoctorId && (
+                          <span className="block text-[11px] text-amber-800">
+                            {canManageDoctors
+                              ? "Add the doctor in the Doctor database tab first, or reject the prescription."
+                              : "Ask the owner to add this doctor, or reject the prescription."}
+                          </span>
+                        )}
+                      </label>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* Patient Notes, Contact & Delivery Address */}
               {(selectedRx.notes || selectedRx.contactPhone || selectedRx.deliveryAddress) && (
@@ -512,6 +619,8 @@ export default function PrescriptionVerification({
         </div>
 
       </div>
+      </>
+      )}
 
       {/* New Prescription Modal */}
       <NewPrescriptionModal
@@ -520,6 +629,7 @@ export default function PrescriptionVerification({
         onSave={handleAddPrescription}
         customers={customers}
         medicines={medicines}
+        doctors={doctors}
       />
 
     </div>

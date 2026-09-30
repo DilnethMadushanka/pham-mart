@@ -22,3 +22,9 @@ insert into public.medicines (id, code, name, generic_name, category, price, sto
   ('MED-105', 'MED-ATR010', 'Atorvastatin 10mg Tablets', 'Atorvastatin Calcium', 'Cardiovascular', 95, 8, 40, true, false, '2026-04-05', 'ATR-2025-110', 'SUP-01', 'GlaxoSmithKline Pharmaceuticals'),
   ('MED-107', 'MED-DZP005', 'Diazepam 5mg Tablets', 'Diazepam', 'Controlled Drugs', 120, 45, 20, true, true, '2026-08-30', 'DZP-2024-998', 'SUP-03', 'Sun Pharmaceutical Industries')
 on conflict do nothing;
+
+-- Example entries for the doctor database (the owner can edit or deactivate them).
+insert into public.doctors (id, name, slmc_no, specialty, phone, hospital, status) values
+  ('DOC001', 'Dr. Perera', 'SLMC-10234', 'General Practitioner', '0712345678', 'City Medical Centre, Colombo', 'Active'),
+  ('DOC002', 'Dr. Silva', 'SLMC-20871', 'Consultant Physician', '0771234567', 'Nawaloka Hospital, Colombo', 'Active')
+on conflict do nothing;

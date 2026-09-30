@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { X, FileText, Plus, User, Stethoscope } from 'lucide-react';
 import { notify } from '../../lib/notify';
 
-export default function NewPrescriptionModal({ isOpen, onClose, onSave, customers, medicines }) {
+export default function NewPrescriptionModal({ isOpen, onClose, onSave, customers, medicines, doctors = [] }) {
   const [customerId, setCustomerId] = useState('');
-  const [doctorName, setDoctorName] = useState('Dr. L. C. Fernando');
-  const [doctorSlmcNo, setDoctorSlmcNo] = useState('SLMC-44912');
+  const [doctorId, setDoctorId] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [doctorSlmcNo, setDoctorSlmcNo] = useState('');
   const [selectedMedId, setSelectedMedId] = useState('');
   const [dosage, setDosage] = useState('1 tablet twice daily');
   const [durationDays, setDurationDays] = useState(30);
@@ -22,10 +23,17 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
       return;
     }
 
+    const doctor = doctors.find(d => d.id === doctorId);
+    if (!doctor && (!doctorName.trim() || !doctorSlmcNo.trim())) {
+      notify("Doctor needed", "Pick the doctor from the doctor database, or type the name and SLMC number from the slip.", "error");
+      return;
+    }
+
     onSave({
       customerId: cust.id,
-      doctorName,
-      doctorSlmcNo,
+      doctorId: doctor?.id || null,
+      doctorName: doctor ? doctor.name : doctorName.trim(),
+      doctorSlmcNo: doctor ? doctor.slmcNo : doctorSlmcNo.trim(),
       medicines: [
         { medicineId: med.id, name: med.name, dosage, durationDays, quantity: qty }
       ],
@@ -71,13 +79,33 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
             </select>
           </div>
 
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Prescribing Doctor *</label>
+            <select
+              value={doctorId}
+              onChange={(e) => setDoctorId(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold"
+            >
+              <option value="">Not in the doctor database (type below)</option>
+              {doctors.filter(d => d.status === "Active").map(d => (
+                <option key={d.id} value={d.id}>{d.name} · {d.slmcNo} · {d.id}</option>
+              ))}
+            </select>
+            {!doctorId && (
+              <p className="mt-1 text-[11px] text-amber-700">
+                Unlisted doctors can be registered, but a pharmacist can't approve prescription medicines until the doctor is added to the database.
+              </p>
+            )}
+          </div>
+
+          {!doctorId && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Doctor Name *</label>
               <input 
                 type="text"
-                required
                 value={doctorName}
+                placeholder="As written on the slip"
                 onChange={(e) => setDoctorName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl"
               />
@@ -87,13 +115,14 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
               <label className="block font-bold text-slate-700 mb-1">SLMC Reg No *</label>
               <input 
                 type="text"
-                required
                 value={doctorSlmcNo}
+                placeholder="e.g. SLMC-10234"
                 onChange={(e) => setDoctorSlmcNo(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono"
               />
             </div>
           </div>
+          )}
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Prescribed Medication *</label>

@@ -16,7 +16,8 @@ import {
   Pencil,
   PlusCircle,
   Trash2,
-  Pill
+  Pill,
+  Stethoscope
 } from 'lucide-react';
 import { submitPrescription } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
@@ -62,6 +63,8 @@ export default function CustomerRxUpload({
   const [phone, setPhone] = useState(currentUser?.phone || "");
   const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.address || "");
   const [patientNotes, setPatientNotes] = useState("");
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorSlmcNo, setDoctorSlmcNo] = useState("");
   
   // Submission mode: "photo" | "typed" | "both"
   const [orderMethod, setOrderMethod] = useState("both"); // Default "both" gives maximum flexibility!
@@ -186,6 +189,8 @@ export default function CustomerRxUpload({
       contactPhone: phone,
       deliveryAddress,
       notes: patientNotes,
+      doctorName: doctorName.trim() || null,
+      doctorSlmcNo: doctorSlmcNo.trim() || null,
       medicines: compiledMedicines
     }, file);
     setIsSubmitting(false);
@@ -558,6 +563,33 @@ export default function CustomerRxUpload({
                 className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Prescribing doctor (helps the pharmacist match the doctor database) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Doctor's Name (Optional)</label>
+            <div className="relative">
+              <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="As written on the slip"
+                value={doctorName}
+                onChange={(e) => setDoctorName(e.target.value)}
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Doctor's SLMC Number (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. SLMC-10234"
+              value={doctorSlmcNo}
+              onChange={(e) => setDoctorSlmcNo(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
+            />
           </div>
         </div>
 

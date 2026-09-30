@@ -50,6 +50,9 @@ export default function App() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [inventoryFocus, setInventoryFocus] = useState(null);
+  const clearInventoryFocus = useCallback(() => setInventoryFocus(null), []);
   const [dataError, setDataError] = useState(null);
 
   // Drawers & Modals
@@ -72,6 +75,7 @@ export default function App() {
     if (data.prescriptions) setPrescriptions(data.prescriptions);
     if (data.transactions) setTransactions(data.transactions);
     if (data.audit_logs) setAuditLogs(data.audit_logs);
+    if (data.doctors) setDoctors(data.doctors);
   }, []);
 
   const refresh = useCallback(async (tables = null) => {
@@ -92,6 +96,7 @@ export default function App() {
     setPrescriptions([]);
     setTransactions([]);
     setAuditLogs([]);
+    setDoctors([]);
   }, []);
 
   const endSession = useCallback((message) => {
@@ -149,6 +154,8 @@ export default function App() {
         const tables = Array.from(pendingTables.current);
         pendingTables.current.clear();
         if (tables.includes("staff") || tables.includes("customers")) recheckSession();
+        // Doctor records show how many prescriptions link to them.
+        if (tables.includes("prescriptions") && !tables.includes("doctors")) tables.push("doctors");
         refresh(tables);
       }, 400);
     });
@@ -348,6 +355,9 @@ export default function App() {
                 purchaseOrders={purchaseOrders}
                 setPurchaseOrders={setPurchaseOrders}
                 suppliers={suppliers}
+                transactions={transactions}
+                focusSection={inventoryFocus}
+                onFocusHandled={clearInventoryFocus}
                 onSaveSupplier={handleSaveSupplier}
                 onDeleteSupplier={handleDeleteSupplier}
                 canEdit={can(role, "inventory_edit")}
@@ -361,6 +371,9 @@ export default function App() {
                 setPrescriptions={setPrescriptions}
                 customers={customers}
                 medicines={medicines}
+                doctors={doctors}
+                setDoctors={setDoctors}
+                canManageDoctors={role === "Owner/Admin"}
                 canApprove={can(role, "prescription_approve")}
                 addAuditLog={addAuditLog}
               />
@@ -403,7 +416,12 @@ export default function App() {
         onClose={() => setIsNotificationsOpen(false)}
         medicines={medicines}
         prescriptions={prescriptions}
-        onNavigate={(target) => { handleViewModeChange("enterprise"); goToTab(target); }}
+        onNavigate={(target) => {
+          const [tabId, section] = target.split(":");
+          handleViewModeChange("enterprise");
+          goToTab(tabId);
+          if (tabId === "inventory" && section) setInventoryFocus(section);
+        }}
       />
 
       {/* Audit Trail Logs Modal */}

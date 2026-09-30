@@ -24,6 +24,7 @@ import confetti from 'canvas-confetti';
 import ReceiptModal from './ReceiptModal';
 import { saveCustomer, posCheckout } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
+import { newlyLowStock } from '../../lib/reorder';
 import PageHeader from '../../components/PageHeader';
 
 const needsPrescription = (med) => Boolean(med.prescriptionRequired || med.controlledDrug);
@@ -274,6 +275,14 @@ export default function POSTerminal({
     const { transaction, medicines: updatedMeds, prescription } = data;
     setTransactions(prev => [transaction, ...prev]);
     setMedicines(prev => prev.map(m => updatedMeds.find(u => u.id === m.id) || m));
+
+    // Suggest a reorder the moment a sale takes a medicine down to its reorder level.
+    const nowLow = newlyLowStock(medicines, updatedMeds);
+    if (nowLow.length > 0) {
+      const names = nowLow.map(m => `${m.name} (${m.stock} left)`).join(", ");
+      notify("Reorder suggested", `${names} reached the reorder level. See Inventory, Reorder suggestions.`, "info");
+      addAuditLog?.("Reorder Suggested", `Low stock after sale ${transaction.id}: ${names}`, "warning");
+    }
     if (prescription && setPrescriptions) {
       setPrescriptions(prev => prev.map(p => p.id === prescription.id ? prescription : p));
     }

@@ -133,17 +133,21 @@ export const saveStaff = (staff, password = null) =>
 export const setStaffPassword = (staffId, password) =>
   call('staff_set_password', { p_staff_id: staffId, p_password: password });
 
+export const saveDoctor = (doctor) => call('save_doctor', { p_doctor: doctor });
+export const deleteDoctor = (id) => call('delete_doctor', { p_id: id });
+
 export async function submitPrescription(rx, file = null) {
   const { data, error } = await call('submit_prescription', { p_rx: rx, p_file: file });
   return { data: data ? normalizePrescription(data) : null, error };
 }
 
-export async function reviewPrescription(rxId, decision, notes, medicines = null) {
+export async function reviewPrescription(rxId, decision, notes, medicines = null, doctorId = null) {
   const { data, error } = await call('review_prescription', {
     p_rx_id: rxId,
     p_decision: decision,
     p_notes: notes || null,
-    p_medicines: medicines
+    p_medicines: medicines,
+    p_doctor_id: doctorId || null
   });
   return { data: data ? normalizePrescription(data) : null, error };
 }
