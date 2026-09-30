@@ -80,7 +80,7 @@ export default function DoctorDatabase({ doctors, setDoctors, canManage = false 
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 sm:grid-cols-3">
         <MetricCard title="Registered doctors" value={doctors.length} subtitle="In the doctor database" icon={Stethoscope} />
         <MetricCard title="Active" value={activeCount} subtitle="Prescriptions can be approved" icon={CheckCircle2} />
         <div className="col-span-2 sm:col-span-1">
@@ -106,7 +106,7 @@ export default function DoctorDatabase({ doctors, setDoctors, canManage = false 
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               aria-label="Filter by status"
-              className="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-hidden"
+              className="flex-1 sm:flex-none px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 outline-hidden"
             >
               <option value="ALL">All statuses</option>
               <option value="Active">Active</option>
@@ -149,7 +149,7 @@ export default function DoctorDatabase({ doctors, setDoctors, canManage = false 
           </div>
         ) : (
           <table className="w-full text-left text-xs block md:table">
-            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-semibold">
+            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 text-[11px] font-semibold">
               <tr>
                 <th className="py-3.5 px-5">Doctor</th>
                 <th className="py-3.5 px-5">SLMC reg. no</th>

@@ -45,7 +45,7 @@ export default function NotificationDrawer({
           {/* Pending Prescriptions Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <FileText className="w-3.5 h-3.5 mr-1 text-blue-600" />
                 Pending Prescriptions ({pendingRx.length})
               </h4>
@@ -87,7 +87,7 @@ export default function NotificationDrawer({
           {/* Low Stock Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <AlertTriangle className="w-3.5 h-3.5 mr-1 text-amber-600" />
                 Low Stock Threshold Alerts ({lowStock.length})
               </h4>
@@ -117,7 +117,7 @@ export default function NotificationDrawer({
           {/* Near Expiry Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <Clock className="w-3.5 h-3.5 mr-1 text-rose-600" />
                 Expiry warnings ({nearExpiry.length})
               </h4>

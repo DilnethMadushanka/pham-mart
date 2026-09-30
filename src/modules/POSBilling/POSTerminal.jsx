@@ -351,15 +351,15 @@ export default function POSTerminal({
       </PageHeader>
 
       {/* Expanded Dedicated Customer Toolbar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col xl:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col xl:flex-row justify-between items-center gap-4">
         <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
-          <div className="flex items-center space-x-2.5 bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200/80 w-full sm:w-auto min-w-0">
+          <div className="flex items-center space-x-2.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 w-full sm:w-auto min-w-0">
             <UserCheck className="w-4.5 h-4.5 text-blue-600 shrink-0" />
-            <span className="font-bold text-slate-700 text-xs shrink-0"><span className="hidden sm:inline">Active </span>Customer:</span>
+            <span className="font-medium text-slate-600 text-sm shrink-0">Customer</span>
             <select
               value={selectedCustomerId}
               onChange={(e) => handleCustomerChange(e.target.value)}
-              className="font-semibold text-slate-900 bg-white px-3.5 py-2 rounded-xl border border-slate-300 text-xs outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer flex-1 min-w-0 sm:flex-none sm:min-w-[220px]"
+              className="font-medium text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer flex-1 min-w-0 sm:flex-none sm:min-w-[220px]"
             >
               <option value="">Walk-in Customer (General)</option>
               {customers.map(c => (
@@ -370,7 +370,7 @@ export default function POSTerminal({
 
           {/* Allergy Warning Badge */}
           {activeCustomer.allergies && activeCustomer.allergies !== "None" && activeCustomer.allergies !== "None reported" && (
-            <div className="px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-2xl flex items-center space-x-1.5 animate-pulse">
+            <div className="px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold rounded-xl flex items-center space-x-1.5">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
               <span>Allergy: {activeCustomer.allergies}</span>
             </div>
@@ -381,20 +381,20 @@ export default function POSTerminal({
           <button
             onClick={() => setIsAddCustOpen(true)}
             title="Register new customer profile"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium text-sm rounded-xl shadow-md shadow-blue-500/20 transition-all cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>+ New Customer</span>
+            <span>New customer</span>
           </button>
 
           {activeCustomer.id && (
             <button
               onClick={() => { setIsViewHistoryOpen(true); setHistoryTab("purchases"); }}
               title="View customer purchase & prescription history"
-              className="flex items-center space-x-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-semibold text-xs rounded-2xl transition-all cursor-pointer"
+              className="flex items-center space-x-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-medium text-sm rounded-xl transition-all cursor-pointer"
             >
               <History className="w-4 h-4 text-blue-600" />
-              <span>View History & Rx</span>
+              <span>History</span>
             </button>
           )}
         </div>
@@ -436,19 +436,19 @@ export default function POSTerminal({
                 >
                   <div>
                     <div className="flex flex-col-reverse items-start gap-1 sm:flex-row sm:justify-between">
-                      <span className="font-bold text-slate-900 text-[13px] sm:text-sm leading-snug group-hover:text-blue-700 transition-colors break-words">
+                      <span className="font-semibold text-slate-900 text-[13px] sm:text-sm leading-snug group-hover:text-blue-700 transition-colors break-words">
                         {med.name}
                       </span>
                       {expired ? (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-slate-100 text-slate-600 border border-slate-300">
+                        <span className="shrink-0 whitespace-nowrap px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600 border border-slate-300">
                           Expired
                         </span>
                       ) : med.controlledDrug ? (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                        <span className="shrink-0 whitespace-nowrap px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-rose-100 text-rose-800 border border-rose-300">
                           Controlled
                         </span>
                       ) : med.prescriptionRequired && (
-                        <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                        <span className="shrink-0 whitespace-nowrap px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
                           Rx only
                         </span>
                       )}
@@ -458,7 +458,7 @@ export default function POSTerminal({
 
                   <div className="mt-3 sm:mt-4 pt-2 border-t border-slate-100 flex flex-wrap justify-between items-end gap-x-2 gap-y-1">
                     <div>
-                      <span className="text-[11px] text-slate-400 block font-medium">Stock Level</span>
+                      <span className="text-[11px] text-slate-400 block font-medium">In stock</span>
                       <span className={`font-semibold text-xs ${med.stock <= med.reorderLevel ? "text-rose-600" : "text-blue-700"}`}>
                         {sellable(med)} units
                       </span>
@@ -496,19 +496,19 @@ export default function POSTerminal({
         )}
 
         {/* Right Column: Checkout Billing Counter */}
-        <div id="pos-basket" className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-blue-200 shadow-xl flex flex-col h-full scroll-mt-20 lg:sticky lg:top-20">
+        <div id="pos-basket" className="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-lg flex flex-col h-full scroll-mt-20 lg:sticky lg:top-20">
           
           <div className="flex justify-between items-center border-b border-slate-100 pb-3">
             <h3 className="text-base font-semibold text-slate-900 flex items-center">
-              <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
-              Order Checkout Basket ({cart.reduce((a,c) => a + c.qty, 0)})
+              Current sale
+              <span className="ml-2 min-w-6 h-6 px-2 rounded-full bg-[#EFF6FF] text-[#1D4ED8] text-xs font-semibold font-mono flex items-center justify-center">{cart.reduce((a,c) => a + c.qty, 0)}</span>
             </h3>
             {cart.length > 0 && (
               <button 
                 onClick={() => { setCart([]); setSelectedRxId(""); }}
-                className="text-xs text-rose-600 hover:underline font-bold"
+                className="text-xs text-slate-500 hover:text-rose-700 font-medium"
               >
-                Clear Cart
+                Clear
               </button>
             )}
           </div>
@@ -518,8 +518,8 @@ export default function POSTerminal({
             {cart.length === 0 ? (
               <div className="py-12 text-center text-slate-400 space-y-2">
                 <ShoppingCart className="w-10 h-10 mx-auto text-slate-300" />
-                <p className="text-xs font-semibold">Cart is empty</p>
-                <p className="text-[11px] text-slate-400">Click medicines on the left to add items</p>
+                <p className="text-sm font-medium text-slate-600">No items yet</p>
+                <p className="text-xs text-slate-500">Pick a medicine or scan a barcode to start a sale.</p>
               </div>
             ) : (
               cart.map((item) => (
@@ -609,14 +609,14 @@ export default function POSTerminal({
                 </div>
               )}
               <div className="flex justify-between text-base font-semibold text-slate-900 pt-1 border-t border-slate-200">
-                <span>Grand Total:</span>
+                <span>Total</span>
                 <span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Payment Method Selector */}
             <div className="space-y-2 pt-1">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+              <label className="block text-[11px] font-medium text-slate-500">
                 Payment Channel
               </label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -669,7 +669,7 @@ export default function POSTerminal({
               }`}
             >
               <Receipt className="w-4 h-4" />
-              <span>{isCheckingOut ? "Completing sale..." : "Complete Sale & Issue Receipt"}</span>
+              <span>{isCheckingOut ? "Completing sale..." : "Complete sale"}</span>
             </button>
 
           </div>
@@ -883,7 +883,7 @@ export default function POSTerminal({
 
                             {rx.medicines && rx.medicines.length > 0 && (
                               <div className="space-y-1 py-2 border-t border-slate-200/80">
-                                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Items & Dosage:</span>
+                                <span className="text-[11px] font-medium text-slate-400 block">Items & Dosage:</span>
                                 {rx.medicines.map((m, idx) => (
                                   <div key={idx} className="flex justify-between text-slate-800 font-bold bg-white p-2 rounded-xl border border-slate-200">
                                     <span>{m.name} ({m.dosage})</span>

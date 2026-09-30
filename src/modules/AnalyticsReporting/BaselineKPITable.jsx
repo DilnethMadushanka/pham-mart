@@ -85,7 +85,7 @@ export default function BaselineKPITable() {
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-semibold">
+            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 text-[11px] font-semibold">
               <tr>
                 <th className="py-4 px-5">System Module</th>
                 <th className="py-4 px-5">Key Performance Indicator (KPI)</th>

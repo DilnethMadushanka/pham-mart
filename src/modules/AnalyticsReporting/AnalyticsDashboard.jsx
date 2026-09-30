@@ -67,7 +67,18 @@ function BarList({ rows, valueOf, labelOf, format, empty }) {
   );
 }
 
-export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [], salesReturns = [], batches = [], purchaseOrders = [] }) {
+// Shown in place of a chart when the period has no sales, so an empty axis doesn't read as a flat zero line.
+function EmptyChart({ title, detail }) {
+  return (
+    <div className="h-full flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-6">
+      <BarChart3 className="w-6 h-6 text-slate-300" strokeWidth={1.75} />
+      <p className="mt-3 text-sm font-medium text-slate-700">{title}</p>
+      <p className="mt-1 text-xs text-slate-500 max-w-[40ch]">{detail}</p>
+    </div>
+  );
+}
+
+export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [], salesReturns = [], batches = [], purchaseOrders = [], onNavigate }) {
   const [isDailyOpen, setIsDailyOpen] = useState(false);
   const [isMonthlyOpen, setIsMonthlyOpen] = useState(false);
   const [range, setRange] = useState(30);
@@ -100,6 +111,9 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
   const dayGrowth = growth(todayStats.net, yesterdayStats.net);
   const monthGrowth = growth(monthStats.net, lastMonthStats.net);
   const rangeTotal = daily.reduce((s, d) => s + d.net, 0);
+  const dailyEmpty = daily.every(d => d.count === 0 && d.refunds === 0);
+  const monthlyEmpty = monthly.every(m => m.count === 0 && m.refunds === 0);
+  const go = (target) => onNavigate ? () => onNavigate(target) : undefined;
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
@@ -125,7 +139,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
       </PageHeader>
 
       {/* Money */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 xl:grid-cols-4">
         <MetricCard
           title="Net sales today"
           value={money(todayStats.net)}
@@ -154,11 +168,11 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
       </div>
 
       {/* Work waiting */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <MetricCard title="Need reordering" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} colorScheme="amber" badge={lowStockCount ? "Reorder" : undefined} />
-        <MetricCard title="Expiry warnings" value={expiryCount} subtitle="Batches expired or expiring in 90 days" icon={CalendarX} colorScheme="rose" />
-        <MetricCard title="Prescriptions to check" value={pendingRxCount} subtitle="Pharmacist verification queue" icon={FileText} colorScheme="rose" />
-        <MetricCard title="Open purchase orders" value={openPOs.length} subtitle={`${pendingApproval} waiting for your approval · stock worth ${money(stockValue)}`} icon={Truck} />
+      <div className="metric-grid grid grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Need reordering" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} colorScheme="amber" badge={lowStockCount ? "Reorder" : undefined} onClick={go("inventory:reorder")} />
+        <MetricCard title="Expiry warnings" value={expiryCount} subtitle="Batches expired or expiring in 90 days" icon={CalendarX} colorScheme="rose" onClick={go("inventory:expiry")} />
+        <MetricCard title="Prescriptions to check" value={pendingRxCount} subtitle="Pharmacist verification queue" icon={FileText} colorScheme="rose" onClick={go("prescriptions")} />
+        <MetricCard title="Open purchase orders" value={openPOs.length} subtitle={`${pendingApproval} waiting for approval. Stock on hand worth ${money(stockValue)}`} icon={Truck} onClick={go("inventory:purchase_orders")} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -179,6 +193,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
             </div>
           </div>
           <div className="h-72">
+            {dailyEmpty ? <EmptyChart title={`No sales in the last ${range} days`} detail="Completed sales at the counter appear here within seconds." /> : (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={daily} margin={{ left: 0, right: 8, top: 8 }}>
                 <defs>
@@ -198,6 +213,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                 <Area type="monotone" dataKey="net" stroke={BLUE} strokeWidth={2} fillOpacity={1} fill="url(#netGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
               </AreaChart>
             </ResponsiveContainer>
+            )}
           </div>
         </section>
 
@@ -227,6 +243,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           <button onClick={() => setIsMonthlyOpen(true)} className="text-sm font-medium text-[#2563EB] hover:underline">Full report</button>
         </div>
         <div className="h-64">
+          {monthlyEmpty ? <EmptyChart title="No revenue in the last 12 months" detail="Each month's net revenue and growth appear once sales are recorded." /> : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly} margin={{ left: 0, right: 8, top: 8 }}>
               <CartesianGrid vertical={false} stroke={GRID} />
@@ -244,6 +261,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
               <Bar dataKey="net" fill={BLUE} radius={[4, 4, 0, 0]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
+          )}
         </div>
       </section>
 

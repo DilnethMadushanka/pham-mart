@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from './components/Navbar';
-import Sidebar from './components/Sidebar';
+import Sidebar, { CONSOLE_PAGES } from './components/Sidebar';
+import ConsoleTopbar from './components/ConsoleTopbar';
+import CommandPalette from './components/CommandPalette';
 import NotificationDrawer from './components/NotificationDrawer';
 import AuditLogModal from './components/AuditLogModal';
 import AuthModal from './components/AuthModal';
@@ -32,6 +34,22 @@ import { notifyError, onToast } from './lib/notify';
 import { isStaffUser, assumableRoles, canAccessTab, defaultTab, can } from './lib/permissions';
 import { expiryAlerts } from './lib/expiry';
 
+// Placeholder shaped like a console page while the first data load runs.
+function ConsoleSkeleton() {
+  const bar = "rounded-lg bg-slate-200/70 animate-pulse";
+  return (
+    <div aria-busy="true" aria-label="Loading" className="space-y-6">
+      <div className="space-y-2"><div className={`${bar} h-7 w-64`} /><div className={`${bar} h-4 w-96 max-w-full`} /></div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-px rounded-2xl overflow-hidden ring-1 ring-slate-200/80 bg-slate-200/80">
+        {[0, 1, 2, 3].map(i => <div key={i} className="bg-white p-5 space-y-4"><div className={`${bar} h-3 w-24`} /><div className={`${bar} h-7 w-20`} /><div className={`${bar} h-3 w-32`} /></div>)}
+      </div>
+      <div className="rounded-2xl ring-1 ring-slate-200/80 bg-white p-5 space-y-3">
+        {[0, 1, 2, 3, 4].map(i => <div key={i} className={`${bar} h-10 w-full`} />)}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   // Navigation & View Mode
   const [viewMode, setViewMode] = useState("website"); // "website" | "enterprise"
@@ -58,6 +76,17 @@ export default function App() {
   const [inventoryFocus, setInventoryFocus] = useState(null);
   const clearInventoryFocus = useCallback(() => setInventoryFocus(null), []);
   const [dataError, setDataError] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Console chrome: collapsed sidebar is remembered per browser; Ctrl+K opens search.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem("pharmart_sidebar") === "collapsed"; } catch { return false; }
+  });
+  const toggleSidebar = () => setSidebarCollapsed(c => {
+    try { localStorage.setItem("pharmart_sidebar", c ? "open" : "collapsed"); } catch { /* storage unavailable */ }
+    return !c;
+  });
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
 
   // Drawers & Modals
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -93,6 +122,7 @@ export default function App() {
     }
     setDataError(null);
     applyData(data);
+    setIsLoaded(true);
   }, [applyData]);
 
   const clearPrivateData = useCallback(() => {
@@ -271,6 +301,18 @@ export default function App() {
     addAuditLog("Role Switch", `Switched active workstation view mode to ${newRole}`, "info");
   };
 
+  useEffect(() => {
+    if (!inConsole) return;
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsPaletteOpen(o => !o);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [inConsole]);
+
   // Notification Counts
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
   const expiredCount = expiryAlerts(batches, medicines).length;
@@ -283,7 +325,8 @@ export default function App() {
         Skip to content
       </a>
 
-      {/* Top Header Navbar */}
+      {/* Top Header Navbar (customer site) */}
+      {!inConsole && (
       <Navbar
         currentRole={role}
         availableRoles={rolesForUser}
@@ -298,6 +341,7 @@ export default function App() {
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onOpenAuditLogs={can(role, "reports_view") ? () => setIsAuditLogsOpen(true) : undefined}
       />
+      )}
 
       {dataError && (
         <div role="alert" className="bg-amber-50 border-b border-amber-200 text-amber-900 text-sm">
@@ -325,7 +369,7 @@ export default function App() {
         </main>
       ) : (
         /* INTERNAL PHARMACY ENTERPRISE MANAGEMENT CONSOLE */
-        <div className="flex-1 flex max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-8">
+        <div className="flex-1 flex w-full">
 
           <Sidebar
             activeTab={tab}
@@ -334,9 +378,28 @@ export default function App() {
             lowStockCount={lowStockCount}
             pendingRxCount={pendingRxCount}
             expiredCount={expiredCount}
+            collapsed={sidebarCollapsed}
+            onToggleCollapsed={toggleSidebar}
+            onOpenSite={() => handleViewModeChange("website")}
           />
 
-          <main id="main" className="flex-1 min-w-0 pb-24 md:pb-0">
+          <div className="flex-1 min-w-0 flex flex-col">
+          <ConsoleTopbar
+            page={CONSOLE_PAGES.find(p => p.id === tab)}
+            currentUser={sessionUser}
+            currentRole={role}
+            availableRoles={rolesForUser}
+            onRoleChange={handleRoleSwitch}
+            onOpenPalette={() => setIsPaletteOpen(true)}
+            unreadNotificationCount={unreadCount}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
+            onOpenAuditLogs={can(role, "reports_view") ? () => setIsAuditLogsOpen(true) : undefined}
+            onOpenSite={() => handleViewModeChange("website")}
+            onLogout={handleLogout}
+          />
+
+          <main id="main" key={tab} className="flex-1 w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-10 animate-page-in">
+            {!isLoaded ? <ConsoleSkeleton /> : <>
             {tab === "analytics" && (
               <AnalyticsDashboard
                 medicines={medicines}
@@ -345,6 +408,11 @@ export default function App() {
                 salesReturns={salesReturns}
                 batches={batches}
                 purchaseOrders={purchaseOrders}
+                onNavigate={(target) => {
+                  const [tabId, section] = target.split(":");
+                  goToTab(tabId);
+                  if (tabId === "inventory" && section) setInventoryFocus(section);
+                }}
               />
             )}
 
@@ -422,7 +490,9 @@ export default function App() {
                 addAuditLog={addAuditLog}
               />
             )}
+            </>}
           </main>
+          </div>
 
         </div>
       )}
@@ -460,6 +530,16 @@ export default function App() {
       <ToastNotification
         toast={toast}
         onClose={() => setToast(null)}
+      />
+
+      <CommandPalette
+        open={inConsole && isPaletteOpen}
+        onClose={() => setIsPaletteOpen(false)}
+        role={role}
+        onNavigate={goToTab}
+        medicines={medicines}
+        customers={customers}
+        transactions={transactions}
       />
 
       <DialogHost />

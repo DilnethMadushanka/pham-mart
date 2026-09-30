@@ -304,7 +304,7 @@ export default function PrescriptionVerification({
               
               <div className="flex justify-between items-start border-b border-slate-100 pb-4">
                 <div>
-                  <span className="text-xs font-semibold uppercase text-blue-600 tracking-wider">
+                  <span className="text-xs font-semibold text-blue-600">
                     Pharmacist Verification Workstation
                   </span>
                   <h3 className="text-xl font-semibold text-slate-900 mt-1">{selectedRx.rxNumber}</h3>
@@ -323,11 +323,11 @@ export default function PrescriptionVerification({
               {/* Patient & Doctor details */}
               <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
                 <div>
-                  <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Patient Name</span>
+                  <span className="text-slate-400 font-medium text-[11px] block">Patient Name</span>
                   <span className="font-semibold text-slate-900 text-sm">{selectedRx.customerName}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 font-bold uppercase text-[10px] tracking-wider block">Order / Physician Type</span>
+                  <span className="text-slate-400 font-medium text-[11px] block">Order / Physician Type</span>
                   <span className="font-semibold text-slate-900 text-sm">{selectedRx.doctorName}</span>
                   <span className="text-[11px] text-blue-700 block font-mono font-bold">{selectedRx.orderType || "SLMC Reg: " + selectedRx.doctorSlmcNo}</span>
                 </div>
@@ -346,7 +346,7 @@ export default function PrescriptionVerification({
                 return (
                   <div className={`p-4 rounded-2xl border text-xs space-y-2.5 ${tone === "emerald" ? "bg-emerald-50/70 border-emerald-200" : "bg-amber-50/70 border-amber-200"}`}>
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-semibold uppercase text-[10.5px] tracking-wider text-slate-700">Doctor database check</span>
+                      <span className="font-semibold text-[11px] text-slate-700">Doctor database check</span>
                       {chosen ? (
                         chosen.status === "Active"
                           ? <span className="status-chip status-chip-green"><BadgeCheck className="w-3.5 h-3.5" /> Record found</span>
@@ -404,7 +404,7 @@ export default function PrescriptionVerification({
               {/* Patient Notes, Contact & Delivery Address */}
               {(selectedRx.notes || selectedRx.contactPhone || selectedRx.deliveryAddress) && (
                 <div className="p-3.5 bg-blue-50/80 rounded-2xl border border-blue-200/80 text-xs space-y-1.5">
-                  <span className="text-blue-900 font-semibold uppercase text-[10.5px] tracking-wider block">
+                  <span className="text-blue-900 font-semibold text-[11px] block">
                     Patient contact and notes
                   </span>
                   {selectedRx.contactPhone && <p className="text-slate-800"><span className="text-slate-500">Phone:</span> {selectedRx.contactPhone}</p>}
@@ -416,7 +416,7 @@ export default function PrescriptionVerification({
               {/* Prescription Slip Photo Preview OR Typed Order Banner */}
               {selectedRx.hasAttachment ? (
                 <div className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">Attached prescription</span>
+                  <span className="text-xs font-medium text-slate-500 block">Attached prescription</span>
                   {attachment === undefined ? (
                     <div className="h-48 rounded-2xl border border-blue-200 bg-slate-50 flex items-center justify-center text-xs text-slate-500">Loading attachment...</div>
                   ) : attachment === null ? (
@@ -460,7 +460,7 @@ export default function PrescriptionVerification({
                 const items = editing ? approvalItems : (selectedRx.medicines || []);
                 return (
                   <div>
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                    <h4 className="text-xs font-medium text-slate-500 mb-2">
                       {editing ? "Items to dispense" : "Prescribed / requested items"}
                     </h4>
                     {editing && (

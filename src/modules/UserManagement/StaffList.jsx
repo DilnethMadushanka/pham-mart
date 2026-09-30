@@ -119,7 +119,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
       </PageHeader>
 
       {/* Quick Role Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 sm:grid-cols-3">
         <MetricCard title="Staff accounts" value={staffList.length} subtitle="Everyone with console access" icon={Users} />
         <MetricCard title="Active accounts" value={staffList.filter(s => s.status === "Active").length} subtitle="Ready for the current shift" icon={UserCheck} />
         <div className="col-span-2 sm:col-span-1">
@@ -136,7 +136,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
             placeholder="Search staff by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
           />
         </div>
 
@@ -146,7 +146,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
           >
             <option value="ALL">All Roles</option>
             <option value="Owner/Admin">Owner / Admin</option>
@@ -160,7 +160,7 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs block md:table">
-            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-semibold">
+            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 text-[11px] font-semibold">
               <tr>
                 <th className="py-4 px-5">Staff Member</th>
                 <th className="py-4 px-5">Assigned Role</th>

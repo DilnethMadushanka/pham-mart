@@ -156,7 +156,7 @@ export default function CustomerList({
       </PageHeader>
 
       {/* Search Toolbar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
           <input 
@@ -164,7 +164,7 @@ export default function CustomerList({
             placeholder="Search customer by name, NIC or phone number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
           />
         </div>
 
@@ -469,7 +469,7 @@ export default function CustomerList({
 
                             {rx.medicines && rx.medicines.length > 0 && (
                               <div className="space-y-1 py-2 border-t border-slate-200/80">
-                                <span className="text-[10.5px] font-bold text-slate-400 uppercase tracking-wider block">Items & Dosage:</span>
+                                <span className="text-[11px] font-medium text-slate-400 block">Items & Dosage:</span>
                                 {rx.medicines.map((m, idx) => (
                                   <div key={idx} className="flex justify-between text-slate-800 font-bold bg-white p-2 rounded-xl border border-slate-200">
                                     <span>{m.name} ({m.dosage})</span>

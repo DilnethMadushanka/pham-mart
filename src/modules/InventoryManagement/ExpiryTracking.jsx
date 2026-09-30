@@ -53,7 +53,7 @@ export default function ExpiryTracking({ medicines, batches, canEdit, onOpenBatc
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
         <MetricCard title="Expired batches" value={byStatus("expired").length} subtitle={`${money(valueOf(byStatus("expired")))} at selling price`} icon={CalendarX} colorScheme="rose" />
         <MetricCard title="Within 30 days" value={byStatus("soon").length} subtitle={`${money(valueOf(byStatus("soon")))} at selling price`} icon={CalendarClock} colorScheme="rose" />
         <MetricCard title="Within 90 days" value={byStatus("watch").length} subtitle={`${money(valueOf(byStatus("watch")))} at selling price`} icon={Clock} colorScheme="amber" />

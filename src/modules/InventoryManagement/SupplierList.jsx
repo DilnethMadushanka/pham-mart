@@ -1,3 +1,4 @@
+import MetricCard from '../../components/MetricCard';
 import React, { useState } from 'react';
 import { 
   Building2, 
@@ -101,59 +102,14 @@ export default function SupplierList({
         </button>
       </div>
 
-      {/* Top Stat Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Suppliers</span>
-            <div className="text-3xl font-semibold text-slate-900 mt-1 group-hover:text-blue-600 transition-colors">
-              {suppliers.length}
-            </div>
-            <div className="flex items-center space-x-1.5 mt-1 text-xs font-bold text-blue-600">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>100% Active Distributors</span>
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100 group-hover:scale-110 transition-transform">
-            <Building2 className="w-7 h-7" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avg Delivery Lead Time</span>
-            <div className="text-3xl font-semibold text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">
-              {avgLeadTime} <span className="text-sm font-bold text-slate-500">Days</span>
-            </div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">
-              Standard Logistics SLA
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 group-hover:scale-110 transition-transform">
-            <Clock className="w-7 h-7" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Tracked Purchase Orders</span>
-            <div className="text-3xl font-semibold text-slate-900 mt-1 group-hover:text-blue-600 transition-colors">
-              {purchaseOrders.length}
-            </div>
-            <div className="text-xs font-bold text-blue-600 mt-1">
-              Supplier Orders Processed
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100 group-hover:scale-110 transition-transform">
-            <Truck className="w-7 h-7" />
-          </div>
-        </div>
-
+      <div className="metric-grid grid-cols-1 sm:grid-cols-3">
+        <MetricCard title="Suppliers" value={suppliers.length} subtitle="Registered distributors" icon={Building2} />
+        <MetricCard title="Average lead time" value={`${avgLeadTime} days`} subtitle="From order to delivery" icon={Clock} />
+        <MetricCard title="Purchase orders" value={purchaseOrders.length} subtitle="Placed with these suppliers" icon={Truck} />
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -162,7 +118,7 @@ export default function SupplierList({
             placeholder="Search supplier name, contact person, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
           />
           {searchTerm && (
             <button 

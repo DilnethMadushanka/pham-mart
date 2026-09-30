@@ -99,7 +99,7 @@ export default function PurchaseOrders({
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
         <MetricCard title="Waiting for approval" value={count("Pending")} subtitle={canApprove ? "Approve to send" : "The owner approves orders"} icon={Clock} colorScheme="amber" />
         <MetricCard title="With the supplier" value={count("Approved") + count("Partly received")} subtitle="Approved, not fully received" icon={Truck} />
         <MetricCard title="Received" value={count("Received")} subtitle="Delivered and in stock" icon={PackageCheck} />

@@ -98,7 +98,7 @@ export default function ReorderSuggestions({ medicines, transactions, purchaseOr
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
         <MetricCard title="Need reordering" value={suggestions.length} subtitle="At or below reorder level" icon={TrendingDown} colorScheme="amber" />
         <MetricCard title="Out of stock" value={outCount} subtitle="Can't be sold right now" icon={PackageX} colorScheme="rose" />
         <MetricCard title="Run out before delivery" value={criticalCount} subtitle="Based on last 30 days of sales" icon={AlertTriangle} colorScheme="rose" />

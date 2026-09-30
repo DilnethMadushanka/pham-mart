@@ -256,7 +256,7 @@ export default function CustomerRxUpload({
           {/* Requested Items Summary */}
           {submittedRx.medicines.length > 0 && (
           <div className="pt-2 border-t border-slate-200 space-y-1">
-            <span className="text-slate-500 font-bold block uppercase text-[10px] tracking-wider">Requested Items:</span>
+            <span className="text-slate-500 font-medium block text-[11px]">Requested Items:</span>
             {submittedRx.medicines.map((m, idx) => (
               <div key={idx} className="font-bold text-slate-800 flex justify-between bg-white p-2 rounded-lg border border-slate-200">
                 <span>{m.name}</span>

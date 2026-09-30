@@ -12,6 +12,7 @@ import PatientTestimonialsSection from './PatientTestimonialsSection';
 import LocationContactModal from './LocationContactModal';
 import CustomerRxUpload from './CustomerRxUpload';
 import MyOrders from './MyOrders';
+import StockChecker from './StockChecker';
 import GoogleFeedbackModal from '../../components/GoogleFeedbackModal';
 
 export default function CustomerStorefront({ 
@@ -96,15 +97,21 @@ export default function CustomerStorefront({
 
       {activePortalTab === "store" && (
         <div className="space-y-24 sm:space-y-32">
-          <div id="assortment-section" className="scroll-mt-24">
+          <div id="assortment-section" className="scroll-mt-24 reveal">
             <PharmacyServicesSection 
               onOpenLocation={() => setIsLocationOpen(true)}
             />
           </div>
 
-          <PatientTestimonialsSection onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)} />
+          <div className="reveal">
+            <StockChecker medicines={medicines} onUploadRx={() => openPortalTab("upload_rx")} />
+          </div>
 
-          <div id="how-it-works-section" className="scroll-mt-24">
+          <div className="reveal">
+            <PatientTestimonialsSection onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)} />
+          </div>
+
+          <div id="how-it-works-section" className="scroll-mt-24 reveal">
             <HowItWorksSection 
               onUploadRx={() => openPortalTab("upload_rx")}
               onShop={() => {
@@ -114,7 +121,9 @@ export default function CustomerStorefront({
             />
           </div>
 
-          <FaqAccordion />
+          <div className="reveal">
+            <FaqAccordion />
+          </div>
         </div>
       )}
 

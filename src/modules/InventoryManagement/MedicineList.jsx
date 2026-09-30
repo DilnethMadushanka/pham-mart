@@ -312,7 +312,7 @@ export default function MedicineList({
           )}
 
           {/* Summary Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
             <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />
             <MetricCard title="Low stock" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} badge="Reorder" colorScheme="amber" />
             <MetricCard title="Batches expiring or expired" value={expiredCount} subtitle="Within the next 90 days" icon={Clock} badge="Inspect" colorScheme="rose" />
@@ -320,7 +320,7 @@ export default function MedicineList({
           </div>
 
           {/* Controls & Search */}
-          <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
             <div className="relative w-full md:w-96">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -331,7 +331,7 @@ export default function MedicineList({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onKeyDown={handleSearchKey}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               />
             </div>
 
@@ -341,7 +341,7 @@ export default function MedicineList({
                 aria-label="Filter by category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -353,7 +353,7 @@ export default function MedicineList({
                 aria-label="Filter by stock status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
                 <option value="LOW_STOCK">Needs reordering</option>
@@ -366,7 +366,7 @@ export default function MedicineList({
               {canEdit && (
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
@@ -381,7 +381,7 @@ export default function MedicineList({
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs block md:table">
-                <thead className="hidden md:table-header-group bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+                <thead className="hidden md:table-header-group bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-medium">
                   <tr>
                     <th className="py-3.5 px-4">Medicine & Generic Info</th>
                     <th className="py-3.5 px-4">Category</th>

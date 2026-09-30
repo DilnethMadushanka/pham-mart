@@ -16,28 +16,33 @@ export default function MetricCard({
   trend,
   trendValue,
   badge,
-  colorScheme = "sky"
+  colorScheme = "sky",
+  onClick
 }) {
+  const Wrapper = onClick ? "button" : "div";
   const tone = TONES[colorScheme] || { icon: "text-[#64748B] bg-slate-100", badge: "status-chip-gray" };
 
   return (
-    <div className="group bg-white rounded-2xl p-4 sm:p-5 ring-1 ring-slate-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-[box-shadow,transform] duration-300 flex flex-col h-full min-h-[128px] sm:min-h-[148px]">
+    <Wrapper
+      {...(onClick ? { type: "button", onClick } : {})}
+      className={`group bg-white p-4 sm:p-5 transition-colors duration-200 flex flex-col h-full min-h-[120px] sm:min-h-[136px] text-left w-full ${onClick ? "hover:bg-slate-50/80 focus-visible:relative focus-visible:z-10" : ""}`}
+    >
 
-      <div className="flex items-center justify-between gap-2">
-        <h4 className="text-[13px] font-medium text-slate-500 leading-snug">
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-medium text-slate-500 leading-snug">
           {title}
-        </h4>
+        </span>
         {Icon && (
-          <span className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${tone.icon}`}>
-            <Icon className="w-4 h-4" strokeWidth={2} />
+          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${tone.icon}`}>
+            <Icon className="w-3.5 h-3.5" strokeWidth={2} />
           </span>
         )}
-      </div>
+      </span>
 
-      <div className="flex flex-wrap items-center gap-2.5 mt-3 sm:mt-4 mb-1">
-        <div className="text-2xl sm:text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
+      <span className="flex flex-wrap items-center gap-2.5 mt-3 sm:mt-4 mb-1">
+        <span className="text-2xl sm:text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
           {value}
-        </div>
+        </span>
 
         {trendValue ? (
           <span className={`status-chip ${trend === "up" ? "status-chip-green" : "status-chip-red"}`}>
@@ -47,11 +52,12 @@ export default function MetricCard({
         ) : badge ? (
           <span className={`status-chip ${tone.badge}`}>{badge}</span>
         ) : null}
-      </div>
+      </span>
 
-      <p className="text-xs text-slate-500 mt-auto pt-3 line-clamp-2">
-        {subtitle}
-      </p>
-    </div>
+      <span className="text-xs text-slate-500 mt-auto pt-3 flex items-end justify-between gap-2">
+        <span className="line-clamp-2">{subtitle}</span>
+        {onClick && <ArrowUpRight className="w-4 h-4 shrink-0 text-slate-300 group-hover:text-[#2563EB] transition-colors" aria-hidden />}
+      </span>
+    </Wrapper>
   );
 }
