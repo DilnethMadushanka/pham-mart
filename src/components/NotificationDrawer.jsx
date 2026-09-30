@@ -1,18 +1,19 @@
 import React from 'react';
-import { X, AlertTriangle, Clock, FileText, CheckCircle2, ShieldAlert, ArrowRight } from 'lucide-react';
+import { X, AlertTriangle, Clock, FileText, CheckCircle2, ArrowRight } from 'lucide-react';
+import { expiryAlerts, EXPIRY_LABEL } from '../lib/expiry';
 
 export default function NotificationDrawer({ 
   isOpen, 
   onClose, 
   medicines, 
+  batches = [],
   prescriptions,
   onNavigate 
 }) {
   if (!isOpen) return null;
 
   const lowStock = medicines.filter(m => m.stock <= m.reorderLevel);
-  const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
-  const nearExpiry = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow);
+  const nearExpiry = expiryAlerts(batches, medicines);
   const pendingRx = prescriptions.filter(p => p.status === "Pending");
 
   return (
@@ -44,7 +45,7 @@ export default function NotificationDrawer({
           {/* Pending Prescriptions Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <FileText className="w-3.5 h-3.5 mr-1 text-blue-600" />
                 Pending Prescriptions ({pendingRx.length})
               </h4>
@@ -86,16 +87,16 @@ export default function NotificationDrawer({
           {/* Low Stock Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <AlertTriangle className="w-3.5 h-3.5 mr-1 text-amber-600" />
                 Low Stock Threshold Alerts ({lowStock.length})
               </h4>
               {lowStock.length > 0 && (
                 <button 
-                  onClick={() => { onNavigate("inventory"); onClose(); }} 
+                  onClick={() => { onNavigate("inventory:reorder"); onClose(); }} 
                   className="text-xs text-blue-700 hover:underline font-semibold flex items-center"
                 >
-                  Create PO <ArrowRight className="w-3 h-3 ml-0.5" />
+                  Reorder suggestions <ArrowRight className="w-3 h-3 ml-0.5" />
                 </button>
               )}
             </div>
@@ -105,7 +106,7 @@ export default function NotificationDrawer({
                 <div key={m.id} className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 text-xs">
                   <div className="flex justify-between font-bold text-slate-800">
                     <span>{m.name}</span>
-                    <span className="text-amber-800 font-extrabold">{m.stock} units left</span>
+                    <span className="text-amber-800 font-semibold">{m.stock} units left</span>
                   </div>
                   <p className="text-[11px] text-amber-700 mt-0.5">Reorder Level: {m.reorderLevel} units | Supplier: {m.supplierName}</p>
                 </div>
@@ -116,20 +117,34 @@ export default function NotificationDrawer({
           {/* Near Expiry Section */}
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center">
+              <h4 className="text-xs font-medium text-slate-500 flex items-center">
                 <Clock className="w-3.5 h-3.5 mr-1 text-rose-600" />
-                Near Expiry Warning ({nearExpiry.length})
+                Expiry warnings ({nearExpiry.length})
               </h4>
+              {nearExpiry.length > 0 && (
+                <button
+                  onClick={() => { onNavigate("inventory:expiry"); onClose(); }}
+                  className="text-xs text-blue-700 hover:underline font-semibold flex items-center"
+                >
+                  Expiry tracking <ArrowRight className="w-3 h-3 ml-0.5" />
+                </button>
+              )}
             </div>
 
             <div className="space-y-2">
-              {nearExpiry.map(m => (
-                <div key={m.id} className="p-3 rounded-xl border border-rose-200 bg-rose-50/50 text-xs">
-                  <div className="flex justify-between font-bold text-slate-800">
-                    <span>{m.name}</span>
-                    <span className="text-rose-700 font-bold">{m.expiryDate}</span>
+              {nearExpiry.length === 0 && (
+                <p className="text-xs text-slate-500">No batch expires in the next 90 days.</p>
+              )}
+              {nearExpiry.map(b => (
+                <div key={b.id} className={`p-3 rounded-xl border text-xs ${b.status === "watch" ? "border-amber-200 bg-amber-50/50" : "border-rose-200 bg-rose-50/50"}`}>
+                  <div className="flex justify-between gap-2 font-bold text-slate-800">
+                    <span>{b.medicine.name}</span>
+                    <span className={b.status === "watch" ? "text-amber-800" : "text-rose-700"}>{b.expiryDate}</span>
                   </div>
-                  <p className="text-[11px] text-rose-600 mt-0.5">Batch: {m.batchNo} | Stock: {m.stock}</p>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Batch {b.batchNo} · {b.quantity} units · {EXPIRY_LABEL[b.status].label}
+                    {b.status !== "expired" && b.days !== null ? ` (${b.days} day${b.days === 1 ? "" : "s"})` : ""}
+                  </p>
                 </div>
               ))}
             </div>
@@ -139,7 +154,7 @@ export default function NotificationDrawer({
 
         {/* Footer */}
         <div className="p-4 border-t border-slate-200 bg-slate-50 text-center text-xs text-slate-500">
-          Automated Baseline Monitoring Active (Report Epic 2 & 3)
+          Low stock and expiry are checked as stock changes.
         </div>
 
       </div>

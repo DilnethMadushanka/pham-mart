@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, ShieldAlert, DollarSign } from 'lucide-react';
+import { notify } from '../../lib/notify';
 
-export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEdit, suppliers }) {
+const DEFAULT_CATEGORIES = ["Antibiotics", "Analgesics", "Cardiovascular", "Diabetes", "Respiratory", "Controlled Drugs", "Supplements"];
+
+export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEdit, suppliers, categories = [] }) {
+  const categoryOptions = Array.from(new Set([...DEFAULT_CATEGORIES, ...categories])).sort();
   const [formData, setFormData] = useState({
     name: '',
     genericName: '',
@@ -10,16 +14,18 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
     reorderLevel: 30,
     unitPrice: 50.0,
     batchNo: '',
+    barcode: '',
     expiryDate: '2027-12-31',
     prescriptionRequired: false,
     controlledDrug: false,
-    supplierId: 'SUP-01',
-    supplierName: 'GlaxoSmithKline Pharmaceuticals'
+    supplierId: '',
+    supplierName: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (medicineToEdit) {
-      setFormData(medicineToEdit);
+      setFormData({ ...medicineToEdit, barcode: medicineToEdit.barcode || '' });
     } else {
       setFormData({
         name: '',
@@ -29,11 +35,12 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
         reorderLevel: 30,
         unitPrice: 50.0,
         batchNo: `BATCH-${Math.floor(1000 + Math.random() * 9000)}`,
+        barcode: '',
         expiryDate: '2027-12-31',
         prescriptionRequired: false,
         controlledDrug: false,
-        supplierId: suppliers[0]?.id || 'SUP-01',
-        supplierName: suppliers[0]?.name || 'GlaxoSmithKline Pharmaceuticals'
+        supplierId: suppliers[0]?.id || '',
+        supplierName: suppliers[0]?.name || ''
       });
     }
   }, [medicineToEdit, isOpen, suppliers]);
@@ -45,17 +52,24 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
     setFormData({
       ...formData,
       supplierId: e.target.value,
-      supplierName: selectedSup ? selectedSup.name : 'Unknown Supplier'
+      supplierName: selectedSup ? selectedSup.name : ''
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.batchNo) {
-      alert('Please fill in required medicine name and batch number.');
+    if (isSaving) return;
+    if (!formData.name || (!medicineToEdit && formData.stock > 0 && !formData.batchNo)) {
+      notify("Details needed", "Please fill in the medicine name and batch number.", "error");
       return;
     }
-    onSave(formData);
+    if (!String(formData.category || "").trim()) {
+      notify("Details needed", "Choose or type a category.", "error");
+      return;
+    }
+    setIsSaving(true);
+    await onSave(formData);
+    setIsSaving(false);
   };
 
   return (
@@ -94,7 +108,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin 500mg Capsules"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -105,26 +119,23 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               placeholder="e.g. Amoxicillin Trihydrate"
               value={formData.genericName}
               onChange={(e) => setFormData({...formData, genericName: e.target.value})}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Therapeutic Category</label>
-              <select
+              <input
+                list="medicine-categories"
                 value={formData.category}
                 onChange={(e) => setFormData({...formData, category: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
-              >
-                <option value="Antibiotics">Antibiotics</option>
-                <option value="Analgesics">Analgesics</option>
-                <option value="Cardiovascular">Cardiovascular</option>
-                <option value="Diabetes">Diabetes</option>
-                <option value="Respiratory">Respiratory</option>
-                <option value="Controlled Drugs">Controlled Drugs</option>
-                <option value="Supplements">Supplements</option>
-              </select>
+                placeholder="Pick or type a category"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+              />
+              <datalist id="medicine-categories">
+                {categoryOptions.map(c => <option key={c} value={c} />)}
+              </datalist>
             </div>
 
             <div>
@@ -135,11 +146,42 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.unitPrice}
                 onChange={(e) => setFormData({...formData, unitPrice: parseFloat(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
 
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Barcode</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Scan or type the pack barcode (optional)"
+              value={formData.barcode}
+              onChange={(e) => setFormData({...formData, barcode: e.target.value})}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+            />
+          </div>
+
+          {medicineToEdit ? (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <div className="font-bold text-slate-800">
+                Stock: {medicineToEdit.stock} units in {medicineToEdit.batchCount || 0} batch{medicineToEdit.batchCount === 1 ? "" : "es"}
+              </div>
+              <p className="text-slate-500">Stock is kept by batch. Use the Batches button in the list to receive stock, count it, correct a batch or write off expired stock.</p>
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">Reorder Threshold Alert</label>
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  value={formData.reorderLevel}
+                  onChange={(e) => setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0})}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+                />
+              </div>
+            </div>
+          ) : (<>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Initial Stock Quantity *</label>
@@ -148,7 +190,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.stock}
                 onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -159,7 +201,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.reorderLevel}
                 onChange={(e) => setFormData({...formData, reorderLevel: parseInt(e.target.value) || 0})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-amber-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -169,10 +211,10 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               <label className="block font-bold text-slate-700 mb-1">Batch Number *</label>
               <input 
                 type="text"
-                required
+                required={formData.stock > 0}
                 value={formData.batchNo}
                 onChange={(e) => setFormData({...formData, batchNo: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -183,18 +225,20 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
                 required
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
+          </>)}
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Primary Supplier</label>
             <select
-              value={formData.supplierId}
+              value={formData.supplierId || ""}
               onChange={handleSupplierChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             >
+              <option value="">No supplier</option>
               {suppliers.map(s => (
                 <option key={s.id} value={s.id}>{s.name} ({s.leadTimeDays}d lead)</option>
               ))}
@@ -235,9 +279,10 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-xs cursor-pointer"
+              disabled={isSaving}
+              className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-bold rounded-xl shadow-xs cursor-pointer"
             >
-              {medicineToEdit ? "Update Medicine" : "Add to Inventory"}
+              {isSaving ? "Saving..." : medicineToEdit ? "Update Medicine" : "Add to Inventory"}
             </button>
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, ShieldCheck, Mail, Phone, Lock } from 'lucide-react';
+import { notify } from '../../lib/notify';
 
 export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) {
   const [formData, setFormData] = useState({
@@ -12,6 +13,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
     permissions: ['inventory_view', 'pos_checkout'],
     password: ''
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (staffToEdit) {
@@ -33,23 +35,27 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) {
-      alert('Please fill in all required fields.');
+    if (isSaving) return;
+    if (!formData.name || !formData.username || !formData.email) {
+      notify("Details needed", "Please fill in the name, username and email.", "error");
       return;
     }
     if (!staffToEdit && !formData.password) {
-      alert('Please set an initial password for this staff account.');
+      notify("Password needed", "Set an initial password for this staff account.", "error");
+      return;
+    }
+    if (formData.password && formData.password.length < 8) {
+      notify("Password too short", "Passwords must be at least 8 characters.", "error");
       return;
     }
 
-    const submission = { ...formData };
-    if (staffToEdit && !submission.password) {
-      // Editing without typing a new password: don't overwrite the existing one.
-      delete submission.password;
-    }
-    onSave(submission);
+    // Editing without typing a new password keeps the existing one.
+    const submission = { ...formData, password: formData.password || null };
+    setIsSaving(true);
+    await onSave(submission);
+    setIsSaving(false);
   };
 
   const allPermissions = [
@@ -78,13 +84,13 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
       <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Header */}
-        <div className="p-5 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-blue-50/60 flex justify-between items-center">
+        <div className="p-5 border-b border-blue-100 bg-white flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/20">
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">
+              <h3 className="text-base font-semibold text-slate-900">
                 {staffToEdit ? "Edit Staff Account" : "Register New Staff Account"}
               </h3>
               <p className="text-xs text-slate-500 font-medium">Assign role permissions & workstation privileges</p>
@@ -109,7 +115,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               placeholder="e.g. Dr. K. A. Perera"
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
           </div>
 
@@ -122,7 +128,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="e.g. perera_k"
                 value={formData.username}
                 onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -131,7 +137,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               >
                 <option value="Owner/Admin">Owner / Admin</option>
                 <option value="Pharmacist">Pharmacist</option>
@@ -149,10 +155,12 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
               <input
                 type="text"
                 required={!staffToEdit}
-                placeholder={staffToEdit ? "Leave blank to keep existing password" : "e.g. Pharma@2026!"}
+                minLength={8}
+                autoComplete="new-password"
+                placeholder={staffToEdit ? "Leave blank to keep existing password" : "At least 8 characters"}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -166,7 +174,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="staff@pharmart.lk"
                 value={formData.email}
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
 
@@ -177,7 +185,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
                 placeholder="+94 77 000 0000"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -214,9 +222,10 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 text-white font-black rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer"
+              disabled={isSaving}
+              className="px-6 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/25 cursor-pointer"
             >
-              {staffToEdit ? "Update Account" : "Create Staff Account"}
+              {isSaving ? "Saving..." : staffToEdit ? "Update Account" : "Create Staff Account"}
             </button>
           </div>
 

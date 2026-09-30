@@ -1,3 +1,4 @@
+import MetricCard from '../../components/MetricCard';
 import React, { useState } from 'react';
 import { 
   Building2, 
@@ -12,26 +13,27 @@ import {
   Trash2, 
   Package, 
   Truck,
-  CheckCircle2,
-  ExternalLink,
   ShieldCheck,
-  Building
+  Tags
 } from 'lucide-react';
 import AddSupplierModal from './AddSupplierModal';
+import SupplierPriceModal from './SupplierPriceModal';
+import { confirmDialog } from '../../lib/notify';
 
 export default function SupplierList({ 
   suppliers, 
-  setSuppliers, 
+  setSuppliers,
   medicines = [],
   purchaseOrders = [],
-  onAddSupplier,
-  onUpdateSupplier,
+  onSaveSupplier,
   onDeleteSupplier,
   addAuditLog 
 }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [pricingId, setPricingId] = useState(null);
+  const pricing = suppliers.find(s => s.id === pricingId);
 
   const filteredSuppliers = suppliers.filter(s => {
     const term = searchTerm.toLowerCase();
@@ -41,49 +43,34 @@ export default function SupplierList({
            (s.email && s.email.toLowerCase().includes(term));
   });
 
-  const handleSaveSupplier = (supplierData) => {
+  // The form stays open with the user's input if saving fails.
+  const handleSaveSupplier = async (supplierData) => {
+    const saved = await onSaveSupplier(supplierData);
+    if (!saved) return;
     if (editingSupplier) {
-      if (onUpdateSupplier) {
-        onUpdateSupplier(supplierData.id, supplierData);
-      } else {
-        setSuppliers(prev => prev.map(s => s.id === supplierData.id ? supplierData : s));
-      }
-      if (addAuditLog) {
-        addAuditLog("Supplier Record Updated", `Updated details for supplier: ${supplierData.name}`, "info");
-      }
+      addAuditLog("Supplier Record Updated", `Updated details for supplier: ${saved.name}`, "info");
     } else {
-      const newSup = {
-        ...supplierData,
-        id: supplierData.id || `SUP-${Math.floor(10 + Math.random() * 90)}`
-      };
-      if (onAddSupplier) {
-        onAddSupplier(newSup);
-      } else {
-        setSuppliers(prev => [newSup, ...prev]);
-      }
-      if (addAuditLog) {
-        addAuditLog("New Supplier Registered", `Registered new wholesale supplier: ${newSup.name}`, "success");
-      }
+      addAuditLog("New Supplier Registered", `Registered new wholesale supplier: ${saved.name}`, "success");
     }
     setIsAddModalOpen(false);
     setEditingSupplier(null);
   };
 
-  const handleDelete = (supplier) => {
-    if (window.confirm(`Are you sure you want to remove supplier "${supplier.name}"?`)) {
-      if (onDeleteSupplier) {
-        onDeleteSupplier(supplier.id);
-      } else {
-        setSuppliers(prev => prev.filter(s => s.id !== supplier.id));
-      }
-      if (addAuditLog) {
-        addAuditLog("Supplier Removed", `Deleted supplier record: ${supplier.name}`, "warning");
-      }
+  const handleDelete = async (supplier) => {
+    const confirmed = await confirmDialog({
+      title: `Remove ${supplier.name}?`,
+      message: "Medicines and past purchase orders keep the supplier's name.",
+      confirmLabel: "Remove supplier",
+      tone: "danger"
+    });
+    if (!confirmed) return;
+    if (await onDeleteSupplier(supplier.id)) {
+      addAuditLog("Supplier Removed", `Deleted supplier record: ${supplier.name}`, "warning");
     }
   };
 
   const avgLeadTime = suppliers.length > 0 
-    ? (suppliers.reduce((acc, s) => acc + (s.leadTimeDays || 3), 0) / suppliers.length).toFixed(1)
+    ? (suppliers.reduce((acc, s) => acc + (s.leadTimeDays ?? 3), 0) / suppliers.length).toFixed(1)
     : "3.0";
 
   return (
@@ -98,7 +85,7 @@ export default function SupplierList({
               Enterprise Supply Chain
             </span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-semibold text-slate-900">
             Suppliers & Distributors
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed font-medium">
@@ -108,66 +95,21 @@ export default function SupplierList({
 
         <button
           onClick={() => { setEditingSupplier(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-semibold text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4.5 h-4.5" />
           <span>Register New Supplier</span>
         </button>
       </div>
 
-      {/* Top Stat Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Registered Suppliers</span>
-            <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-blue-600 transition-colors">
-              {suppliers.length}
-            </div>
-            <div className="flex items-center space-x-1.5 mt-1 text-xs font-bold text-blue-600">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              <span>100% Active Distributors</span>
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100 group-hover:scale-110 transition-transform">
-            <Building2 className="w-7 h-7" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Avg Delivery Lead Time</span>
-            <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-emerald-600 transition-colors">
-              {avgLeadTime} <span className="text-sm font-bold text-slate-500">Days</span>
-            </div>
-            <div className="text-xs font-semibold text-slate-500 mt-1">
-              Standard Logistics SLA
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold border border-emerald-100 group-hover:scale-110 transition-transform">
-            <Clock className="w-7 h-7" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex items-center justify-between group">
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Tracked Purchase Orders</span>
-            <div className="text-3xl font-black text-slate-900 mt-1 group-hover:text-indigo-600 transition-colors">
-              {purchaseOrders.length}
-            </div>
-            <div className="text-xs font-bold text-indigo-600 mt-1">
-              Supplier Orders Processed
-            </div>
-          </div>
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold border border-indigo-100 group-hover:scale-110 transition-transform">
-            <Truck className="w-7 h-7" />
-          </div>
-        </div>
-
+      <div className="metric-grid grid-cols-1 sm:grid-cols-3">
+        <MetricCard title="Suppliers" value={suppliers.length} subtitle="Registered distributors" icon={Building2} />
+        <MetricCard title="Average lead time" value={`${avgLeadTime} days`} subtitle="From order to delivery" icon={Clock} />
+        <MetricCard title="Purchase orders" value={purchaseOrders.length} subtitle="Placed with these suppliers" icon={Truck} />
       </div>
 
       {/* Filter & Search Toolbar */}
-      <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         
         <div className="relative w-full sm:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -176,7 +118,7 @@ export default function SupplierList({
             placeholder="Search supplier name, contact person, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
           />
           {searchTerm && (
             <button 
@@ -189,7 +131,7 @@ export default function SupplierList({
         </div>
 
         <div className="text-xs font-bold text-slate-500">
-          Showing <span className="text-slate-900 font-extrabold">{filteredSuppliers.length}</span> of {suppliers.length} Suppliers
+          Showing <span className="text-slate-900 font-semibold">{filteredSuppliers.length}</span> of {suppliers.length} Suppliers
         </div>
 
       </div>
@@ -200,7 +142,7 @@ export default function SupplierList({
           <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <Building2 className="w-8 h-8" />
           </div>
-          <h3 className="font-extrabold text-slate-800 text-base">No Suppliers Found</h3>
+          <h3 className="font-semibold text-slate-800 text-base">No Suppliers Found</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             No wholesale suppliers matched your search query "{searchTerm}". Try a different keyword or add a new supplier.
           </p>
@@ -234,18 +176,18 @@ export default function SupplierList({
                 className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
               >
                 {/* Top Hover Gradient Line */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="absolute top-0 left-0 right-0 h-1 bg-[#2563EB] opacity-0 group-hover:opacity-100 transition-opacity" />
 
                 <div>
                   {/* Card Top Header Row */}
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center space-x-2">
-                      <span className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 font-mono font-black text-xs border border-blue-200/80 shadow-2xs">
+                      <span className="px-3 py-1 rounded-xl bg-blue-50 text-blue-700 font-mono font-semibold text-xs border border-blue-200/80 shadow-2xs">
                         {supplier.id}
                       </span>
                       <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
                         <Clock className="w-3 h-3 mr-1 text-emerald-600" />
-                        Lead: {supplier.leadTimeDays || 3} Days
+                        Lead: {supplier.leadTimeDays ?? 3} Days
                       </span>
                     </div>
 
@@ -269,7 +211,7 @@ export default function SupplierList({
 
                   {/* Supplier Company Name - Full, bold, unclipped */}
                   <div className="mb-4">
-                    <h3 className="font-extrabold text-slate-900 text-base leading-snug group-hover:text-blue-600 transition-colors break-words">
+                    <h3 className="font-semibold text-slate-900 text-base leading-snug group-hover:text-blue-600 transition-colors break-words">
                       {supplier.name}
                     </h3>
                   </div>
@@ -325,16 +267,31 @@ export default function SupplierList({
                       <span>{suppliedMedsCount} Medicines</span>
                     </div>
                     <div className="flex items-center space-x-1.5 text-slate-700 font-bold">
-                      <Truck className="w-4 h-4 text-indigo-500" />
+                      <Truck className="w-4 h-4 text-blue-500" />
                       <span>{supplierPOsCount} Orders</span>
                     </div>
                   </div>
+                  <button
+                    onClick={() => setPricingId(supplier.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+                  >
+                    <Tags className="w-3.5 h-3.5" /> Price list ({(supplier.prices || []).length})
+                  </button>
                 </div>
 
               </div>
             );
           })}
         </div>
+      )}
+
+      {pricing && (
+        <SupplierPriceModal
+          supplier={pricing}
+          medicines={medicines}
+          onClose={() => setPricingId(null)}
+          onSaved={(updated) => setSuppliers?.(prev => prev.map(s => (s.id === updated.id ? updated : s)))}
+        />
       )}
 
       {/* Add / Edit Supplier Modal */}

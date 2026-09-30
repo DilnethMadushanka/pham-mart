@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Star, CheckCircle2, MessageSquare, Send, Sparkles, User, Mail, ShieldCheck, HeartHandshake } from 'lucide-react';
-import { saveAuditLog } from '../services/supabaseService';
+import { notify } from '../lib/notify';
 
 export default function GoogleFeedbackModal({ 
   isOpen, 
@@ -47,7 +47,7 @@ export default function GoogleFeedbackModal({
   const handleSubmitReview = (e) => {
     e.preventDefault();
     if (!reviewerName.trim() || !reviewText.trim()) {
-      alert("Please enter your name and write a brief review.");
+      notify("Details needed", "Please enter your name and write a short review.", "error");
       return;
     }
 
@@ -64,16 +64,6 @@ export default function GoogleFeedbackModal({
 
     if (addAuditLog) {
       addAuditLog("Google Review Submitted", `Patient ${reviewerName} submitted a ${rating}-star Google review for PHARMART Pharmacy`, "success");
-    } else {
-      saveAuditLog({
-        id: `LOG-${Math.floor(600 + Math.random() * 400)}`,
-        timestamp: new Date().toLocaleString(),
-        user: reviewerName,
-        role: "Customer",
-        action: "Google Review Submitted",
-        details: `Submitted ${rating}-star review: "${reviewText.substring(0, 40)}..."`,
-        severity: "success"
-      });
     }
 
     setIsSubmitted(true);
@@ -103,15 +93,13 @@ export default function GoogleFeedbackModal({
       <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-blue-100/80 overflow-hidden flex flex-col my-6 relative transform transition-all">
         
         {/* Premium Google Themed Header */}
-        <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-blue-900 p-6 text-white relative overflow-hidden">
-          {/* Ambient Decorative Blur Rings */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="bg-[#0B2545] p-6 text-white relative overflow-hidden">
 
           <button 
             type="button"
             onClick={(e) => { e.stopPropagation(); if (onClose) onClose(); }}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/15 hover:bg-white/30 text-white transition-all cursor-pointer border border-white/20 backdrop-blur-md z-30 shadow-lg hover:scale-110 active:scale-95"
+            className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-xl text-slate-300 hover:text-white hover:bg-white/10 z-30"
+            aria-label="Close"
             title="Close Modal"
           >
             <X className="w-5 h-5" />
@@ -129,8 +117,8 @@ export default function GoogleFeedbackModal({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-black tracking-tight text-white font-heading">Google Patient Reviews</h3>
-                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/25 text-blue-300 text-[10px] font-extrabold border border-blue-400/40 backdrop-blur-md shadow-xs">
+                <h3 className="text-lg font-semibold tracking-tight text-white font-heading">Google Patient Reviews</h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-500/25 text-blue-300 text-[10px] font-semibold border border-blue-400/40 backdrop-blur-md shadow-xs">
                   Official 4.8 ★
                 </span>
               </div>
@@ -148,14 +136,14 @@ export default function GoogleFeedbackModal({
                 <CheckCircle2 className="w-12 h-12" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-2xl font-black text-slate-900 tracking-tight font-heading">Thank You for Your Review!</h4>
+                <h4 className="text-2xl font-semibold text-slate-900 tracking-tight font-heading">Thank You for Your Review!</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto font-medium">
                   Your 5-star Google review has been published and shared with our duty Pharmacist care team.
                 </p>
               </div>
               <button
                 onClick={handleReset}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-600 hover:from-blue-500 hover:to-blue-500 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
+                className="px-6 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs rounded-2xl shadow-lg shadow-blue-500/25 transition-all cursor-pointer hover:scale-105 active:scale-95"
               >
                 Write Another Review
               </button>
@@ -166,7 +154,7 @@ export default function GoogleFeedbackModal({
               
               {/* Star Selector Pill Box */}
               <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 p-4.5 rounded-2xl border border-slate-200/80 text-center space-y-2 shadow-xs">
-                <span className="font-extrabold text-slate-800 text-xs tracking-wide block">Tap to Rate Your Healthcare Experience</span>
+                <span className="font-semibold text-slate-800 text-xs tracking-wide block">Tap to Rate Your Healthcare Experience</span>
                 
                 <div className="flex items-center justify-center space-x-2 py-1">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -190,14 +178,14 @@ export default function GoogleFeedbackModal({
                 </div>
 
                 <div className="inline-block px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30">
-                  <span className="text-xs text-amber-700 font-extrabold tracking-wide">
+                  <span className="text-xs text-amber-700 font-semibold tracking-wide">
                     {getRatingLabel(hoverRating || rating)}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Your Full Name *</label>
+                <label className="block font-semibold text-slate-700 mb-1">Your Full Name *</label>
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input 
@@ -212,7 +200,7 @@ export default function GoogleFeedbackModal({
               </div>
 
               <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Email Address (Optional)</label>
+                <label className="block font-semibold text-slate-700 mb-1">Email Address (Optional)</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <input 
@@ -226,7 +214,7 @@ export default function GoogleFeedbackModal({
               </div>
 
               <div>
-                <label className="block font-extrabold text-slate-700 mb-1">Write Patient Feedback & Experience *</label>
+                <label className="block font-semibold text-slate-700 mb-1">Write Patient Feedback & Experience *</label>
                 <div className="relative">
                   <MessageSquare className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
                   <textarea
@@ -242,7 +230,7 @@ export default function GoogleFeedbackModal({
 
               <button
                 type="submit"
-                className="w-full py-3.5 bg-gradient-to-r from-[#2563EB] to-blue-600 hover:from-[#1D4ED8] hover:to-blue-700 text-white font-extrabold rounded-2xl shadow-lg shadow-blue-500/25 text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
+                className="w-full py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold rounded-2xl shadow-lg shadow-blue-500/25 text-xs flex items-center justify-center space-x-2 transition-all cursor-pointer hover:scale-[1.01] active:scale-[0.99]"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Feedback to Google Reviews</span>
@@ -253,11 +241,11 @@ export default function GoogleFeedbackModal({
           {/* Verified Google Reviews Feed */}
           <div className="space-y-3.5 pt-4 border-t border-slate-200">
             <div className="flex items-center justify-between">
-              <h4 className="font-extrabold text-slate-900 text-xs flex items-center space-x-1.5">
+              <h4 className="font-semibold text-slate-900 text-xs flex items-center space-x-1.5">
                 <ShieldCheck className="w-4 h-4 text-blue-600" />
                 <span>Verified Google Patient Reviews ({reviewsList.length})</span>
               </h4>
-              <span className="text-amber-500 font-black text-xs bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+              <span className="text-amber-500 font-semibold text-xs bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
                 4.8 / 5.0 ★
               </span>
             </div>
@@ -267,11 +255,11 @@ export default function GoogleFeedbackModal({
                 <div key={rev.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/80 text-xs space-y-2 transition-all shadow-xs">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-black flex items-center justify-center text-xs shadow-sm">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-semibold flex items-center justify-center text-xs shadow-sm">
                         {rev.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <span className="font-extrabold text-slate-900 block text-xs">{rev.name}</span>
+                        <span className="font-semibold text-slate-900 block text-xs">{rev.name}</span>
                         <span className="text-[10px] text-blue-700 font-bold flex items-center space-x-1">
                           <CheckCircle2 className="w-3 h-3 text-blue-600 inline" />
                           <span>Verified Patient</span>

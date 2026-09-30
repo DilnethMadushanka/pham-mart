@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { X, FileText, Plus, User, Stethoscope } from 'lucide-react';
+import { notify } from '../../lib/notify';
 
-export default function NewPrescriptionModal({ isOpen, onClose, onSave, customers, medicines }) {
-  const [customerId, setCustomerId] = useState(customers[0]?.id || '');
-  const [doctorName, setDoctorName] = useState('Dr. L. C. Fernando');
-  const [doctorSlmcNo, setDoctorSlmcNo] = useState('SLMC-44912');
-  const [selectedMedId, setSelectedMedId] = useState(medicines[0]?.id || '');
+export default function NewPrescriptionModal({ isOpen, onClose, onSave, customers, medicines, doctors = [] }) {
+  const [customerId, setCustomerId] = useState('');
+  const [doctorId, setDoctorId] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [doctorSlmcNo, setDoctorSlmcNo] = useState('');
+  const [selectedMedId, setSelectedMedId] = useState('');
   const [dosage, setDosage] = useState('1 tablet twice daily');
   const [durationDays, setDurationDays] = useState(30);
   const [qty, setQty] = useState(60);
@@ -16,28 +18,27 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
     e.preventDefault();
     const cust = customers.find(c => c.id === customerId);
     const med = medicines.find(m => m.id === selectedMedId);
-    if (!cust || !med) return;
+    if (!cust || !med) {
+      notify("Details needed", "Choose the customer and the prescribed medicine.", "error");
+      return;
+    }
 
-    const newRx = {
-      id: `RX-${Math.floor(900 + Math.random() * 100)}`,
-      rxNumber: `RX-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    const doctor = doctors.find(d => d.id === doctorId);
+    if (!doctor && (!doctorName.trim() || !doctorSlmcNo.trim())) {
+      notify("Doctor needed", "Pick the doctor from the doctor database, or type the name and SLMC number from the slip.", "error");
+      return;
+    }
+
+    onSave({
       customerId: cust.id,
-      customerName: cust.name,
-      doctorName: doctorName,
-      doctorSlmcNo: doctorSlmcNo,
-      uploadDate: new Date().toLocaleString(),
-      expiryDate: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
+      doctorId: doctor?.id || null,
+      doctorName: doctor ? doctor.name : doctorName.trim(),
+      doctorSlmcNo: doctor ? doctor.slmcNo : doctorSlmcNo.trim(),
       medicines: [
-        { medicineId: med.id, name: med.name, dosage: dosage, durationDays: durationDays, quantity: qty }
+        { medicineId: med.id, name: med.name, dosage, durationDays, quantity: qty }
       ],
-      isControlledDrug: med.controlledDrug,
-      status: "Pending",
-      verifiedBy: null,
-      verifiedAt: null,
-      notes: med.controlledDrug ? "Controlled drug verification required." : "Regular prescription review pending."
-    };
-
-    onSave(newRx);
+      notes: med.controlledDrug ? "Controlled drug verification required." : ""
+    });
   };
 
   return (
@@ -71,19 +72,40 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
               onChange={(e) => setCustomerId(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold"
             >
+              <option value="">Choose a customer...</option>
               {customers.map(c => (
-                <option key={c.id} value={c.id}>{c.name} ({c.nic})</option>
+                <option key={c.id} value={c.id}>{c.name}{c.nic ? ` (${c.nic})` : ""}</option>
               ))}
             </select>
           </div>
 
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Prescribing Doctor *</label>
+            <select
+              value={doctorId}
+              onChange={(e) => setDoctorId(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold"
+            >
+              <option value="">Not in the doctor database (type below)</option>
+              {doctors.filter(d => d.status === "Active").map(d => (
+                <option key={d.id} value={d.id}>{d.name} · {d.slmcNo} · {d.id}</option>
+              ))}
+            </select>
+            {!doctorId && (
+              <p className="mt-1 text-[11px] text-amber-700">
+                Unlisted doctors can be registered, but a pharmacist can't approve prescription medicines until the doctor is added to the database.
+              </p>
+            )}
+          </div>
+
+          {!doctorId && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block font-bold text-slate-700 mb-1">Doctor Name *</label>
               <input 
                 type="text"
-                required
                 value={doctorName}
+                placeholder="As written on the slip"
                 onChange={(e) => setDoctorName(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl"
               />
@@ -93,13 +115,14 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
               <label className="block font-bold text-slate-700 mb-1">SLMC Reg No *</label>
               <input 
                 type="text"
-                required
                 value={doctorSlmcNo}
+                placeholder="e.g. SLMC-10234"
                 onChange={(e) => setDoctorSlmcNo(e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl font-mono"
               />
             </div>
           </div>
+          )}
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Prescribed Medication *</label>
@@ -108,6 +131,7 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
               onChange={(e) => setSelectedMedId(e.target.value)}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl font-semibold"
             >
+              <option value="">Choose a medicine...</option>
               {medicines.map(m => (
                 <option key={m.id} value={m.id}>
                   {m.name} {m.controlledDrug ? "(CONTROLLED DRUG)" : ""}

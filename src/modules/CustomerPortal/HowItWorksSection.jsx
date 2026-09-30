@@ -1,111 +1,88 @@
 import React from 'react';
-import { Upload, Stethoscope, ShoppingCart, Truck, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Upload, Stethoscope, PackageCheck, Truck, ArrowRight } from 'lucide-react';
+
+const STEPS = [
+  {
+    title: "Upload",
+    desc: "Send a photo or PDF of a valid prescription with the patient's details.",
+    icon: Upload
+  },
+  {
+    title: "Pharmacist review",
+    desc: "A registered pharmacist checks the doctor's SLMC number, dosage limits and interactions.",
+    icon: Stethoscope
+  },
+  {
+    title: "Reserve and quote",
+    desc: "Approved items are held from stock and you receive an itemised price.",
+    icon: PackageCheck
+  },
+  {
+    title: "Deliver or collect",
+    desc: "Pay online or on delivery, or pick it up at the counter.",
+    icon: Truck
+  }
+];
 
 export default function HowItWorksSection({ onUploadRx, onShop }) {
-  const steps = [
-    {
-      num: "01",
-      title: "Upload Doctor Prescription",
-      desc: "Upload a photograph or PDF scan of your valid doctor prescription with patient details.",
-      icon: Upload,
-      color: "bg-blue-100 text-blue-800 border-blue-300"
-    },
-    {
-      num: "02",
-      title: "Pharmacist Review & Clearance",
-      desc: "Registered SLMC pharmacists verify doctor SLMC credentials, dosage limits, and drug interaction safety.",
-      icon: Stethoscope,
-      color: "bg-blue-100 text-blue-800 border-blue-300"
-    },
-    {
-      num: "03",
-      title: "Automated Stock Reserve & Billing",
-      desc: "Approved items are reserved from inventory and an accurate digital price quotation is generated.",
-      icon: ShoppingCart,
-      color: "bg-blue-100 text-blue-800 border-blue-300"
-    },
-    {
-      num: "04",
-      title: "Home Delivery / Express Counter Pickup",
-      desc: "Pay securely online or upon delivery, and receive your medication safely packaged at home.",
-      icon: Truck,
-      color: "bg-blue-600 text-white shadow-lg"
-    }
-  ];
-
   return (
-    <section className="bg-white rounded-3xl p-8 border border-blue-100 shadow-sm space-y-8">
-      
-      <div className="text-center max-w-2xl mx-auto space-y-2">
-        <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full border border-blue-200 inline-block">
-          Prescription Fulfillment Workflow
-        </span>
-        <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
-          How Prescription Ordering Works<span className="text-blue-600">.</span>
+    <section aria-labelledby="how-title" className="space-y-12">
+
+      <div className="max-w-2xl space-y-3">
+        <h2 id="how-title" className="text-3xl sm:text-4xl font-semibold text-[#0B2545]">
+          How prescription orders work
         </h2>
-        <p className="text-xs text-slate-500">
-          In accordance with pharmacy health regulations, all medication orders require a valid doctor prescription.
+        <p className="text-base text-slate-600 leading-relaxed max-w-[60ch]">
+          Pharmacy regulations require a valid prescription for every prescription medicine we dispense.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
-        {steps.map((step, idx) => {
+      <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8 stagger">
+        <span aria-hidden className="hidden lg:block absolute top-6 left-6 right-6 h-px bg-gradient-to-r from-[#2563EB]/60 via-slate-200 to-slate-200" />
+        {STEPS.map((step, idx) => {
           const Icon = step.icon;
           return (
-            <div key={idx} className="bg-slate-50 p-6 rounded-2xl border border-slate-200 relative group hover:border-blue-300 hover:shadow-md transition-all flex flex-col justify-between">
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-black font-mono text-blue-600 px-2.5 py-1 bg-blue-50 rounded-lg border border-blue-200">
-                    Step {step.num}
-                  </span>
-                  <div className={`p-3 rounded-2xl ${step.color}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                </div>
-
-                <h3 className="font-extrabold text-slate-900 text-sm leading-snug group-hover:text-blue-700 transition-colors">
-                  {step.title}
-                </h3>
-
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {step.desc}
-                </p>
+            <li key={step.title} style={{ '--i': idx }} className="relative group">
+              <div className="relative flex items-center gap-3 mb-5">
+                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ring-1 transition-colors duration-300 ${idx === 0 ? "bg-[#2563EB] text-white ring-[#2563EB] shadow-lg shadow-[#2563EB]/25" : "bg-white text-[#2563EB] ring-slate-200 group-hover:ring-[#2563EB]/40"}`}>
+                  <Icon className="w-5 h-5" strokeWidth={1.75} />
+                </span>
               </div>
-
-              <div className="pt-4 mt-4 border-t border-slate-200 text-[11px] font-bold text-blue-700 flex items-center">
-                <span>Verified System Step</span>
-                <CheckCircle2 className="w-3.5 h-3.5 ml-1 text-blue-600" />
-              </div>
-
-            </div>
+              <h3 className="text-lg font-semibold text-[#0B2545] mb-2">{step.title}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed max-w-[34ch]">{step.desc}</p>
+            </li>
           );
         })}
-      </div>
+      </ol>
 
-      {/* Bottom CTA Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 rounded-2xl text-white flex flex-col sm:flex-row justify-between items-center gap-4 shadow-md">
-        <div>
-          <h4 className="text-base font-black">Need to order your prescribed medication?</h4>
-          <p className="text-xs text-blue-100 mt-0.5">Upload your doctor prescription now for instant Pharmacist verification.</p>
+      {/* Closing call to action: the page's one navy block */}
+      <div className="relative overflow-hidden rounded-[28px] bg-[#0B2545] text-white">
+        <img src="/images/hero_pharmacist.png" alt="" aria-hidden loading="lazy"
+          className="absolute inset-y-0 right-0 w-full md:w-3/5 h-full object-cover opacity-30 md:opacity-60 [mask-image:linear-gradient(90deg,transparent,#000_45%)]" />
+        <div aria-hidden className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-[#2563EB]/35 blur-3xl" />
+        <div className="relative px-6 py-10 sm:px-12 sm:py-14 max-w-xl space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-2xl sm:text-4xl font-semibold leading-tight">Have a prescription ready?</h3>
+            <p className="text-slate-300 leading-relaxed">Upload it now. A pharmacist starts the review and sends you an itemised price.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-5">
+            <button
+              onClick={onUploadRx}
+              className="group inline-flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-white hover:bg-blue-50 text-[#0B2545] text-sm font-semibold shadow-lg shadow-black/20"
+            >
+              <Upload className="w-4 h-4 text-[#2563EB]" />
+              Upload prescription
+            </button>
+            <button
+              onClick={onShop}
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white"
+            >
+              Browse the store
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={onUploadRx}
-            className="px-6 py-2.5 bg-white text-blue-900 hover:bg-blue-50 font-extrabold text-xs rounded-xl shadow-md transition-colors cursor-pointer"
-          >
-            Upload Prescription Now
-          </button>
-          <button
-            onClick={onShop}
-            className="px-5 py-2.5 bg-blue-800 hover:bg-blue-900 text-white font-extrabold text-xs rounded-xl border border-blue-500 transition-colors cursor-pointer"
-          >
-            View Catalogue
-          </button>
-        </div>
       </div>
-
     </section>
   );
 }

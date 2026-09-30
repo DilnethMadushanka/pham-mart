@@ -1,313 +1,181 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Phone, 
-  MapPin, 
-  Star, 
-  Upload, 
-  LogIn, 
+import {
+  MapPin,
+  Star,
+  Upload,
   Clock,
   Truck,
   ShieldCheck,
-  Award,
-  CheckCircle2,
-  Sparkles,
   ArrowRight,
-  Pill,
-  ChevronLeft,
-  ChevronRight
+  PenLine,
+  Search
 } from 'lucide-react';
+import { openStatus } from '../../lib/hours';
 
 const HERO_IMAGES = [
-  { 
-    url: '/images/hero_pharmacist.png', 
-    title: 'Certified Pharmacists',
-    subtitle: 'Expert healthcare advice & consultation' 
+  {
+    url: '/images/hero_pharmacist.png',
+    alt: 'Pharmacist at the PHARMART counter holding a medicine box'
   },
-  { 
-    url: '/images/female_pharmacist.png', 
-    title: 'Precision Verification',
-    subtitle: 'Licensed doctor prescription clearance' 
-  },
-  { 
-    url: 'https://images.unsplash.com/photo-1586015555751-63bb77f4322a?q=80&w=1600&auto=format&fit=crop', 
-    title: 'Modern E-Pharmacy Store',
-    subtitle: '100% genuine medical supplies' 
-  },
-  { 
-    url: 'https://images.unsplash.com/photo-1631549916768-4119b2e5f926?q=80&w=1600&auto=format&fit=crop', 
-    title: 'Express Doorstep Delivery',
-    subtitle: 'Fast medication fulfillment across the region' 
+  {
+    url: '/images/female_pharmacist.png',
+    alt: 'Pharmacist checking stock on the dispensary shelves'
   }
 ];
 
-export default function HeroBanner({ 
-  onUploadRx, 
-  onOpenAuth, 
-  onShop,
+const FACTS = [
+  { icon: Clock, label: "Open 7 days a week", value: "Weekdays until 8:00 PM" },
+  { icon: ShieldCheck, label: "Every prescription", value: "Checked by a pharmacist" },
+  { icon: Truck, label: "Home delivery", value: "Free over Rs. 2,000" }
+];
+
+export default function HeroBanner({
+  onUploadRx,
+  onCheckStock,
   onOpenLocation,
   onOpenGoogleFeedback
 }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [status, setStatus] = useState(() => openStatus());
 
   useEffect(() => {
+    const t = setInterval(() => setStatus(openStatus()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
     const timer = setInterval(() => {
       setActiveImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
-    }, 4500);
+    }, 6000);
     return () => clearInterval(timer);
   }, []);
 
-  const handleNextSlide = () => {
-    setActiveImageIndex(prev => (prev + 1) % HERO_IMAGES.length);
-  };
-
-  const handlePrevSlide = () => {
-    setActiveImageIndex(prev => (prev - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
-  };
-
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden bg-gradient-to-br from-blue-100/90 via-blue-50 to-white border border-blue-200 shadow-xl min-h-[480px] sm:min-h-[520px] lg:min-h-[540px] flex flex-col justify-between font-sans group">
-      
-      {/* Dynamic Background Image Slideshow with Smooth Cross-Fade */}
-      {HERO_IMAGES.map((img, index) => (
-        <div 
-          key={index}
-          className={`absolute inset-0 bg-cover bg-center transition-all duration-1000 ease-in-out mix-blend-multiply transform ${
-            index === activeImageIndex 
-              ? "opacity-20 scale-100" 
-              : "opacity-0 scale-105 pointer-events-none"
-          }`}
-          style={{ backgroundImage: `url('${img.url}')` }}
-        ></div>
-      ))}
+    <section aria-labelledby="hero-title" className="relative space-y-6">
+      <div aria-hidden className="pointer-events-none absolute -z-10 -top-24 right-0 w-[70%] h-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.10),transparent)]" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pt-4 lg:pt-10">
 
-      {/* Ambient Glow Effects */}
-      <div className="absolute top-0 right-1/3 w-80 h-80 bg-blue-300/30 rounded-full filter blur-[100px] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-0 w-80 h-80 bg-blue-300/20 rounded-full filter blur-[120px] pointer-events-none"></div>
+        {/* Copy */}
+        <div className="lg:col-span-6 space-y-7">
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 animate-rise">
+            <span className="relative flex w-2 h-2" aria-hidden>
+              {status.open && <span className="absolute inset-0 rounded-full bg-[#10B981] opacity-60 animate-ping"></span>}
+              <span className={`relative w-2 h-2 rounded-full ${status.open ? "bg-[#10B981]" : "bg-slate-400"}`}></span>
+            </span>
+            {status.text}
+          </p>
 
-      {/* Multi-Layer Soft Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-blue-50/90 to-transparent"></div>
+          <h1
+            id="hero-title"
+            className="text-[2.5rem] sm:text-[3.4rem] xl:text-[3.75rem] font-semibold text-[#0B2545] leading-[1.02] animate-rise [animation-delay:60ms]"
+          >
+            Your prescription, checked and delivered<span className="text-[#2563EB]">.</span>
+          </h1>
 
-      {/* Content Container */}
-      <div className="relative z-10 p-5 sm:p-8 lg:p-10 flex flex-col justify-between h-full min-h-[480px] sm:min-h-[520px] lg:min-h-[540px] w-full">
-        
-        {/* Top Navigation Row inside Hero */}
-        <div className="flex flex-wrap justify-between items-center pb-4 border-b border-blue-200/60 gap-3">
-          
-          {/* Logo Brand */}
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/30 ring-2 ring-blue-500/20 shrink-0">
-              <Pill className="w-5 h-5 transform -rotate-45" />
-            </div>
-            <div>
-              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-slate-900 block leading-none font-heading">
-                PHARMART Pharmacy
-              </span>
-              <span className="text-[9px] sm:text-[10px] font-bold text-blue-700 uppercase tracking-wider block mt-1">
-                Licensed Community Pharmacy & Healthcare
-              </span>
-            </div>
-          </div>
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-[44ch] animate-rise [animation-delay:120ms]">
+            Upload a photo of your prescription. A licensed pharmacist reviews it, and we deliver to your door.
+          </p>
 
-          {/* Quick Links */}
-          <div className="flex items-center space-x-2 text-xs font-semibold">
-            <button 
-              onClick={() => {
-                const el = document.getElementById("assortment-section");
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-                else if (onShop) onShop();
-              }}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-100/80 hover:bg-blue-200 text-blue-900 backdrop-blur-md transition-all cursor-pointer font-bold border border-blue-200/60"
+          <div className="flex flex-wrap items-center gap-3 animate-rise [animation-delay:180ms]">
+            <button
+              onClick={onUploadRx}
+              className="group inline-flex items-center gap-2.5 pl-5 pr-4 py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold shadow-lg shadow-[#2563EB]/25 hover:-translate-y-0.5"
             >
-              Browse Medicines
+              <Upload className="w-4 h-4" />
+              <span>Upload prescription</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </button>
 
-            <button 
-              onClick={() => {
-                if (onOpenLocation) onOpenLocation();
-                const el = document.getElementById("location-section");
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="px-3.5 py-1.5 rounded-lg bg-blue-100/80 hover:bg-blue-200 text-blue-900 backdrop-blur-md transition-all flex items-center space-x-1 cursor-pointer font-bold border border-blue-200/60"
-            >
-              <MapPin className="w-3.5 h-3.5 text-blue-600" />
-              <span>Location</span>
-            </button>
-
-            <button 
-              onClick={onOpenAuth}
-              className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/20 transition-all flex items-center space-x-1 cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>Sign In</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Central Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 my-auto py-4 items-center">
-          
-          {/* Left Column: Heading & Buttons */}
-          <div className="lg:col-span-8 space-y-4">
-            
-            {/* Pill Badge with Active Image Caption */}
-            <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-blue-100/90 border border-blue-300/70 backdrop-blur-md transition-all shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse" />
-              <span className="text-[11px] font-extrabold text-blue-900 uppercase tracking-wider">
-                {HERO_IMAGES[activeImageIndex].title} • {HERO_IMAGES[activeImageIndex].subtitle}
-              </span>
-            </div>
-
-            {/* Headline */}
-            <div className="space-y-2">
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 leading-tight tracking-tight font-heading">
-                Your Health, Our Priority<span className="text-blue-600">.</span>
-              </h1>
-              <p className="text-xs sm:text-sm md:text-base text-slate-700 leading-relaxed font-semibold max-w-xl">
-                Certified pharmaceuticals, instant doctor prescription clearance by licensed Pharmacists, and express home delivery straight to your door.
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="pt-1 flex flex-wrap items-center gap-3 text-xs font-bold">
-              
+            {onCheckStock && (
               <button
-                onClick={onUploadRx}
-                className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white shadow-lg shadow-blue-600/25 transition-all flex items-center space-x-2 transform hover:-translate-y-0.5 cursor-pointer font-bold"
+                onClick={onCheckStock}
+                className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-slate-300 text-sm font-semibold text-[#0B2545] shadow-xs"
               >
-                <Upload className="w-4 h-4" />
-                <span>Upload Doctor Prescription</span>
-                <ArrowRight className="w-4 h-4" />
+                <Search className="w-4 h-4 text-[#2563EB]" />
+                <span>Check stock</span>
               </button>
+            )}
+          </div>
+        </div>
 
-              <a
-                href="tel:055-222-8292"
-                className="px-4 py-3 rounded-xl bg-white hover:bg-blue-50 text-slate-800 shadow-xs border border-blue-200 transition-all flex items-center space-x-2 cursor-pointer font-bold"
-              >
-                <Phone className="w-3.5 h-3.5 text-blue-600" />
-                <span>Hotline: 055-222-8292</span>
-              </a>
+        {/* Visual */}
+        <div className="lg:col-span-6 relative animate-rise [animation-delay:160ms]">
+          <div className="relative aspect-[4/3] lg:aspect-[5/4.2] rounded-[28px] overflow-hidden bg-slate-200 shadow-xl ring-1 ring-[#0B2545]/5">
+            <div aria-hidden className="absolute inset-0 z-10 bg-gradient-to-t from-[#0B2545]/25 via-transparent to-transparent pointer-events-none" />
+            {HERO_IMAGES.map((img, index) => (
+              <img
+                key={img.url}
+                src={img.url}
+                alt={img.alt}
+                aria-hidden={index !== activeImageIndex}
+                fetchPriority={index === 0 ? "high" : "low"}
+                className={`absolute inset-0 w-full h-full object-cover transition-[opacity,transform] duration-[1400ms] ease-out ${
+                  index === activeImageIndex ? "opacity-100 scale-100" : "opacity-0 scale-[1.03]"
+                }`}
+              />
+            ))}
+          </div>
 
+          {/* Rating card overlapping the image edge */}
+          <button
+            onClick={onOpenGoogleFeedback}
+            className="group absolute -bottom-6 left-4 sm:left-8 flex items-center gap-4 bg-white rounded-2xl pl-4 pr-5 py-3.5 shadow-lg ring-1 ring-slate-200/70 hover:-translate-y-0.5 text-left"
+          >
+            <span className="text-3xl font-semibold text-[#0B2545] tracking-tight tabular-nums">4.8</span>
+            <span className="space-y-1">
+              <span className="flex items-center gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-3.5 h-3.5 fill-amber-400 stroke-amber-400" />
+                ))}
+              </span>
+              <span className="flex items-center gap-1 text-xs text-slate-500 group-hover:text-[#2563EB]">
+                Google reviews
+                <PenLine className="w-3 h-3" />
+              </span>
+            </span>
+          </button>
+
+          {/* Slide selector */}
+          <div className="absolute -bottom-3 right-6 hidden sm:flex items-center gap-1.5" role="tablist" aria-label="Hero images">
+            {HERO_IMAGES.map((img, i) => (
               <button
-                onClick={onOpenLocation}
-                className="px-4 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 transition-all flex items-center space-x-1.5 cursor-pointer font-bold"
-              >
-                <MapPin className="w-3.5 h-3.5 text-blue-600" />
-                <span>Find Store</span>
-              </button>
-
-            </div>
-
-            {/* Ratings & Verification */}
-            <div className="flex flex-wrap items-center gap-3 pt-1 text-xs text-slate-800 font-semibold">
-              <button 
-                onClick={onOpenGoogleFeedback}
-                className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-amber-100/90 hover:bg-amber-100 backdrop-blur-md border border-amber-300 text-amber-900 transition-all cursor-pointer shadow-2xs hover:scale-105"
-              >
-                <span className="font-extrabold text-amber-900">Google 4.8 ★</span>
-                <div className="flex items-center text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="w-3 h-3 fill-amber-400 stroke-amber-500" />
-                  ))}
-                </div>
-              </button>
-
-              <button 
-                onClick={onOpenGoogleFeedback}
-                className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-blue-100/90 hover:bg-blue-200/90 text-blue-900 font-extrabold border border-blue-300/80 backdrop-blur-md transition-all cursor-pointer hover:scale-105 shadow-2xs"
-              >
-                <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                <span>⭐ Write Patient Review & Feedback</span>
-              </button>
-            </div>
-
-          </div>
-
-          {/* Right Column: Highlights Card + Slideshow Controls */}
-          <div className="hidden lg:flex lg:col-span-4 flex-col justify-end items-end space-y-3">
-            <div className="w-full max-w-xs p-5 rounded-2xl bg-white/90 backdrop-blur-xl border border-blue-200/80 shadow-lg space-y-3 text-slate-800 font-sans">
-              
-              <div className="flex items-center space-x-3 pb-2.5 border-b border-blue-100">
-                <div className="w-9 h-9 rounded-xl bg-blue-100 border border-blue-300 flex items-center justify-center text-blue-600">
-                  <Award className="w-4.5 h-4.5" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-xs text-slate-900">PHARMART Standards</h4>
-                  <p className="text-[10px] text-blue-700 font-bold">Certified Care</p>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-[11px] font-semibold">
-                <div className="flex justify-between items-center p-2 rounded-lg bg-blue-50/50 border border-blue-100">
-                  <span className="text-slate-600">Availability</span>
-                  <span className="text-blue-700 font-extrabold">365 Days / Year</span>
-                </div>
-
-                <div className="flex justify-between items-center p-2 rounded-lg bg-blue-50/50 border border-blue-100">
-                  <span className="text-slate-600">Consultation</span>
-                  <span className="text-blue-700 font-extrabold">Duty Pharmacist</span>
-                </div>
-
-                <div className="flex justify-between items-center p-2 rounded-lg bg-blue-50/50 border border-blue-100">
-                  <span className="text-slate-600">Delivery</span>
-                  <span className="text-blue-700 font-extrabold">Express Direct</span>
-                </div>
-              </div>
-
-              {/* Slideshow Manual Controls & Dots */}
-              <div className="pt-2 border-t border-blue-100 flex items-center justify-between">
-                <div className="flex items-center space-x-1.5">
-                  {HERO_IMAGES.map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setActiveImageIndex(i)}
-                      className={`h-1.5 rounded-full transition-all cursor-pointer ${
-                        i === activeImageIndex ? "w-6 bg-blue-600" : "w-1.5 bg-slate-300 hover:bg-slate-400"
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex items-center space-x-1">
-                  <button 
-                    onClick={handlePrevSlide}
-                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                  </button>
-                  <button 
-                    onClick={handleNextSlide}
-                    className="p-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                  >
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-        </div>
-
-        {/* Bottom Feature Strip */}
-        <div className="pt-3 border-t border-blue-200/60 grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs text-slate-700 font-semibold">
-          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-blue-100 shadow-2xs">
-            <Clock className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Pharmacist Review: <strong className="text-slate-900 font-black">Express Service</strong></span>
-          </div>
-
-          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-blue-100 shadow-2xs">
-            <Truck className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Regional <strong className="text-slate-900 font-black">Direct Doorstep Delivery</strong></span>
-          </div>
-
-          <div className="flex items-center space-x-2 bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-blue-100 shadow-2xs">
-            <ShieldCheck className="w-4 h-4 text-blue-600 shrink-0" />
-            <span>Certified <strong className="text-slate-900 font-black">Healthcare Licensed</strong></span>
+                key={img.url}
+                role="tab"
+                aria-selected={i === activeImageIndex}
+                aria-label={`Show image ${i + 1}`}
+                onClick={() => setActiveImageIndex(i)}
+                className={`h-1.5 rounded-full ${i === activeImageIndex ? "w-8 bg-[#2563EB]" : "w-3 bg-slate-300 hover:bg-slate-400"}`}
+              />
+            ))}
           </div>
         </div>
-
       </div>
 
-    </div>
+      {/* Facts strip, directly under the hero */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200/80 rounded-2xl overflow-hidden ring-1 ring-slate-200/80 mt-14">
+        {FACTS.map(({ icon: Icon, label, value }) => (
+          <div key={label} className="bg-white px-5 py-4 flex items-center gap-3.5">
+            <Icon className="w-5 h-5 text-[#2563EB] shrink-0" strokeWidth={1.75} />
+            <div className="min-w-0">
+              <div className="text-xs text-slate-500">{label}</div>
+              <div className="text-sm font-semibold text-[#0B2545] truncate">{value}</div>
+            </div>
+          </div>
+        ))}
+        <button
+          onClick={onOpenLocation}
+          className="group bg-white hover:bg-[#EFF6FF] px-5 py-4 flex items-center gap-3.5 text-left"
+        >
+          <MapPin className="w-5 h-5 text-[#2563EB] shrink-0" strokeWidth={1.75} />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-slate-500">Visit the counter</div>
+            <div className="text-sm font-semibold text-[#0B2545]">Main Street, City Center</div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-[#2563EB] group-hover:translate-x-0.5 transition-transform" />
+        </button>
+      </div>
+    </section>
   );
 }

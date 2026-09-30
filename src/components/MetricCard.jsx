@@ -1,6 +1,13 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
+const TONES = {
+  sky: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
+  emerald: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
+  amber: { icon: "text-[#B45309] bg-[#FFFBEB]", badge: "status-chip-amber" },
+  rose: { icon: "text-[#B91C1C] bg-[#FEF2F2]", badge: "status-chip-red" }
+};
+
 export default function MetricCard({
   title,
   value,
@@ -9,63 +16,48 @@ export default function MetricCard({
   trend,
   trendValue,
   badge,
-  colorScheme = "sky"
+  colorScheme = "sky",
+  onClick
 }) {
-  const isSky = colorScheme === "sky" || colorScheme === "emerald";
-  const isAmber = colorScheme === "amber";
-  const isRose = colorScheme === "rose";
+  const Wrapper = onClick ? "button" : "div";
+  const tone = TONES[colorScheme] || { icon: "text-[#64748B] bg-slate-100", badge: "status-chip-gray" };
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-300 relative overflow-hidden flex flex-col justify-between h-full min-h-[160px]">
+    <Wrapper
+      {...(onClick ? { type: "button", onClick } : {})}
+      className={`group bg-white p-4 sm:p-5 transition-colors duration-200 flex flex-col h-full min-h-[120px] sm:min-h-[136px] text-left w-full ${onClick ? "hover:bg-slate-50/80 focus-visible:relative focus-visible:z-10" : ""}`}
+    >
 
-      {/* Card Header (Title & Icon) */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <h4 className="text-xs font-bold text-[#64748B] leading-snug break-words">
+      <span className="flex items-center justify-between gap-2">
+        <span className="text-[13px] font-medium text-slate-500 leading-snug">
           {title}
-        </h4>
+        </span>
         {Icon && (
-          <div className={`p-2.5 rounded-xl shrink-0 ${
-            isSky ? "bg-[#EFF6FF] text-[#2563EB]" :
-            isAmber ? "bg-[#FFFBEB] text-[#B45309]" :
-            isRose ? "bg-[#FEF2F2] text-[#B91C1C]" :
-            "bg-slate-100 text-[#64748B]"
-          }`}>
-            <Icon className="w-5 h-5" />
-          </div>
+          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${tone.icon}`}>
+            <Icon className="w-3.5 h-3.5" strokeWidth={2} />
+          </span>
         )}
-      </div>
+      </span>
 
-      {/* Main Value & Trend Pill */}
-      <div className="flex flex-wrap items-baseline justify-between gap-2 my-2">
-        <div className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <span className="flex flex-wrap items-center gap-2.5 mt-3 sm:mt-4 mb-1">
+        <span className="text-2xl sm:text-[1.75rem] leading-none font-semibold tracking-tight text-[#0B2545] tabular-nums">
           {value}
-        </div>
+        </span>
 
         {trendValue ? (
-          <div className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${
-            trend === "up" ? "bg-[#ECFDF5] text-[#047857]" : "bg-[#FEF2F2] text-[#B91C1C]"
-          }`}>
-            {trend === "up" ? <ArrowUpRight className="w-4 h-4 mr-0.5" /> : <ArrowDownRight className="w-4 h-4 mr-0.5" />}
+          <span className={`status-chip ${trend === "up" ? "status-chip-green" : "status-chip-red"}`}>
+            {trend === "up" ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
             {trendValue}
-          </div>
-        ) : badge ? (
-          <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0 ${
-            isAmber ? "bg-[#FFFBEB] text-[#B45309]" :
-            isRose ? "bg-[#FEF2F2] text-[#B91C1C]" :
-            "bg-slate-100 text-[#64748B]"
-          }`}>
-            {badge}
           </span>
+        ) : badge ? (
+          <span className={`status-chip ${tone.badge}`}>{badge}</span>
         ) : null}
-      </div>
+      </span>
 
-      {/* Subtitle Footer */}
-      <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between mt-auto">
-        <p className="text-xs text-[#64748B] font-medium">
-          {subtitle}
-        </p>
-      </div>
-
-    </div>
+      <span className="text-xs text-slate-500 mt-auto pt-3 flex items-end justify-between gap-2">
+        <span className="line-clamp-2">{subtitle}</span>
+        {onClick && <ArrowUpRight className="w-4 h-4 shrink-0 text-slate-300 group-hover:text-[#2563EB] transition-colors" aria-hidden />}
+      </span>
+    </Wrapper>
   );
 }

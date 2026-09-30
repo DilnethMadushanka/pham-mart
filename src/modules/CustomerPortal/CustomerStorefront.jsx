@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  Pill, 
-  Upload, 
-  ShoppingCart, 
-  Search, 
-  ShieldCheck, 
-  Truck, 
-  Clock, 
-  CheckCircle2, 
-  FileText, 
-  Plus, 
-  Minus, 
-  X,
-  MapPin
+import { Phone as PhoneIcon } from 'lucide-react';
+import { openStatus, HOURS } from '../../lib/hours';
+import {
+  Pill,
+  Upload,
+  Clock
 } from 'lucide-react';
 import HeroBanner from './HeroBanner';
 import HowItWorksSection from './HowItWorksSection';
@@ -22,140 +14,90 @@ import PatientTestimonialsSection from './PatientTestimonialsSection';
 import LocationContactModal from './LocationContactModal';
 import CustomerRxUpload from './CustomerRxUpload';
 import MyOrders from './MyOrders';
+import StockChecker from './StockChecker';
 import GoogleFeedbackModal from '../../components/GoogleFeedbackModal';
 
 export default function CustomerStorefront({ 
   medicines, 
-  customers, 
   prescriptions, 
   setPrescriptions, 
   currentUser, 
-  onOpenAuth,
-  onSwitchToEnterprise,
+  onRequestSignIn,
   addAuditLog 
 }) {
   const [activePortalTab, setActivePortalTab] = useState("store"); // "store" | "upload_rx" | "my_orders"
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [cart, setCart] = useState([]);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isGoogleFeedbackOpen, setIsGoogleFeedbackOpen] = useState(false);
+  const footerStatus = openStatus();
 
-  // Filter products: Show Consumer/OTC items on Storefront
-  const consumerProducts = medicines.filter(m => m.isConsumerProduct || !m.prescriptionRequired);
-
-  const categories = Array.from(new Set(consumerProducts.map(m => m.category)));
-
-  const filteredProducts = consumerProducts.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.genericName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === "ALL" || m.category === selectedCategory;
-    return matchesSearch && matchesCat;
-  });
-
-  const addToCart = (product) => {
-    setCart(prev => {
-      const existing = prev.find(item => item.id === product.id);
-      if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
-      }
-      return [...prev, { ...product, qty: 1 }];
+  const openPortalTab = (tab) => {
+    setActivePortalTab(tab);
+    requestAnimationFrame(() => {
+      const el = document.getElementById("portal-nav");
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   };
 
-  const updateQty = (id, newQty) => {
-    if (newQty <= 0) {
-      setCart(prev => prev.filter(item => item.id !== id));
-      return;
-    }
-    setCart(prev => prev.map(item => item.id === id ? { ...item, qty: newQty } : item));
-  };
-
-  const subtotal = cart.reduce((acc, item) => acc + (item.unitPrice * item.qty), 0);
-  const deliveryFee = subtotal > 2000 ? 0 : 250;
-  const grandTotal = subtotal + deliveryFee;
-
-  const handleOnlineCheckout = (e) => {
-    e.preventDefault();
-    if (cart.length === 0) return;
-
-    alert(`Order placed successfully! Thank you for ordering from PHARMART Pharmacy Store.\n\nTotal: LKR ${grandTotal.toFixed(2)}\nDelivery to: ${currentUser?.address || 'Your Registered Address'}`);
-    
-    addAuditLog("Online Customer Purchase", `Customer ${currentUser?.name || 'Walk-in'} ordered consumer products LKR ${grandTotal.toFixed(2)}`, "info");
-    setCart([]);
-    setIsCheckoutOpen(false);
-  };
+  const portalTabs = [
+    { id: "store", label: "Wellness store", short: "Store", icon: Pill },
+    { id: "upload_rx", label: "Upload prescription", short: "Upload Rx", icon: Upload },
+    { id: "my_orders", label: "My orders", short: "My orders", icon: Clock }
+  ];
 
   return (
-    <div className="space-y-12 animate-fade-in pb-16">
-      
-      {/* Full-Screen Hero Banner (Matched to Reference Screenshot 1) */}
-      <HeroBanner 
-        onUploadRx={() => setActivePortalTab("upload_rx")}
-        onOpenAuth={onOpenAuth}
-        onShop={() => setActivePortalTab("store")}
-        onHowItWorks={() => {
-          const el = document.getElementById("how-it-works-section");
-          if (el) el.scrollIntoView({ behavior: 'smooth' });
+    <div className="animate-fade-in pb-24 sm:pb-8">
+
+      <HeroBanner
+        onUploadRx={() => openPortalTab("upload_rx")}
+        onCheckStock={() => {
+          setActivePortalTab("store");
+          requestAnimationFrame(() => {
+            const el = document.getElementById("stock-section");
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => el?.querySelector("input")?.focus({ preventScroll: true }), 500);
+          });
         }}
         onOpenLocation={() => setIsLocationOpen(true)}
         onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)}
       />
 
-      {/* Portal Secondary Navigation Bar */}
-      <div className="flex flex-wrap justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-xs gap-3">
-        
-        <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl text-xs font-bold">
-          <button
-            onClick={() => setActivePortalTab("store")}
-            className={`px-4 py-2 rounded-lg transition-all ${
-              activePortalTab === "store" ? "bg-white text-blue-800 shadow-xs" : "text-slate-600"
-            }`}
-          >
-            Wellness & Baby Care Store
-          </button>
-          <button
-            onClick={() => setActivePortalTab("upload_rx")}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-1.5 ${
-              activePortalTab === "upload_rx" ? "bg-blue-600 text-white shadow-xs" : "text-slate-600"
-            }`}
-          >
-            <Upload className="w-3.5 h-3.5" />
-            <span>Upload Doctor Prescription</span>
-          </button>
-          <button
-            onClick={() => setActivePortalTab("my_orders")}
-            className={`px-4 py-2 rounded-lg transition-all flex items-center space-x-1.5 ${
-              activePortalTab === "my_orders" ? "bg-white text-blue-800 shadow-xs" : "text-slate-600"
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>My Orders & Rx Status</span>
-          </button>
+      {/* Portal navigation: one segmented control for the three things a customer comes to do */}
+      <nav id="portal-nav" aria-label="Customer portal" className="scroll-mt-24 mt-16 sm:mt-24 mb-12 sm:mb-16 flex justify-center">
+        <div className="relative grid grid-cols-3 w-full sm:w-auto p-1 rounded-2xl bg-white ring-1 ring-slate-200/80 shadow-sm">
+          <span
+            aria-hidden
+            className="absolute top-1 bottom-1 left-1 rounded-xl bg-[#0B2545] shadow-md shadow-[#0B2545]/20 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ width: "calc((100% - 0.5rem) / 3)", transform: `translateX(${portalTabs.findIndex(t => t.id === activePortalTab) * 100}%)` }}
+          />
+          {portalTabs.map(({ id, label, short, icon: Icon }) => {
+            const isActive = activePortalTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => setActivePortalTab(id)}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={label}
+                className={`relative z-10 flex justify-center items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2.5 sm:py-3 rounded-xl text-[13px] sm:text-sm font-medium whitespace-nowrap transition-colors duration-300 ${
+                  isActive ? "text-white" : "text-slate-600 hover:text-[#0B2545]"
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-blue-300" : "text-slate-400"}`} />
+                <span className="sm:hidden">{short}</span>
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            );
+          })}
         </div>
-
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIsLocationOpen(true)}
-            className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl shadow-xs transition-colors"
-          >
-            <MapPin className="w-3.5 h-3.5 text-blue-600" />
-            <span>Where to find us?</span>
-          </button>
-        </div>
-
-      </div>
+      </nav>
 
       {/* DYNAMIC PORTAL VIEWS */}
       {activePortalTab === "upload_rx" && (
         <CustomerRxUpload 
-          customers={customers}
           medicines={medicines}
           currentUser={currentUser}
           setPrescriptions={setPrescriptions}
-          onSuccess={() => setActivePortalTab("my_orders")}
-          addAuditLog={addAuditLog}
+          onSuccess={() => setActivePortalTab(currentUser ? "my_orders" : "store")}
+          onRequestSignIn={onRequestSignIn}
         />
       )}
 
@@ -163,98 +105,100 @@ export default function CustomerStorefront({
         <MyOrders 
           prescriptions={prescriptions}
           currentUser={currentUser}
+          onRequestSignIn={onRequestSignIn}
         />
       )}
 
       {activePortalTab === "store" && (
-        <div className="space-y-12">
-          
-          {/* Pharmacy Services & Wide Selection Spotlight Section */}
-          <div id="assortment-section">
+        <div className="space-y-24 sm:space-y-32">
+          <div id="assortment-section" className="scroll-mt-24 reveal">
             <PharmacyServicesSection 
               onOpenLocation={() => setIsLocationOpen(true)}
             />
           </div>
 
-          {/* Patient Testimonials Section */}
-          <PatientTestimonialsSection />
-
-          {/* Location & Contact Section Anchor */}
-          <div id="location-section" className="pt-4">
-            <div id="contact-section"></div>
+          <div id="stock-section" className="scroll-mt-24 reveal">
+            <StockChecker medicines={medicines} onUploadRx={() => openPortalTab("upload_rx")} />
           </div>
 
-          {/* How It Works Section */}
-          <div id="how-it-works-section">
+          <div className="reveal">
+            <PatientTestimonialsSection onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)} />
+          </div>
+
+          <div id="how-it-works-section" className="scroll-mt-24 reveal">
             <HowItWorksSection 
-              onUploadRx={() => setActivePortalTab("upload_rx")}
-              onShop={() => setActivePortalTab("store")}
+              onUploadRx={() => openPortalTab("upload_rx")}
+              onShop={() => {
+                const el = document.getElementById("assortment-section");
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
             />
           </div>
 
-          {/* FAQs Accordion Section */}
-          <FaqAccordion />
-
-        </div>
-      )}
-
-      {/* Online Cart Checkout Modal */}
-      {isCheckoutOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-            
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h3 className="text-base font-bold text-slate-900 flex items-center">
-                <ShoppingCart className="w-5 h-5 mr-2 text-blue-600" />
-                Consumer Checkout Basket
-              </h3>
-              <button onClick={() => setIsCheckoutOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="max-h-60 overflow-y-auto space-y-2 text-xs">
-              {cart.length === 0 ? (
-                <p className="text-slate-400 text-center py-6">Your cart is empty.</p>
-              ) : (
-                cart.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <div>
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-[11px] text-blue-700 font-semibold">Rs. {item.unitPrice.toFixed(2)} × {item.qty}</div>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <button onClick={() => updateQty(item.id, item.qty - 1)} className="px-2 py-0.5 bg-slate-200 rounded font-bold">-</button>
-                      <span className="font-bold px-2">{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, item.qty + 1)} className="px-2 py-0.5 bg-blue-600 text-white rounded font-bold">+</button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <form onSubmit={handleOnlineCheckout} className="space-y-3 pt-2 border-t border-slate-200 text-xs">
-                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                  <div className="flex justify-between"><span>Subtotal:</span><span>Rs. {subtotal.toFixed(2)}</span></div>
-                  <div className="flex justify-between text-slate-600"><span>Home Delivery Fee:</span><span>{deliveryFee === 0 ? "FREE" : `Rs. ${deliveryFee}`}</span></div>
-                  <div className="flex justify-between font-black text-slate-900 text-sm pt-1 border-t border-slate-200">
-                    <span>Total Amount:</span><span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-md text-xs"
-                >
-                  Confirm & Place Delivery Order
-                </button>
-              </form>
-            )}
-
+          <div className="reveal">
+            <FaqAccordion />
           </div>
         </div>
       )}
+
+      {/* Contact footer */}
+      <footer id="location-section" className="scroll-mt-24 mt-24 sm:mt-32 pt-12 border-t border-slate-200">
+        <div id="contact-section" className="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-10">
+          <div className="col-span-2 md:col-span-4 space-y-4">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center text-white relative" aria-hidden>
+                <span className="absolute w-3.5 h-1 bg-white rounded-full"></span>
+                <span className="absolute h-3.5 w-1 bg-white rounded-full"></span>
+              </span>
+              <span className="text-base font-semibold tracking-tight text-[#0B2545]">PHARMART Pharmacy</span>
+            </div>
+            <p className="text-sm text-slate-500 max-w-[38ch]">
+              Licensed community pharmacy. Prescriptions reviewed by registered pharmacists.
+            </p>
+            <p className={`inline-flex items-center gap-2 text-sm font-medium ${footerStatus.open ? "text-emerald-700" : "text-slate-600"}`}>
+              <span aria-hidden className={`w-2 h-2 rounded-full ${footerStatus.open ? "bg-[#10B981]" : "bg-slate-400"}`}></span>
+              {footerStatus.text}
+            </p>
+          </div>
+
+          <div className="md:col-span-2 space-y-3 text-sm">
+            <h3 className="font-semibold text-[#0B2545]">Pharmacy</h3>
+            <ul className="space-y-2 text-slate-600">
+              <li><button onClick={() => openPortalTab("upload_rx")} className="hover:text-[#2563EB]">Upload prescription</button></li>
+              <li><button onClick={() => { setActivePortalTab("store"); requestAnimationFrame(() => document.getElementById("stock-section")?.scrollIntoView({ behavior: "smooth" })); }} className="hover:text-[#2563EB]">Check stock</button></li>
+              <li><button onClick={() => openPortalTab("my_orders")} className="hover:text-[#2563EB]">My orders</button></li>
+            </ul>
+          </div>
+
+          <div className="md:col-span-3 space-y-3 text-sm">
+            <h3 className="font-semibold text-[#0B2545]">Visit</h3>
+            <button onClick={() => setIsLocationOpen(true)} className="block text-left text-slate-600 hover:text-[#2563EB]">
+              Main Street Healthcare Hub, City Center
+            </button>
+            <p className="text-slate-600">{HOURS.weekday.label}<br />{HOURS.weekend.label}</p>
+          </div>
+
+          <div className="col-span-2 md:col-span-3 space-y-3 text-sm">
+            <h3 className="font-semibold text-[#0B2545]">Call the pharmacist</h3>
+            <a href="tel:055-222-8292" className="block text-2xl font-semibold tracking-tight text-[#0B2545] hover:text-[#2563EB] tabular-nums">055-222-8292</a>
+            <p className="text-slate-500">Questions about dosage, stock or an order.</p>
+          </div>
+        </div>
+        <div className="mt-12 pt-6 border-t border-slate-200 flex flex-wrap justify-between gap-3 text-xs text-slate-400">
+          <span>&copy; {new Date().getFullYear()} PHARMART Pharmacy</span>
+          <span>Prescription medicines are dispensed only against a valid prescription.</span>
+        </div>
+      </footer>
+
+      {/* Phones: the two things people come for stay one tap away */}
+      <div className="sm:hidden fixed bottom-0 inset-x-0 z-30 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white/90 backdrop-blur-xl border-t border-slate-200/80 flex gap-2">
+        <a href="tel:055-222-8292" aria-label="Call the pharmacist" className="w-12 h-12 shrink-0 rounded-xl ring-1 ring-slate-200 bg-white flex items-center justify-center text-[#0B2545]">
+          <PhoneIcon className="w-5 h-5" />
+        </a>
+        <button onClick={() => openPortalTab("upload_rx")} className="flex-1 h-12 rounded-xl bg-[#2563EB] text-white text-sm font-semibold shadow-md shadow-[#2563EB]/25 flex items-center justify-center gap-2">
+          <Upload className="w-4 h-4" /> Upload prescription
+        </button>
+      </div>
 
       {/* Location & Contact Modal */}
       <LocationContactModal 

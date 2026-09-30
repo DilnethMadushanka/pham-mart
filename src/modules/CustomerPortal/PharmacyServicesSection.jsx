@@ -1,133 +1,103 @@
 import React from 'react';
-import { Pill, Sparkles, FlaskConical, Check, MapPin } from 'lucide-react';
+import { Pill, Sparkles, FlaskConical, Check, MapPin, ArrowRight } from 'lucide-react';
+
+const RANGE = [
+  "Homeopathic medicine",
+  "Allergy medication",
+  "Glucometers",
+  "Food supplements",
+  "Dental hygiene",
+  "Children's health",
+  "Blood pressure monitors",
+  "First aid",
+  "Baby care",
+  "Vitamins"
+];
 
 export default function PharmacyServicesSection({ onOpenLocation }) {
-  const serviceCards = [
-    {
-      title: "Wide portfolio of prescription drugs",
-      desc: "We offer a wide selection of prescription and over-the-counter medications, homeopathic products, dental hygiene supplies, natural remedies, and specialized children's products.",
-      icon: Pill
-    },
-    {
-      title: "Large selection of dermocosmetics",
-      desc: "Specialized skincare advice and dermatological formulations for atopic skin, acne, psoriasis, body care, and hair care from top dermatologist-recommended brands.",
-      icon: Sparkles
-    },
-    {
-      title: "Individual preparation of medicines",
-      desc: "Custom laboratory-manufactured pharmaceuticals, tailored liquid doses, special ointments, and custom capsules prepared precisely by our licensed pharmacists.",
-      icon: FlaskConical
-    }
-  ];
-
   return (
-    <section className="space-y-12 py-6">
-      
-      {/* 3-Column Features / Services Section */}
-      <div className="space-y-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
-          <span className="px-3.5 py-1 bg-blue-100 text-[#2563EB] text-xs font-extrabold rounded-full border border-blue-200 inline-block uppercase tracking-wider">
-            Healthcare Services
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-slate-900">
-            PHARMART Pharmacy<span className="text-[#2563EB]">.</span>
-          </h2>
-          <p className="text-sm text-slate-500 font-medium">
-            Providing reliable pharmaceutical care, expert consultation, and custom formulations for your total wellbeing.
-          </p>
-        </div>
+    <section aria-labelledby="services-title" className="space-y-10">
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {serviceCards.map((card, idx) => {
-            const Icon = card.icon;
-            return (
-              <div 
-                key={idx} 
-                className="bg-white p-7 rounded-2xl border border-slate-200 shadow-xs hover:shadow-lg hover:border-blue-300 transition-all space-y-4 flex flex-col justify-between"
-              >
-                <div className="space-y-4">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#2563EB] flex items-center justify-center border border-blue-200 shadow-xs">
-                    <Icon className="w-7 h-7" />
-                  </div>
-                  <h3 className="font-extrabold text-slate-900 text-lg leading-snug">
-                    {card.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                    {card.desc}
-                  </p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      <div className="max-w-2xl space-y-3">
+        <h2 id="services-title" className="text-3xl sm:text-4xl font-semibold text-[#0B2545]">
+          What we stock and prepare
+        </h2>
+        <p className="text-base text-slate-600 leading-relaxed max-w-[60ch]">
+          Prescription and over-the-counter medicine, skincare advice, and medicines made up to order by our pharmacists.
+        </p>
       </div>
 
-      {/* Wide Selection Feature Section (2-Column Grid) */}
-      <div className="bg-white rounded-2xl p-6 sm:p-10 border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
-        
-        {/* Left Column: Image of Female Pharmacist */}
-        <div className="md:col-span-5 h-80 sm:h-96 rounded-2xl overflow-hidden shadow-md border border-slate-200 relative group">
-          <img 
-            src="/images/female_pharmacist.png" 
-            alt="Female Pharmacist" 
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 lg:auto-rows-[minmax(200px,auto)]">
+
+        {/* Image tile */}
+        <figure className="md:col-span-2 lg:col-span-5 lg:row-span-2 relative rounded-3xl overflow-hidden bg-slate-200 min-h-[320px] group">
+          <img
+            src="/images/female_pharmacist.png"
+            alt="PHARMART pharmacist holding a box of medicine in front of the dispensary shelves"
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 to-transparent"></div>
-          <div className="absolute bottom-4 left-4 right-4 bg-white/90 backdrop-blur-md p-3.5 rounded-xl border border-white/40 shadow-sm text-xs font-bold text-slate-900">
-            Certified Pharmacist Care & Consultation
-          </div>
-        </div>
+        </figure>
 
-        {/* Right Column: Text Content & Bullet List */}
-        <div className="md:col-span-7 space-y-5">
+        {/* Prescription drugs: wide tinted tile */}
+        <article className="md:col-span-2 lg:col-span-7 rounded-3xl bg-[#EFF6FF] p-7 sm:p-9 flex flex-col justify-between gap-8">
+          <Pill className="w-7 h-7 text-[#2563EB]" strokeWidth={1.75} />
+          <div className="space-y-2 max-w-lg">
+            <h3 className="text-xl sm:text-2xl font-semibold text-[#0B2545]">Prescription and everyday medicine</h3>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+              Prescription and over-the-counter medication, homeopathic products, natural remedies and children's products.
+            </p>
+          </div>
+        </article>
+
+        {/* Dermocosmetics: white tile */}
+        <article className="lg:col-span-3 rounded-3xl bg-white ring-1 ring-slate-200/80 p-7 flex flex-col justify-between gap-8">
+          <Sparkles className="w-6 h-6 text-[#2563EB]" strokeWidth={1.75} />
           <div className="space-y-2">
-            <span className="text-xs font-extrabold text-[#2563EB] tracking-wider uppercase">Comprehensive Inventory</span>
-            <h3 className="text-3xl font-black text-slate-900">Wide Selection</h3>
+            <h3 className="text-lg font-semibold text-[#0B2545]">Dermocosmetics</h3>
+            <p className="text-sm text-slate-600 leading-relaxed">
+              Skincare advice for atopic skin, acne, psoriasis, body and hair care.
+            </p>
           </div>
+        </article>
 
-          <p className="text-sm text-slate-600 leading-relaxed font-medium">
-            We pride ourselves on providing a wide range of pharmaceutical products, certified health supplies, and food supplements. Our primary commitment is customer health and complete satisfaction across the wider area.
-          </p>
-
-          {/* Bullet List with Checkmarks */}
-          <div className="space-y-3 pt-1">
-            <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-blue-100 text-[#2563EB] flex items-center justify-center shrink-0">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-              <span>Homeopathic medicine</span>
-            </div>
-
-            <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-blue-100 text-[#2563EB] flex items-center justify-center shrink-0">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-              <span>Allergy medication</span>
-            </div>
-
-            <div className="flex items-center space-x-3 text-sm font-bold text-slate-800">
-              <div className="w-6 h-6 rounded-full bg-blue-100 text-[#2563EB] flex items-center justify-center shrink-0">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </div>
-              <span>Glucometers</span>
-            </div>
+        {/* Compounding: navy tile */}
+        <article className="group lg:col-span-4 rounded-3xl bg-[#0B2545] text-white p-7 flex flex-col justify-between gap-8 relative overflow-hidden">
+          <div aria-hidden className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-[#2563EB]/30 blur-3xl transition-transform duration-700 group-hover:scale-125" />
+          <FlaskConical className="w-6 h-6 text-blue-300 relative" strokeWidth={1.75} />
+          <div className="space-y-2 relative">
+            <h3 className="text-lg font-semibold">Made to order</h3>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Liquid doses, ointments and capsules prepared by our licensed pharmacists.
+            </p>
           </div>
-
-          {/* CTA Button */}
-          <div className="pt-3">
-            <button
-              onClick={onOpenLocation}
-              className="px-7 py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs sm:text-sm rounded-full shadow-md hover:shadow-lg flex items-center space-x-2 transition-all transform hover:-translate-y-0.5"
-            >
-              <MapPin className="w-4 h-4" />
-              <span>Where to find us?</span>
-            </button>
-          </div>
-
-        </div>
-
+        </article>
       </div>
 
+      {/* Range: one slow marquee, because the point is breadth, not any single item */}
+      <div className="flex flex-col md:flex-row md:items-center gap-5 md:gap-8 pt-2">
+        <div className="shrink-0 space-y-1">
+          <h3 className="text-lg font-semibold text-[#0B2545]">Also on the shelf</h3>
+          <button
+            onClick={onOpenLocation}
+            className="group inline-flex items-center gap-1.5 text-sm font-medium text-[#2563EB] hover:text-[#1D4ED8]"
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Where to find us</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+          </button>
+        </div>
+        <div className="marquee relative flex-1 min-w-0 overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]">
+          <ul className="marquee-track flex w-max gap-3">
+            {[...RANGE, ...RANGE].map((item, i) => (
+              <li key={i} aria-hidden={i >= RANGE.length} className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white ring-1 ring-slate-200/80 text-sm font-medium text-slate-700 whitespace-nowrap">
+                <Check className="w-3.5 h-3.5 text-[#2563EB]" strokeWidth={2.5} />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </section>
   );
 }

@@ -1,23 +1,33 @@
-import React, { useState } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Filter, 
-  AlertTriangle, 
-  Clock, 
-  ShieldAlert, 
-  Edit, 
-  Trash2, 
-  Truck, 
-  CheckCircle,
-  FileCheck,
-  Building
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Package,
+  Plus,
+  Search,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+  Edit,
+  Trash2,
+  Truck,
+  Building,
+  TrendingDown,
+  ArrowRight,
+  Layers,
+  CalendarX,
+  ScanBarcode
 } from 'lucide-react';
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
-import { createMedicine, updateMedicine, deleteMedicine } from '../../services/supabaseService';
+import ReorderSuggestions from './ReorderSuggestions';
+import ExpiryTracking from './ExpiryTracking';
+import BatchesModal from './BatchesModal';
+import { expiryAlerts, expiryStatus, EXPIRY_LABEL } from '../../lib/expiry';
+import { buildReorderSuggestions } from '../../lib/reorder';
+import { saveMedicine, deleteMedicine, loadData } from '../../services/supabaseService';
+import { confirmDialog, notifyError } from '../../lib/notify';
+import PageHeader from '../../components/PageHeader';
+import MetricCard from '../../components/MetricCard';
 
 export default function MedicineList({ 
   medicines, 
@@ -26,12 +36,37 @@ export default function MedicineList({
   setPurchaseOrders,
   suppliers,
   setSuppliers,
-  onAddSupplier,
-  onUpdateSupplier,
+  onSaveSupplier,
   onDeleteSupplier,
+  batches = [],
+  setBatches,
+  stockMovements = [],
+  setStockMovements,
+  canApproveOrders = false,
+  transactions = [],
+  focusSection = null,
+  onFocusHandled,
+  canEdit = false,
   addAuditLog 
 }) {
-  const [activeSubTab, setActiveSubTab] = useState("catalogue"); // "catalogue" | "purchase_orders" | "suppliers"
+  const [selectedSubTab, setActiveSubTab] = useState("catalogue");
+
+  // Another screen (for example the notifications) can open a section directly.
+  useEffect(() => {
+    if (!focusSection) return;
+    setActiveSubTab(focusSection);
+    onFocusHandled?.();
+  }, [focusSection, onFocusHandled]);
+
+  const reorderSuggestions = useMemo(
+    () => buildReorderSuggestions({ medicines, transactions, purchaseOrders, suppliers }),
+    [medicines, transactions, purchaseOrders, suppliers]
+  );
+  const toReorder = reorderSuggestions.filter(s => s.openOrders.length === 0).length;
+  // Read-only roles only see the catalogue; procurement screens need edit rights.
+  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "expiry" | "purchase_orders" | "suppliers"
+  const alerts = useMemo(() => expiryAlerts(batches, medicines), [batches, medicines]);
+  const [batchesFor, setBatchesFor] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -39,138 +74,200 @@ export default function MedicineList({
   const [isAddMedicineOpen, setIsAddMedicineOpen] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
 
-  // Filter catalogue
+  // Filter catalogue. Search covers name, generic name, code, barcode and every batch number.
+  const warnedIds = new Set(alerts.map(a => a.medicineId));
+  const term = searchTerm.trim().toLowerCase();
+  const compactTerm = term.replace(/\s/g, "");
   const filteredMedicines = medicines.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          m.genericName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.batchNo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !term ||
+      m.name.toLowerCase().includes(term) ||
+      (m.genericName || "").toLowerCase().includes(term) ||
+      (m.code || "").toLowerCase().includes(term) ||
+      (compactTerm && (m.barcode || "").toLowerCase().includes(compactTerm)) ||
+      (m.batchNo || "").toLowerCase().includes(term) ||
+      batches.some(b => b.medicineId === m.id && b.batchNo.toLowerCase().includes(term));
     const matchesCategory = categoryFilter === "ALL" || m.category === categoryFilter;
-    
+
     let matchesStatus = true;
-    const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
     if (statusFilter === "LOW_STOCK") matchesStatus = m.stock <= m.reorderLevel;
+    if (statusFilter === "OUT") matchesStatus = (m.sellableStock ?? m.stock) <= 0;
     if (statusFilter === "CONTROLLED") matchesStatus = m.controlledDrug;
-    if (statusFilter === "EXPIRED") matchesStatus = m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow;
+    if (statusFilter === "EXPIRED") matchesStatus = (m.expiredStock || 0) > 0;
+    if (statusFilter === "NEAR_EXPIRY") matchesStatus = warnedIds.has(m.id);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
+  // A barcode scanner types the code and presses Enter: open that medicine's batches.
+  const handleSearchKey = (e) => {
+    if (e.key !== "Enter" || !compactTerm) return;
+    const exact = medicines.find(m => (m.barcode || "").toLowerCase() === compactTerm || (m.code || "").toLowerCase() === compactTerm);
+    if (exact) setBatchesFor(exact);
+  };
+
   const categories = Array.from(new Set(medicines.map(m => m.category)));
 
+  // Returns true when saved, so the form stays open (with the user's input) on failure.
   const handleSaveMedicine = async (medData) => {
+    if (!canEdit) return false;
+    const payload = editingMedicine ? { ...medData, stockBefore: editingMedicine.stock } : medData;
+    const { data, error } = await saveMedicine(payload);
+    if (error) {
+      notifyError(error, "Medicine not saved");
+      return false;
+    }
     if (editingMedicine) {
-      setMedicines(prev => prev.map(m => m.id === medData.id ? medData : m));
-      const { data, error } = await updateMedicine(medData.id, medData);
-      if (error) {
-        console.error("Error updating medicine in DB:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setMedicines(prev => prev.map(m => m.id === medData.id ? { ...m, ...saved } : m));
-      }
-      addAuditLog("Medicine Updated", `Updated record for ${medData.name} (${medData.code})`, "info");
+      setMedicines(prev => prev.map(m => m.id === data.id ? data : m));
+      addAuditLog("Medicine Updated", `Updated record for ${data.name} (${data.code})`, "info");
     } else {
-      const newMed = {
-        ...medData,
-        id: `MED-${Math.floor(200 + Math.random() * 800)}`,
-        code: medData.code || `MED-${(medData.name || 'DRG').substring(0,3).toUpperCase()}${Math.floor(100 + Math.random()*800)}`
-      };
-      setMedicines(prev => [newMed, ...prev]);
-      const { data, error } = await createMedicine(newMed);
-      if (error) {
-        console.error("Error creating medicine in DB:", error);
-      } else if (data && data.length > 0) {
-        const saved = data[0];
-        setMedicines(prev => prev.map(m => m.id === newMed.id ? { ...m, id: saved.id || m.id } : m));
-      }
-      addAuditLog("New Medicine Added", `Added ${newMed.name} to catalogue`, "success");
+      setMedicines(prev => [data, ...prev]);
+      addAuditLog("New Medicine Added", `Added ${data.name} (${data.code}) to catalogue`, "success");
     }
     setIsAddMedicineOpen(false);
     setEditingMedicine(null);
+    // Opening stock and stock corrections are booked into batches on the server.
+    const fresh = await loadData(['medicine_batches', 'stock_movements']);
+    if (fresh.data) {
+      setBatches?.(fresh.data.medicine_batches || []);
+      setStockMovements?.(fresh.data.stock_movements || []);
+    }
+    return true;
   };
 
-  const handleDeleteMedicine = async (id, name, code) => {
-    if (window.confirm(`Are you sure you want to discontinue ${name}?`)) {
-      setMedicines(prev => prev.filter(m => 
-        String(m.id).toLowerCase() !== String(id).toLowerCase() && 
-        (!code || String(m.code).toLowerCase() !== String(code).toLowerCase()) &&
-        (!name || String(m.name).toLowerCase() !== String(name).toLowerCase())
-      ));
-      await deleteMedicine(id, code, name);
-      addAuditLog("Medicine Discontinued", `Discontinued medication record: ${name}`, "warning");
+  const handleDeleteMedicine = async (med) => {
+    if (!canEdit) return;
+    const confirmed = await confirmDialog({
+      title: `Discontinue ${med.name}?`,
+      message: `This removes ${med.name} (${med.code}) from the catalogue. Past sales keep their records.`,
+      confirmLabel: "Discontinue",
+      tone: "danger"
+    });
+    if (!confirmed) return;
+    const { error } = await deleteMedicine(med.id);
+    if (error) {
+      notifyError(error, "Medicine not removed");
+      return;
     }
+    setMedicines(prev => prev.filter(m => m.id !== med.id));
+    addAuditLog("Medicine Discontinued", `Discontinued medication record: ${med.name} (${med.code})`, "warning");
   };
 
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
-  const ninetyDaysThreshold = new Date(Date.now() + 90 * 86400000);
-  const expiredCount = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysThreshold).length;
+  const expiredCount = alerts.length;
+  const batchSetters = { setMedicines, setBatches, setStockMovements };
 
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Top Header */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 mb-1">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
-              Inventory Management
-            </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            Medicine Catalogue & Inventory Management
-          </h2>
-          <p className="text-xs text-slate-500 mt-1 font-medium">
-            Real-time stock level monitoring, batch tracking, expiry date alerts, and purchase order workflow.
-          </p>
-        </div>
+      <PageHeader
+        kicker="Inventory"
+        title="Medicines and stock"
+        description="Stock levels, batches, expiry alerts and purchase orders in one place."
+      />
 
-        {/* Sub-tab buttons */}
-        <div className="flex items-center space-x-2 bg-slate-100 p-1.5 rounded-2xl shrink-0">
+      {canEdit && (
+      <nav aria-label="Inventory sections" className="flex items-center gap-6 border-b border-slate-200 overflow-x-auto">
           <button
             onClick={() => setActiveSubTab("catalogue")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            aria-current={activeSubTab === "catalogue" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "catalogue"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
-            Medicine Catalogue ({medicines.length})
+            <Package className="w-4 h-4" />
+            <span>Catalogue</span>
+            <span className="text-xs font-mono text-slate-400">{medicines.length}</span>
           </button>
-
+          <button
+            onClick={() => setActiveSubTab("reorder")}
+            aria-current={activeSubTab === "reorder" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              activeSubTab === "reorder"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            <TrendingDown className="w-4 h-4" />
+            <span>Reorder suggestions</span>
+            {toReorder > 0 ? (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-semibold font-mono flex items-center justify-center">{toReorder}</span>
+            ) : (
+              <span className="text-xs font-mono text-slate-400">0</span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveSubTab("expiry")}
+            aria-current={activeSubTab === "expiry" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              activeSubTab === "expiry"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            <CalendarX className="w-4 h-4" />
+            <span>Expiry tracking</span>
+            {alerts.length > 0 ? (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-semibold font-mono flex items-center justify-center">{alerts.length}</span>
+            ) : (
+              <span className="text-xs font-mono text-slate-400">0</span>
+            )}
+          </button>
           <button
             onClick={() => setActiveSubTab("purchase_orders")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+            aria-current={activeSubTab === "purchase_orders" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "purchase_orders"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
             <Truck className="w-4 h-4" />
-            <span>Purchase Orders ({purchaseOrders.length})</span>
+            <span>Purchase orders</span>
+            <span className="text-xs font-mono text-slate-400">{purchaseOrders.length}</span>
           </button>
-
           <button
             onClick={() => setActiveSubTab("suppliers")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+            aria-current={activeSubTab === "suppliers" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
               activeSubTab === "suppliers"
-                ? "bg-white text-blue-800 shadow-xs"
-                : "text-slate-600 hover:text-slate-900"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
             }`}
           >
             <Building className="w-4 h-4" />
-            <span>Suppliers ({suppliers.length})</span>
+            <span>Suppliers</span>
+            <span className="text-xs font-mono text-slate-400">{suppliers.length}</span>
           </button>
-        </div>
-      </div>
+      </nav>
+      )}
 
-      {activeSubTab === "suppliers" ? (
+      {activeSubTab === "expiry" ? (
+        <ExpiryTracking
+          medicines={medicines}
+          batches={batches}
+          canEdit={canEdit}
+          onOpenBatches={setBatchesFor}
+          {...batchSetters}
+        />
+      ) : activeSubTab === "reorder" ? (
+        <ReorderSuggestions
+          medicines={medicines}
+          transactions={transactions}
+          purchaseOrders={purchaseOrders}
+          setPurchaseOrders={setPurchaseOrders}
+          suppliers={suppliers}
+          addAuditLog={addAuditLog}
+          onViewOrders={() => setActiveSubTab("purchase_orders")}
+        />
+      ) : activeSubTab === "suppliers" ? (
         <SupplierList
           suppliers={suppliers}
           setSuppliers={setSuppliers}
           medicines={medicines}
           purchaseOrders={purchaseOrders}
-          onAddSupplier={onAddSupplier}
-          onUpdateSupplier={onUpdateSupplier}
+          onSaveSupplier={onSaveSupplier}
           onDeleteSupplier={onDeleteSupplier}
           addAuditLog={addAuditLog}
         />
@@ -180,66 +277,71 @@ export default function MedicineList({
           setPurchaseOrders={setPurchaseOrders}
           medicines={medicines}
           setMedicines={setMedicines}
+          setBatches={setBatches}
+          setStockMovements={setStockMovements}
           suppliers={suppliers}
-          addAuditLog={addAuditLog}
+          transactions={transactions}
+          canApprove={canApproveOrders}
         />
       ) : (
         <>
-          {/* Summary Stat Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Catalogue Items</span>
-              <div className="text-3xl font-black text-slate-900 mt-1">{medicines.length}</div>
-              <span className="text-xs text-blue-700 font-extrabold mt-1 block">100% Digital Tracking</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-amber-200/90 bg-amber-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-amber-800 font-bold uppercase tracking-wider flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-1 text-amber-600" />
-                Low Stock Threshold
-              </span>
-              <div className="text-3xl font-black text-amber-700 mt-1">{lowStockCount}</div>
-              <span className="text-xs text-amber-800 font-bold mt-1 block">Reorder recommended</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-rose-200/90 bg-rose-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-rose-800 font-bold uppercase tracking-wider flex items-center">
-                <Clock className="w-4 h-4 mr-1 text-rose-600" />
-                Expiring Medicine Risk
-              </span>
-              <div className="text-3xl font-black text-rose-700 mt-1">{expiredCount}</div>
-              <span className="text-xs text-rose-800 font-bold mt-1 block">Flagged for inspection</span>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-blue-200/90 bg-blue-50/20 shadow-xs hover:shadow-md transition-all">
-              <span className="text-xs text-blue-800 font-bold uppercase tracking-wider">Controlled Drugs</span>
-              <div className="text-3xl font-black text-blue-800 mt-1">
-                {medicines.filter(m => m.controlledDrug).length}
+          {toReorder > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200">
+              <div className="flex items-start gap-3">
+                <TrendingDown className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-amber-900">
+                    {toReorder === 1 ? "1 medicine needs reordering" : `${toReorder} medicines need reordering`}
+                  </p>
+                  <p className="text-xs text-amber-800">
+                    {reorderSuggestions.filter(s => s.openOrders.length === 0).slice(0, 3).map(s => s.medicine.name).join(", ")}
+                    {toReorder > 3 ? ` and ${toReorder - 3} more` : ""}
+                    {canEdit ? "" : ". Let a pharmacist or the owner know."}
+                  </p>
+                </div>
               </div>
-              <span className="text-xs text-blue-700 font-bold mt-1 block">Strict Verification</span>
+              {canEdit && (
+                <button
+                  onClick={() => setActiveSubTab("reorder")}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-amber-300 text-amber-900 rounded-xl text-sm font-medium hover:bg-amber-100 shrink-0"
+                >
+                  View suggestions <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
+          )}
+
+          {/* Summary Stat Cards */}
+          <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
+            <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />
+            <MetricCard title="Low stock" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} badge="Reorder" colorScheme="amber" />
+            <MetricCard title="Batches expiring or expired" value={expiredCount} subtitle="Within the next 90 days" icon={Clock} badge="Inspect" colorScheme="rose" />
+            <MetricCard title="Controlled drugs" value={medicines.filter(m => m.controlledDrug).length} subtitle="Pharmacist sign-off required" icon={ShieldCheck} />
           </div>
 
           {/* Controls & Search */}
-          <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             
             <div className="relative w-full md:w-96">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-              <input 
-                type="text"
-                placeholder="Search medicine name, code or batch..."
+              <input
+                type="search"
+                aria-label="Search medicines"
+                placeholder="Search name, barcode or batch, or scan a barcode"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                onKeyDown={handleSearchKey}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               />
             </div>
 
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               
               <select
+                aria-label="Filter by category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Categories</option>
                 {categories.map(c => (
@@ -248,23 +350,28 @@ export default function MedicineList({
               </select>
 
               <select
+                aria-label="Filter by stock status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-hidden transition-all"
+                className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
-                <option value="LOW_STOCK">Low Stock Only</option>
-                <option value="CONTROLLED">Controlled Drugs Only</option>
-                <option value="EXPIRED">Near Expiry Only</option>
+                <option value="LOW_STOCK">Needs reordering</option>
+                <option value="OUT">Out of stock</option>
+                <option value="NEAR_EXPIRY">Expiring within 90 days</option>
+                <option value="EXPIRED">Has expired stock</option>
+                <option value="CONTROLLED">Controlled drugs</option>
               </select>
 
+              {canEdit && (
               <button
                 onClick={() => { setEditingMedicine(null); setIsAddMedicineOpen(true); }}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs rounded-2xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-sm rounded-xl shadow-md shadow-blue-500/20 cursor-pointer transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add Medicine</span>
               </button>
+              )}
 
             </div>
 
@@ -273,8 +380,8 @@ export default function MedicineList({
           {/* Medicines Grid Table */}
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-wider font-bold">
+              <table className="w-full text-left text-xs block md:table">
+                <thead className="hidden md:table-header-group bg-slate-50 border-b border-slate-200 text-slate-500 text-[11px] font-medium">
                   <tr>
                     <th className="py-3.5 px-4">Medicine & Generic Info</th>
                     <th className="py-3.5 px-4">Category</th>
@@ -285,17 +392,18 @@ export default function MedicineList({
                     <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="block md:table-row-group divide-y divide-slate-100">
                   {filteredMedicines.map((med) => {
                     const isLowStock = med.stock <= med.reorderLevel;
-                    const isNearExpiry = med.expiryDate && new Date(med.expiryDate) <= ninetyDaysThreshold;
+                    const status = med.stock > 0 ? expiryStatus(med.expiryDate) : "ok";
+                    const isNearExpiry = status !== "ok";
 
                     return (
-                      <tr key={med.id} className="hover:bg-slate-50/80 transition-colors">
+                      <tr key={med.id} className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-4 md:table-row md:p-0 hover:bg-slate-50/80 transition-colors">
                         
                         {/* Name & Generic */}
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-slate-900 flex items-center space-x-2">
+                        <td className="col-span-2 md:py-3.5 md:px-4">
+                          <div className="font-bold text-slate-900 flex flex-wrap items-center gap-x-2 gap-y-1">
                             <span>{med.name}</span>
                             {med.controlledDrug && (
                               <span className="px-1.5 py-0.5 rounded-md text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
@@ -308,22 +416,27 @@ export default function MedicineList({
                               </span>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
-                            {med.genericName} • {med.code}
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            {med.genericName} <span className="font-mono text-slate-400">{med.code}</span>
+                            {med.barcode && (
+                              <span className="inline-flex items-center gap-1 ml-2 font-mono text-slate-400">
+                                <ScanBarcode className="w-3 h-3" />{med.barcode}
+                              </span>
+                            )}
                           </div>
                         </td>
 
                         {/* Category */}
-                        <td className="py-3.5 px-4">
-                          <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-700">
+                        <td className="md:py-3.5 md:px-4">
+                          <span className="px-2 py-1 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 whitespace-nowrap">
                             {med.category}
                           </span>
                         </td>
 
                         {/* Stock Level */}
-                        <td className="py-3.5 px-4">
+                        <td className="justify-self-end md:justify-self-auto md:py-3.5 md:px-4">
                           <div className="flex items-center space-x-2">
-                            <span className={`font-black text-sm ${isLowStock ? "text-rose-600" : "text-blue-700"}`}>
+                            <span className={`font-medium text-sm whitespace-nowrap tabular-nums ${isLowStock ? "text-rose-600" : "text-slate-900"}`}>
                               {med.stock} units
                             </span>
                             {isLowStock && (
@@ -332,30 +445,52 @@ export default function MedicineList({
                               </span>
                             )}
                           </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5 text-right md:text-left">
+                            {med.batchCount > 0 ? `${med.batchCount} batch${med.batchCount === 1 ? "" : "es"}` : "No batches"}
+                            {med.expiredStock > 0 && <span className="text-rose-600 font-semibold"> · {med.expiredStock} expired</span>}
+                          </div>
                         </td>
 
                         {/* Price */}
-                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <td className="self-center md:py-3.5 md:px-4 font-medium text-slate-900 whitespace-nowrap tabular-nums">
                           Rs. {(Number(med.unitPrice || med.unit_price || 0)).toFixed(2)}
                         </td>
 
                         {/* Batch & Expiry */}
-                        <td className="py-3.5 px-4">
-                          <div className="text-slate-800 font-mono font-semibold">{med.batchNo}</div>
-                          <div className={`text-[11px] flex items-center ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
-                            <Clock className="w-3 h-3 mr-1" />
-                            Exp: {med.expiryDate}
-                          </div>
+                        <td className="justify-self-end text-right md:text-left md:justify-self-auto md:py-3.5 md:px-4">
+                          {med.stock > 0 ? (
+                            <>
+                              <div className="text-slate-800 font-mono whitespace-nowrap">{med.batchNo}</div>
+                              <div
+                                title={isNearExpiry ? EXPIRY_LABEL[status].label : undefined}
+                                className={`text-[11px] flex items-center justify-end md:justify-start whitespace-nowrap ${status === "watch" ? "text-amber-700 font-bold" : isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                {status === "expired" ? "Expired " : "Exp: "}{med.expiryDate}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-slate-400">No stock</div>
+                          )}
                         </td>
 
                         {/* Supplier */}
-                        <td className="py-3.5 px-4 text-slate-600 truncate max-w-[160px]">
+                        <td className="self-center md:py-3.5 md:px-4 text-slate-600 truncate md:max-w-[160px] min-w-0">
                           {med.supplierName}
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="md:py-3.5 md:px-4 text-right">
                           <div className="flex items-center justify-end space-x-1">
+                            <button
+                              onClick={() => setBatchesFor(med)}
+                              title="Batches and stock"
+                              aria-label={`Batches of ${med.name}`}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                            >
+                              <Layers className="w-4 h-4" />
+                            </button>
+                            {canEdit && (<>
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
@@ -364,12 +499,13 @@ export default function MedicineList({
                               <Edit className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={() => handleDeleteMedicine(med.id, med.name, med.code)}
+                              onClick={() => handleDeleteMedicine(med)}
                               title="Discontinue Product"
                               className="p-1.5 rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50 transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
+                            </>)}
                           </div>
                         </td>
 
@@ -383,13 +519,25 @@ export default function MedicineList({
         </>
       )}
 
+      {batchesFor && (
+        <BatchesModal
+          medicine={medicines.find(m => m.id === batchesFor.id) || batchesFor}
+          batches={batches}
+          stockMovements={stockMovements}
+          canEdit={canEdit}
+          onClose={() => setBatchesFor(null)}
+          {...batchSetters}
+        />
+      )}
+
       {/* Add / Edit Medicine Modal */}
       <AddMedicineModal
         isOpen={isAddMedicineOpen}
-        onClose={() => setIsAddMedicineOpen(false)}
+        onClose={() => { setIsAddMedicineOpen(false); setEditingMedicine(null); }}
         onSave={handleSaveMedicine}
         medicineToEdit={editingMedicine}
         suppliers={suppliers}
+        categories={categories}
       />
 
     </div>

@@ -9,7 +9,7 @@ export default function ReceiptModal({ txn, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Top Actions */}
@@ -31,7 +31,7 @@ export default function ReceiptModal({ txn, onClose }) {
           
           {/* Pharmacy Header */}
           <div className="text-center border-b border-dashed border-slate-300 pb-4">
-            <div className="flex justify-center items-center space-x-1 font-sans font-black text-xl text-[#2563EB]">
+            <div className="flex justify-center items-center space-x-1 font-sans font-semibold text-xl text-[#2563EB]">
               <Pill className="w-5 h-5" />
               <span>PHARMART PHARMACY</span>
             </div>
@@ -70,9 +70,16 @@ export default function ReceiptModal({ txn, onClose }) {
               <span>Amount</span>
             </div>
             {txn.items.map((item, idx) => (
-              <div key={idx} className="flex justify-between text-[11px]">
-                <span>{item.name} × {item.qty}</span>
-                <span>Rs. {item.total.toFixed(2)}</span>
+              <div key={idx} className="text-[11px]">
+                <div className="flex justify-between gap-2">
+                  <span>{item.name} × {item.qty} @ Rs. {Number(item.price || 0).toFixed(2)}</span>
+                  <span>Rs. {Number(item.total || 0).toFixed(2)}</span>
+                </div>
+                {(item.batches || []).length > 0 && (
+                  <div className="text-[10px] text-slate-500">
+                    Batch {item.batches.map(b => `${b.batchNo}${b.expiryDate ? ` (exp ${b.expiryDate})` : ""}`).join(", ")}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -95,10 +102,17 @@ export default function ReceiptModal({ txn, onClose }) {
                 <span>+ Rs. {txn.taxAmt.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between font-black text-sm text-slate-900 border-t border-slate-300 pt-2 mt-2">
+            <div className="flex justify-between font-semibold text-sm text-slate-900 border-t border-slate-300 pt-2 mt-2">
               <span>TOTAL PAID ({txn.paymentMethod}):</span>
               <span>Rs. {txn.total.toFixed(2)}</span>
             </div>
+
+            {txn.refundedAmount > 0 && (
+              <div className="flex justify-between font-semibold text-rose-700">
+                <span>Refunded ({txn.status}):</span>
+                <span>- Rs. {Number(txn.refundedAmount).toFixed(2)}</span>
+              </div>
+            )}
 
             {txn.paymentMethod === "Cash" && (
               <>

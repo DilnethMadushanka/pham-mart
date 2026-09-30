@@ -17,9 +17,12 @@ import {
   UserCheck
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
-import { createStaff, updateStaff } from '../../services/supabaseService';
+import { saveStaff, setStaffPassword } from '../../services/supabaseService';
+import { confirmDialog, promptDialog, notify, notifyError } from '../../lib/notify';
+import PageHeader from '../../components/PageHeader';
+import MetricCard from '../../components/MetricCard';
 
-export default function StaffList({ staffList, setStaffList, addAuditLog }) {
+export default function StaffList({ staffList, setStaffList, currentUser, addAuditLog }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -37,106 +40,90 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
     const targetStaff = staffList.find(s => s.id === id);
     if (!targetStaff) return;
     const newStatus = targetStaff.status === "Active" ? "Inactive" : "Active";
-    setStaffList(prev => prev.map(s => s.id === id ? { ...s, status: newStatus } : s));
-    await updateStaff(id, { status: newStatus });
+    if (newStatus === "Inactive") {
+      const confirmed = await confirmDialog({
+        title: `Deactivate ${targetStaff.name}?`,
+        message: "They are signed out straight away and can't sign in until reactivated.",
+        confirmLabel: "Deactivate",
+        tone: "danger"
+      });
+      if (!confirmed) return;
+    }
+    const { data, error } = await saveStaff({ ...targetStaff, status: newStatus });
+    if (error) {
+      notifyError(error, "Account not updated");
+      return;
+    }
+    setStaffList(prev => prev.map(s => s.id === id ? data : s));
     addAuditLog(
       `Staff Account ${newStatus === "Active" ? "Activated" : "Deactivated"}`,
-      `Account for ${targetStaff.name} (${targetStaff.username}) was set to ${newStatus}`,
+      `Account for ${data.name} (${data.username}) was set to ${newStatus}`,
       newStatus === "Active" ? "success" : "warning"
     );
   };
 
-  const handleResetPassword = (staff) => {
-    alert(`Password reset link generated & dispatched to ${staff.email} (${staff.name})`);
-    addAuditLog(
-      "Password Reset Requested",
-      `Password reset trigger executed for user ${staff.username}`,
-      "info"
-    );
+  const handleResetPassword = async (staff) => {
+    const password = await promptDialog({
+      title: `Set a new password for ${staff.name}`,
+      message: "They are signed out everywhere and must use the new password. Share it with them in person.",
+      label: "New password",
+      inputType: "text",
+      minLength: 8,
+      confirmLabel: "Set password"
+    });
+    if (!password) return;
+    const { error } = await setStaffPassword(staff.id, password);
+    if (error) {
+      notifyError(error, "Password not changed");
+      return;
+    }
+    notify("Password changed", `${staff.name} can now sign in with the new password.`);
+    addAuditLog("Password Reset", `Owner set a new password for ${staff.username}`, "info");
   };
 
+  // Returns true when saved, so the form keeps the user's input on failure.
   const handleSaveStaff = async (staffData) => {
+    const { password, ...fields } = staffData;
+    const { data, error } = await saveStaff(editingStaff ? { ...fields, id: editingStaff.id } : fields, password);
+    if (error) {
+      notifyError(error, "Staff account not saved");
+      return false;
+    }
     if (editingStaff) {
-      // Merge rather than replace — staffData omits `password` when it wasn't reset,
-      // so a plain replace would wipe the existing password from local state.
-      setStaffList(prev => prev.map(s => s.id === staffData.id ? { ...s, ...staffData } : s));
-      await updateStaff(staffData.id, staffData);
-      addAuditLog("Staff Account Updated", `Updated roles and permissions for ${staffData.name}`, "info");
+      setStaffList(prev => prev.map(s => s.id === data.id ? data : s));
+      addAuditLog("Staff Account Updated", `Updated role and permissions for ${data.name}`, "info");
     } else {
-      const newStaff = {
-        ...staffData,
-        id: `STF-${Math.floor(100 + Math.random() * 900)}`,
-        createdAt: new Date().toISOString().split('T')[0],
-        lastActive: "Never"
-      };
-      setStaffList(prev => [newStaff, ...prev]);
-      await createStaff(newStaff);
-      addAuditLog("New Staff Account Created", `Created new ${newStaff.role} account for ${newStaff.name}`, "success");
+      setStaffList(prev => [data, ...prev]);
+      addAuditLog("New Staff Account Created", `Created new ${data.role} account for ${data.name}`, "success");
     }
     setIsAddModalOpen(false);
     setEditingStaff(null);
+    return true;
   };
 
   return (
     <div className="space-y-6 animate-fade-in">
       
-      {/* Header & Action Banner */}
-      <div className="bg-white p-6 sm:p-7 rounded-3xl border border-blue-100 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <div className="flex items-center space-x-2 mb-1.5">
-            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-bold border border-blue-200">
-              Security & Identity
-            </span>
-            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-              {staffList.length} Registered Staff
-            </span>
-          </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            User Access & Staff Credentials Directory
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed font-medium">
-            Centralized role-based access control, account activation, staff permissions & security audit logs.
-          </p>
-        </div>
-
+      <PageHeader
+        kicker="Settings"
+        title="Staff and access"
+        description="Roles, account status and permissions for everyone who uses the console."
+      >
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
-          className="flex items-center space-x-2 px-5 py-3 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-2xl font-black text-xs shadow-md shadow-blue-500/20 transition-all cursor-pointer shrink-0"
+          className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-medium text-sm shadow-md shadow-[#2563EB]/20 shrink-0"
         >
           <UserPlus className="w-4 h-4" />
-          <span>Add Staff Member</span>
+          <span>Add staff member</span>
         </button>
-      </div>
+      </PageHeader>
 
       {/* Quick Role Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center mb-3">
-            <Users className="w-6 h-6" />
-          </div>
-          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Staff Accounts</span>
-          <div className="text-3xl font-black text-slate-900 mt-1">{staffList.length}</div>
-          <span className="text-xs text-blue-700 font-bold mt-1 inline-block">100% Centralized Directory</span>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center mb-3">
-            <UserCheck className="w-6 h-6" />
-          </div>
-          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Active Duty Accounts</span>
-          <div className="text-3xl font-black text-blue-700 mt-1">
-            {staffList.filter(s => s.status === "Active").length}
-          </div>
-          <span className="text-xs text-slate-500 font-medium mt-1 inline-block">Ready for active shift</span>
-        </div>
-
-        <div className="bg-white p-6 rounded-3xl border border-blue-100 shadow-sm relative overflow-hidden group hover:border-blue-300 transition-all">
-          <div className="w-12 h-12 rounded-2xl bg-purple-50 border border-purple-200 text-purple-700 flex items-center justify-center mb-3">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Average Provisioning Time</span>
-          <div className="text-3xl font-black text-slate-900 mt-1">1.5 mins</div>
-          <span className="text-xs text-purple-700 font-bold mt-1 inline-block">Target KPI: &lt; 2.0 mins (Passed)</span>
+      <div className="metric-grid grid grid-cols-2 sm:grid-cols-3">
+        <MetricCard title="Staff accounts" value={staffList.length} subtitle="Everyone with console access" icon={Users} />
+        <MetricCard title="Active accounts" value={staffList.filter(s => s.status === "Active").length} subtitle="Ready for the current shift" icon={UserCheck} />
+        <div className="col-span-2 sm:col-span-1">
+          <MetricCard title="Average provisioning time" value="1.5 min" subtitle="Target under 2 minutes" icon={ShieldCheck} badge="On target" colorScheme="sky" />
         </div>
       </div>
 
@@ -149,7 +136,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
             placeholder="Search staff by name or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden"
+            className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
           />
         </div>
 
@@ -159,7 +146,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-hidden"
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
           >
             <option value="ALL">All Roles</option>
             <option value="Owner/Admin">Owner / Admin</option>
@@ -172,8 +159,8 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
       {/* Staff Table */}
       <div className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 uppercase text-[10.5px] tracking-wider font-extrabold">
+          <table className="w-full text-left text-xs block md:table">
+            <thead className="hidden md:table-header-group bg-slate-50/80 border-b border-slate-200/80 text-slate-500 text-[11px] font-semibold">
               <tr>
                 <th className="py-4 px-5">Staff Member</th>
                 <th className="py-4 px-5">Assigned Role</th>
@@ -183,28 +170,28 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                 <th className="py-4 px-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block md:table-row-group divide-y divide-slate-100">
               {filteredStaff.map((staff) => (
-                <tr key={staff.id} className="hover:bg-blue-50/40 transition-colors">
+                <tr key={staff.id} className="grid grid-cols-2 gap-x-3 gap-y-3 p-4 md:table-row md:p-0 hover:bg-blue-50/40 transition-colors">
                   
                   {/* Name & ID */}
-                  <td className="py-4 px-5">
+                  <td className="col-span-2 md:py-4 md:px-5">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 text-white font-black flex items-center justify-center text-xs shadow-md shadow-blue-500/15 shrink-0">
+                      <div className="w-10 h-10 rounded-2xl bg-[#EFF6FF] text-[#1D4ED8] font-semibold flex items-center justify-center text-xs shadow-md shadow-blue-500/15 shrink-0">
                         {staff.name.substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-black text-slate-900 text-sm leading-snug">{staff.name}</div>
+                        <div className="font-semibold text-slate-900 text-sm leading-snug">{staff.name}</div>
                         <div className="text-[11.5px] text-slate-400 font-mono">@{staff.username} • {staff.id}</div>
                       </div>
                     </div>
                   </td>
 
                   {/* Role Badge */}
-                  <td className="py-4 px-5">
-                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl font-black text-xs border ${
+                  <td className="md:py-4 md:px-5">
+                    <span className={`inline-flex items-center px-3 py-1.5 rounded-xl font-semibold text-xs border ${
                       staff.role === "Owner/Admin" 
-                        ? "bg-purple-50 text-purple-900 border-purple-200"
+                        ? "bg-slate-100 text-[#0B2545] border-slate-300"
                         : staff.role === "Pharmacist"
                         ? "bg-blue-50 text-blue-900 border-blue-200"
                         : "bg-blue-50 text-blue-900 border-blue-200"
@@ -215,10 +202,10 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   </td>
 
                   {/* Contact */}
-                  <td className="py-4 px-5 space-y-1">
+                  <td className="col-span-2 row-start-3 md:py-4 md:px-5 space-y-1 min-w-0">
                     <div className="flex items-center text-slate-700 font-medium">
                       <Mail className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
-                      <span>{staff.email}</span>
+                      <span className="truncate">{staff.email}</span>
                     </div>
                     <div className="flex items-center text-slate-500 font-medium">
                       <Phone className="w-3.5 h-3.5 mr-1.5 text-slate-400 shrink-0" />
@@ -227,10 +214,12 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   </td>
 
                   {/* Status */}
-                  <td className="py-4 px-5">
+                  <td className="justify-self-end md:justify-self-auto md:py-4 md:px-5">
                     <button
                       onClick={() => toggleStaffStatus(staff.id)}
-                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold border transition-colors cursor-pointer ${
+                      disabled={staff.id === currentUser?.id}
+                      title={staff.id === currentUser?.id ? "You can't deactivate your own account" : "Change account status"}
+                      className={`disabled:cursor-not-allowed disabled:opacity-70 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
                         staff.status === "Active" 
                           ? "bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300"
                           : "bg-slate-100 text-slate-600 border-slate-300 hover:bg-emerald-50 hover:text-emerald-800"
@@ -242,7 +231,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   </td>
 
                   {/* Last Active */}
-                  <td className="py-4 px-5 text-slate-600 font-medium">
+                  <td className="self-center md:py-4 md:px-5 text-slate-600 font-medium">
                     <div className="flex items-center">
                       <Clock className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
                       {staff.lastActive}
@@ -250,7 +239,7 @@ export default function StaffList({ staffList, setStaffList, addAuditLog }) {
                   </td>
 
                   {/* Actions */}
-                  <td className="py-4 px-5 text-right">
+                  <td className="md:py-4 md:px-5 text-right">
                     <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleResetPassword(staff)}

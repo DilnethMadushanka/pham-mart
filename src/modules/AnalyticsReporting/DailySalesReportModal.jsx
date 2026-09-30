@@ -1,397 +1,123 @@
-import React, { useState, useMemo } from 'react';
-import { 
-  X, 
-  Printer, 
-  Download, 
-  Calendar, 
-  DollarSign, 
-  ShoppingCart, 
-  CreditCard, 
-  FileText, 
-  CheckCircle2, 
-  TrendingUp,
-  PackageCheck
-} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import ReportShell, { Stat } from './ReportShell';
+import { summarize, inDay, todayKey, money, downloadCsv } from '../../lib/salesStats';
 
-function toYYYYMMDD(dateVal) {
-  if (!dateVal) return '';
-  try {
-    const d = new Date(dateVal);
-    if (!isNaN(d.getTime())) {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  } catch (e) {}
-
-  const str = String(dateVal);
-  if (str.includes('-')) {
-    const parts = str.split('T')[0].split(' ')[0].split('-');
-    if (parts.length === 3 && parts[0].length === 4) {
-      return `${parts[0]}-${parts[1].padStart(2, '0')}-${parts[2].padStart(2, '0')}`;
-    }
-  }
-  if (str.includes('/')) {
-    const parts = str.split(',')[0].split(' ')[0].split('/');
-    if (parts.length === 3) {
-      const year = parts[2];
-      const month = parts[0].padStart(2, '0');
-      const day = parts[1].padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    }
-  }
-  return str;
+// Hooks can't run after an early return, so the open check lives in this wrapper.
+export default function DailySalesReportModal({ isOpen, ...props }) {
+  if (!isOpen) return null;
+  return <DailySalesReport {...props} />;
 }
 
-export default function DailySalesReportModal({ isOpen, onClose, transactions = [], medicines = [] }) {
-  if (!isOpen) return null;
+// Everything sold and refunded on one day: totals, payments, every invoice
+// and the best sellers.
+function DailySalesReport({ onClose, transactions = [], salesReturns = [], medicines = [] }) {
+  const [day, setDay] = useState(todayKey());
+  const sales = useMemo(() => inDay(transactions, day), [transactions, day]);
+  const refunds = useMemo(() => inDay(salesReturns, day), [salesReturns, day]);
+  const s = useMemo(() => summarize(sales, refunds, medicines), [sales, refunds, medicines]);
 
-  // Selected date (local timezone YYYY-MM-DD format, defaults to 'ALL')
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const [selectedDate, setSelectedDate] = useState('ALL');
-
-  // Filter transactions for the selected date
-  const filteredTxns = useMemo(() => {
-    if (selectedDate === 'ALL') return transactions;
-    const targetDate = toYYYYMMDD(selectedDate);
-
-    return transactions.filter(t => {
-      if (!t) return false;
-      const rawDate = t.created_at || t.date;
-      if (!rawDate) return false;
-      const tFormatted = toYYYYMMDD(rawDate);
-      return tFormatted === targetDate || String(rawDate).includes(selectedDate);
-    });
-  }, [transactions, selectedDate]);
-
-  // Compute Daily Metrics
-  const metrics = useMemo(() => {
-    let totalRevenue = 0;
-    let totalDiscount = 0;
-    let totalTax = 0;
-    let totalItemsCount = 0;
-    const paymentMethods = { Cash: 0, Card: 0, "Digital Wallet (LANKAQR)": 0, Other: 0 };
-    const itemsSoldMap = {};
-
-    filteredTxns.forEach(t => {
-      const amt = Number(t.total) || 0;
-      totalRevenue += amt;
-      totalDiscount += Number(t.discountAmt || t.discount) || 0;
-      totalTax += Number(t.taxAmt || t.tax) || 0;
-
-      // Payment method breakdown
-      const pm = t.paymentMethod || t.payment_method || 'Cash';
-      if (pm.toLowerCase().includes('cash')) paymentMethods.Cash += amt;
-      else if (pm.toLowerCase().includes('card')) paymentMethods.Card += amt;
-      else if (pm.toLowerCase().includes('qr') || pm.toLowerCase().includes('wallet')) paymentMethods["Digital Wallet (LANKAQR)"] += amt;
-      else paymentMethods.Other += amt;
-
-      // Items count & map
-      const items = Array.isArray(t.items) ? t.items : [];
-      items.forEach(item => {
-        const qty = Number(item.qty || item.quantity) || 1;
-        totalItemsCount += qty;
-        const name = item.name || 'Medicine Item';
-        if (!itemsSoldMap[name]) {
-          itemsSoldMap[name] = { name, qty: 0, total: 0 };
-        }
-        itemsSoldMap[name].qty += qty;
-        itemsSoldMap[name].total += Number(item.total || (qty * (item.price || 0))) || 0;
-      });
-    });
-
-    const topItems = Object.values(itemsSoldMap).sort((a, b) => b.total - a.total);
-    const avgTicket = filteredTxns.length > 0 ? totalRevenue / filteredTxns.length : 0;
-
-    return {
-      totalRevenue,
-      totalDiscount,
-      totalTax,
-      totalItemsCount,
-      paymentMethods,
-      topItems,
-      avgTicket,
-      txCount: filteredTxns.length
-    };
-  }, [filteredTxns, selectedDate]);
-
-  // Export to CSV functionality
-  const handleDownloadCSV = () => {
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "PHARMART PHARMACY - DAILY SALES REPORT\n";
-    csvContent += `Report Date: ${selectedDate}\n\n`;
-    csvContent += "Invoice No,Customer Name,Cashier Name,Payment Method,Items,Total (LKR)\n";
-
-    filteredTxns.forEach(t => {
-      const itemsList = (t.items || []).map(i => `${i.name} (x${i.qty || 1})`).join(" | ");
-      const line = `"${t.invoiceNo || t.invoice_no || t.id}","${t.customerName || t.customer_name || 'Walk-in'}","${t.cashierName || t.cashier_name || 'Staff'}","${t.paymentMethod || 'Cash'}","${itemsList}",${t.total}`;
-      csvContent += line + "\n";
-    });
-
-    csvContent += `\nTotal Sales Revenue: LKR ${metrics.totalRevenue.toFixed(2)}\n`;
-    csvContent += `Total Transactions: ${metrics.txCount}\n`;
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Daily_Sales_Report_${selectedDate}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  // Print Report Handler
-  const handlePrint = () => {
-    window.print();
-  };
+  const csv = () => downloadCsv(`daily-sales-${day}.csv`, [
+    ["PHARMART daily sales report", day],
+    [],
+    ["Invoice", "Time", "Customer", "Cashier", "Items", "Payment", "Discount", "Tax", "Total", "Refunded"],
+    ...sales.map(t => [t.invoiceNo, new Date(t.createdAt).toLocaleTimeString(), t.customerName, t.cashierName,
+      t.items.map(i => `${i.name} x ${i.qty}`).join("; "), t.paymentMethod, t.discountAmt, t.taxAmt, t.total, t.refundedAmount || 0]),
+    [],
+    ["Refund", "Invoice", "Items", "Method", "Reason", "Amount"],
+    ...refunds.map(r => [r.returnNo, r.invoiceNo, r.items.map(i => `${i.name} x ${i.qty}`).join("; "), r.refundMethod, r.reason, r.refundAmount]),
+    [],
+    ["Gross sales", s.gross], ["Refunds", s.refunds], ["Net sales", s.net], ["Invoices", s.count], ["Discounts given", s.discount], ["Tax collected", s.tax]
+  ]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-      
-      <div className="bg-white w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[90vh] flex flex-col font-sans">
-        
-        {/* Header (Hidden during print) */}
-        <div className="p-5 sm:p-6 bg-slate-900 text-white flex justify-between items-center shrink-0 print:hidden">
-          <div className="flex items-center space-x-3">
-            <div className="p-2.5 bg-blue-500/20 text-blue-400 rounded-2xl border border-blue-400/30">
-              <FileText className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-black text-white">Daily Sales & Financial Report Generator</h2>
-              <p className="text-xs text-blue-200/80 mt-0.5 font-medium">Export, inspect and print daily POS revenue data</p>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleDownloadCSV}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-blue-300 font-bold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>CSV Sheet</span>
-            </button>
-
-            <button
-              onClick={handlePrint}
-              className="flex items-center space-x-1.5 px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Print Official Report</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl transition-all cursor-pointer ml-2"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-
-        {/* Modal Scrollable Content */}
-        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1">
-          
-          {/* Printable Document Header */}
-          <div className="border-b border-slate-200 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="text-xl font-black tracking-tight text-slate-900">PHARMART PHARMACY</span>
-                <span className="text-xs px-2.5 py-0.5 bg-blue-100 text-blue-800 rounded-md font-bold">Enterprise Audit Report</span>
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-1">Main Counter & E-Pharmacy Daily Checkout Ledger</p>
-            </div>
-
-            {/* Date Selector Filter */}
-            <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200 print:hidden">
-              <Calendar className="w-4 h-4 text-blue-600 ml-1" />
-              <label className="text-xs font-bold text-slate-700">Filter Date:</label>
-              <button
-                type="button"
-                onClick={() => setSelectedDate('ALL')}
-                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === 'ALL' ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-              >
-                All Recorded Sales
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedDate(todayStr)}
-                className={`px-3 py-1 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${selectedDate === todayStr ? 'bg-[#2563EB] text-white shadow-xs' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'}`}
-              >
-                Today ({todayStr})
-              </button>
-              <input 
-                type="date"
-                value={selectedDate === 'ALL' ? '' : selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value || 'ALL')}
-                className="bg-white border border-slate-300 text-slate-900 font-mono font-bold text-xs rounded-xl px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
-              />
-            </div>
-
-            <div className="hidden print:block text-right text-xs text-slate-600 font-mono">
-              Report Filter: <strong>{selectedDate === 'ALL' ? 'All Recorded Dates' : selectedDate}</strong><br />
-              Generated: {new Date().toLocaleString()}
-            </div>
-          </div>
-
-          {/* Metric Highlights Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-blue-50/70 p-4 rounded-2xl border border-blue-100">
-              <div className="text-[11px] font-bold text-blue-700 uppercase tracking-wider">Gross Sales Revenue</div>
-              <div className="text-xl sm:text-2xl font-black text-blue-900 font-mono mt-1">
-                LKR {metrics.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Transactions</div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1">
-                {metrics.txCount} Invoices
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Items Dispensed</div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1">
-                {metrics.totalItemsCount} Units
-              </div>
-            </div>
-
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Avg Transaction Value</div>
-              <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono mt-1">
-                LKR {metrics.avgTicket.toFixed(2)}
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Method Breakdown */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-            <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center">
-              <CreditCard className="w-4 h-4 mr-1.5 text-blue-600" />
-              Payment Collection Breakdown
-            </h4>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-              <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-slate-600">Cash Collections</span>
-                <span className="font-mono font-black text-slate-900">LKR {metrics.paymentMethods.Cash.toFixed(2)}</span>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-slate-600">Credit / Debit Card</span>
-                <span className="font-mono font-black text-slate-900">LKR {metrics.paymentMethods.Card.toFixed(2)}</span>
-              </div>
-              <div className="bg-white p-3 rounded-xl border border-slate-200 flex justify-between items-center">
-                <span className="font-bold text-slate-600">Digital / LANKAQR</span>
-                <span className="font-mono font-black text-slate-900">LKR {metrics.paymentMethods["Digital Wallet (LANKAQR)"].toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Detailed Transaction Table */}
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <h4 className="text-sm font-extrabold text-slate-900">
-                Detailed Invoices Ledger for {selectedDate}
-              </h4>
-              <span className="text-xs text-slate-500 font-bold">{filteredTxns.length} Transactions Found</span>
-            </div>
-
-            {filteredTxns.length === 0 ? (
-              <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-400 text-xs">
-                No checkout transactions recorded for date {selectedDate}.
-              </div>
-            ) : (
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
-                    <tr>
-                      <th className="p-3">Invoice No</th>
-                      <th className="p-3">Time / Cashier</th>
-                      <th className="p-3">Customer</th>
-                      <th className="p-3">Items Sold</th>
-                      <th className="p-3">Payment</th>
-                      <th className="p-3 text-right">Total (LKR)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-slate-800">
-                    {filteredTxns.map((t, index) => (
-                      <tr key={t.id || index} className="hover:bg-slate-50/80">
-                        <td className="p-3 font-mono font-bold text-blue-700">
-                          {t.invoiceNo || t.invoice_no || t.id}
-                        </td>
-                        <td className="p-3 text-slate-500">
-                          <span className="font-semibold block text-slate-700">{t.date ? t.date.split(' ')[1] + ' ' + (t.date.split(' ')[2] || '') : 'POS'}</span>
-                          <span className="text-[10px]">{t.cashierName || t.cashier_name || 'Cashier'}</span>
-                        </td>
-                        <td className="p-3 font-bold text-slate-900">
-                          {t.customerName || t.customer_name || 'Walk-in Customer'}
-                        </td>
-                        <td className="p-3">
-                          <div className="space-y-0.5">
-                            {(t.items || []).map((itm, i) => (
-                              <div key={i} className="text-[11px] text-slate-600">
-                                • {itm.name} <span className="font-mono font-bold text-slate-800">×{itm.qty || 1}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <span className="px-2.5 py-1 bg-slate-100 text-slate-800 rounded-lg text-[10px] font-bold border border-slate-200">
-                            {t.paymentMethod || t.payment_method || 'Cash'}
-                          </span>
-                        </td>
-                        <td className="p-3 text-right font-mono font-black text-slate-900 text-sm">
-                          LKR {(Number(t.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* Top Selling Products List for the day */}
-          {metrics.topItems.length > 0 && (
-            <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center">
-                <PackageCheck className="w-4 h-4 mr-1.5 text-blue-600" />
-                Top Performing Items (By Revenue)
-              </h4>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {metrics.topItems.slice(0, 4).map((item, idx) => (
-                  <div key={idx} className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex justify-between items-center text-xs">
-                    <div>
-                      <div className="font-bold text-slate-900">{item.name}</div>
-                      <div className="text-[11px] text-slate-500 font-semibold">{item.qty} units sold today</div>
-                    </div>
-                    <div className="text-right font-mono font-black text-blue-800">
-                      LKR {item.total.toFixed(2)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+    <ReportShell
+      title="Daily sales report"
+      subtitle={day === todayKey() ? `Today, ${day}` : day}
+      onClose={onClose}
+      onCsv={csv}
+      controls={
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="text-xs font-medium text-slate-600" htmlFor="report-day">Day</label>
+          <input id="report-day" type="date" value={day} max={todayKey()} onChange={(e) => setDay(e.target.value || todayKey())}
+            className="px-3 py-1.5 border border-slate-300 rounded-xl text-sm" />
+          {day !== todayKey() && (
+            <button onClick={() => setDay(todayKey())} className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs hover:bg-slate-50">Today</button>
           )}
-
         </div>
-
-        {/* Modal Footer */}
-        <div className="p-4 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0 print:hidden text-xs">
-          <span className="text-slate-500 font-medium">PHARMART Enterprise POS Reporting System</span>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-xl transition-all cursor-pointer"
-          >
-            Close Window
-          </button>
-        </div>
-
+      }
+    >
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Stat label="Net sales" value={money(s.net)} note={s.refunds ? `${money(s.gross)} sold, ${money(s.refunds)} refunded` : "No refunds"} />
+        <Stat label="Invoices" value={s.count} note={`${s.items} units sold`} />
+        <Stat label="Average bill" value={money(s.avgTicket)} />
+        <Stat label="Discounts and tax" value={money(s.discount)} note={`Tax collected ${money(s.tax)}`} />
       </div>
 
-    </div>
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-slate-900">Payments</h3>
+        {s.methods.length === 0 ? <p className="text-xs text-slate-500">No payments on this day.</p> : (
+          <table className="w-full text-xs">
+            <thead className="text-slate-500"><tr><th className="text-left py-1.5 font-medium">Method</th><th className="text-right py-1.5 font-medium">Sales</th><th className="text-right py-1.5 font-medium">Collected</th><th className="text-right py-1.5 font-medium">Refunded</th><th className="text-right py-1.5 font-medium">Net</th></tr></thead>
+            <tbody className="divide-y divide-slate-100">
+              {s.methods.map(m => (
+                <tr key={m.method}><td className="py-2">{m.method}</td><td className="py-2 text-right tabular-nums">{m.count}</td><td className="py-2 text-right tabular-nums">{money(m.sales)}</td><td className="py-2 text-right tabular-nums">{money(m.refunds)}</td><td className="py-2 text-right tabular-nums font-semibold">{money(m.sales - m.refunds)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="text-sm font-semibold text-slate-900">Invoices ({sales.length})</h3>
+        {sales.length === 0 ? (
+          <p className="text-xs text-slate-500 p-6 text-center rounded-2xl border border-dashed border-slate-300">No sales on {day}.</p>
+        ) : (
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-slate-50 text-slate-600"><tr><th className="p-2.5 font-medium">Invoice</th><th className="p-2.5 font-medium">Time</th><th className="p-2.5 font-medium">Customer</th><th className="p-2.5 font-medium">Items</th><th className="p-2.5 font-medium">Payment</th><th className="p-2.5 font-medium text-right">Total</th></tr></thead>
+              <tbody className="divide-y divide-slate-100">
+                {sales.map(t => (
+                  <tr key={t.id}>
+                    <td className="p-2.5 font-mono text-[#0B2545]">{t.invoiceNo}{t.status !== "Completed" && <span className="block text-[10px] text-amber-700">{t.status}</span>}</td>
+                    <td className="p-2.5 text-slate-600 whitespace-nowrap">{new Date(t.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}<span className="block text-[10px]">{t.cashierName}</span></td>
+                    <td className="p-2.5">{t.customerName}</td>
+                    <td className="p-2.5 text-slate-600">{t.items.map(i => `${i.name} x ${i.qty}`).join(", ")}</td>
+                    <td className="p-2.5">{t.paymentMethod}</td>
+                    <td className="p-2.5 text-right tabular-nums font-semibold">{money(t.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
+      {refunds.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-slate-900">Refunds ({refunds.length})</h3>
+          <ul className="text-xs divide-y divide-slate-100 border border-slate-200 rounded-2xl">
+            {refunds.map(r => (
+              <li key={r.id} className="p-2.5 flex flex-wrap justify-between gap-2">
+                <span><span className="font-mono">{r.returnNo}</span> on {r.invoiceNo}: {r.items.map(i => `${i.name} x ${i.qty}`).join(", ")} · {r.reason}</span>
+                <span className="tabular-nums font-semibold">{money(r.refundAmount)} · {r.refundMethod}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {s.topItems.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-sm font-semibold text-slate-900">Best sellers</h3>
+          <table className="w-full text-xs">
+            <tbody className="divide-y divide-slate-100">
+              {s.topItems.slice(0, 5).map(i => (
+                <tr key={i.name}><td className="py-2">{i.name}</td><td className="py-2 text-right tabular-nums">{i.qty} units</td><td className="py-2 text-right tabular-nums font-semibold">{money(i.total)}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
+    </ReportShell>
   );
 }

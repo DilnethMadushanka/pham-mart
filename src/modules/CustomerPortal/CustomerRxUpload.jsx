@@ -16,22 +16,55 @@ import {
   Pencil,
   PlusCircle,
   Trash2,
-  Pill
+  Pill,
+  Stethoscope
 } from 'lucide-react';
-import { createPrescription } from '../../services/supabaseService';
+import { submitPrescription } from '../../services/supabaseService';
+import { notify, notifyError } from '../../lib/notify';
+
+const MAX_PDF_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
+
+const readAsDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(reader.error);
+  reader.readAsDataURL(file);
+});
+
+// Phone photos are several MB; shrink them to a sharp but small JPEG before upload.
+async function compressImage(file) {
+  const source = await readAsDataUrl(file);
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = reject;
+    el.src = source;
+  });
+  const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.82);
+}
 
 export default function CustomerRxUpload({ 
-  customers = [], 
   medicines = [], 
   currentUser, 
   setPrescriptions, 
   onSuccess,
-  addAuditLog 
+  onRequestSignIn
 }) {
-  const [patientName, setPatientName] = useState(currentUser?.name || "K. A. Sunil Shantha");
-  const [phone, setPhone] = useState(currentUser?.phone || "+94 77 444 1234");
-  const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.address || "12/A, High Level Road, Nugegoda");
+  const [patientName, setPatientName] = useState(currentUser?.name || "");
+  const [phone, setPhone] = useState(currentUser?.phone || "");
+  const [deliveryAddress, setDeliveryAddress] = useState(currentUser?.address || "");
   const [patientNotes, setPatientNotes] = useState("");
+  const [doctorName, setDoctorName] = useState("");
+  const [doctorSlmcNo, setDoctorSlmcNo] = useState("");
   
   // Submission mode: "photo" | "typed" | "both"
   const [orderMethod, setOrderMethod] = useState("both"); // Default "both" gives maximum flexibility!
@@ -46,21 +79,23 @@ export default function CustomerRxUpload({
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [fileDataUrl, setFileDataUrl] = useState(null);
+  const [isPreparingFile, setIsPreparingFile] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRx, setSubmittedRx] = useState(null);
 
   const handleAddQuickMedicine = () => {
     if (!selectedQuickMedicine) return;
-    const medObj = medicines.find(m => m.id === selectedQuickMedicine || m.name === selectedQuickMedicine);
-    const itemName = medObj ? medObj.name : selectedQuickMedicine;
+    const medObj = medicines.find(m => m.id === selectedQuickMedicine);
+    if (!medObj) return;
     
     setCustomTypedItems(prev => [
       ...prev,
       {
-        medicineId: medObj?.id || `MED-CUSTOM-${Date.now()}`,
-        name: itemName,
-        dosage: medObj?.dosage || "As requested",
+        medicineId: medObj.id,
+        name: medObj.name,
+        dosage: medObj.dosage || medObj.genericName || "",
         quantity: quickQty,
         durationDays: 30
       }
@@ -73,15 +108,28 @@ export default function CustomerRxUpload({
     setCustomTypedItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = async (file) => {
     if (!file) return;
-    setSelectedFile(file);
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = (e) => setPreviewUrl(e.target.result);
-      reader.readAsDataURL(file);
-    } else {
-      setPreviewUrl(null);
+    const isImage = file.type.startsWith('image/');
+    const isPdf = file.type === 'application/pdf';
+    if (!isImage && !isPdf) {
+      notify("File not supported", "Attach a photo (JPG, PNG, WEBP) or a PDF of the prescription.", "error");
+      return;
+    }
+    if ((isPdf && file.size > MAX_PDF_BYTES) || (isImage && file.size > MAX_IMAGE_BYTES)) {
+      notify("File too large", isPdf ? "PDFs must be under 5 MB." : "Photos must be under 15 MB.", "error");
+      return;
+    }
+    setIsPreparingFile(true);
+    try {
+      const dataUrl = isImage ? await compressImage(file) : await readAsDataUrl(file);
+      setSelectedFile(file);
+      setFileDataUrl(dataUrl);
+      setPreviewUrl(isImage ? dataUrl : null);
+    } catch {
+      notify("Couldn't read that file", "Please try another photo or PDF.", "error");
+    } finally {
+      setIsPreparingFile(false);
     }
   };
 
@@ -110,93 +158,59 @@ export default function CustomerRxUpload({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting || isPreparingFile) return;
     if (!patientName.trim() || !phone.trim()) {
-      alert("Please enter your full name and contact mobile phone number.");
+      notify("Details needed", "Please enter your full name and a mobile number.", "error");
       return;
     }
 
-    const hasPhoto = selectedFile || previewUrl;
-    const hasTypedItems = customTypedItems.length > 0 || typedMedicinesText.trim().length > 0;
+    const usesTyped = orderMethod === "typed" || orderMethod === "both";
+    const usesPhoto = orderMethod === "photo" || orderMethod === "both";
+    const file = usesPhoto ? fileDataUrl : null;
 
-    if (!hasPhoto && !hasTypedItems) {
-      alert("Please EITHER attach a doctor prescription photo OR type in the required medicine names.");
+    const compiledMedicines = usesTyped ? [...customTypedItems] : [];
+    if (usesTyped && typedMedicinesText.trim()) {
+      compiledMedicines.push({
+        medicineId: null,
+        name: typedMedicinesText.trim(),
+        dosage: "As requested by patient",
+        quantity: 1
+      });
+    }
+
+    if (!file && compiledMedicines.length === 0) {
+      notify("Nothing to send", "Attach a prescription photo or list the medicines you need.", "error");
       return;
     }
 
     setIsSubmitting(true);
-
-    const fileName = selectedFile ? selectedFile.name : (hasPhoto ? "doctor_prescription_slip.jpg" : "None");
-    const rxRefNumber = `RX-2026-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    // Compile medicines array
-    let compiledMedicines = [...customTypedItems];
-    if (typedMedicinesText.trim()) {
-      compiledMedicines.push({
-        medicineId: `MED-TYPED-${Date.now()}`,
-        name: `Typed Order: ${typedMedicinesText.trim()}`,
-        dosage: "As requested by patient",
-        quantity: 1,
-        durationDays: 30
-      });
-    }
-
-    if (compiledMedicines.length === 0) {
-      compiledMedicines = [
-        { 
-          medicineId: "MED-101", 
-          name: "Prescribed Medication (See Attached Photo Slip)", 
-          dosage: "As per doctor prescription photo", 
-          durationDays: 30, 
-          quantity: 60 
-        }
-      ];
-    }
-
-    const orderTypeLabel = hasPhoto && hasTypedItems 
-      ? "Photo Slip + Typed Medicines" 
-      : hasPhoto 
-      ? "Doctor Slip Photo Upload" 
-      : "Typed Medicine Custom Order";
-
-    const newRx = {
-      id: `RX-${Math.floor(950 + Math.random() * 50)}`,
-      rxNumber: rxRefNumber,
-      customerId: currentUser?.id || "CUST-301",
+    const { data, error } = await submitPrescription({
       customerName: patientName,
-      doctorName: hasPhoto ? "Doctor Prescription (Patient Photo)" : "Patient Direct Medicine Order",
-      doctorSlmcNo: hasPhoto ? "VERIFY-SLMC" : "DIRECT-ORDER",
-      uploadDate: new Date().toLocaleString(),
-      expiryDate: new Date(Date.now() + 30*86400000).toISOString().split('T')[0],
-      medicines: compiledMedicines,
-      isControlledDrug: false,
-      status: "Pending",
-      orderType: orderTypeLabel,
-      verifiedBy: null,
-      verifiedAt: null,
-      prescriptionUrl: previewUrl || (hasPhoto ? "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=600&auto=format&fit=crop" : null),
-      notes: `Order Type: ${orderTypeLabel}. Address: ${deliveryAddress}. Remarks: ${patientNotes || 'None'}`
-    };
-
-    // Save to Supabase DB in real-time
-    const { error } = await createPrescription(newRx);
+      contactPhone: phone,
+      deliveryAddress,
+      notes: patientNotes,
+      doctorName: doctorName.trim() || null,
+      doctorSlmcNo: doctorSlmcNo.trim() || null,
+      medicines: compiledMedicines
+    }, file);
+    setIsSubmitting(false);
 
     if (error) {
-      console.warn("Supabase prescription save note:", error.message);
+      notifyError(error, "Order not sent");
+      return;
     }
 
-    setPrescriptions(prev => [newRx, ...prev]);
-    if (addAuditLog) {
-      addAuditLog("Patient Order Submitted", `Patient ${patientName} submitted order ${newRx.rxNumber} (${orderTypeLabel}) for Pharmacist review`, "info");
+    if (currentUser && setPrescriptions) {
+      setPrescriptions(prev => [data, ...prev.filter(p => p.id !== data.id)]);
     }
-    
-    setIsSubmitting(false);
-    setSubmittedRx(newRx);
+    setSubmittedRx(data);
   };
 
   const handleResetForm = () => {
     setSubmittedRx(null);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setFileDataUrl(null);
     setPatientNotes("");
     setTypedMedicinesText("");
     setCustomTypedItems([]);
@@ -211,10 +225,10 @@ export default function CustomerRxUpload({
         </div>
 
         <div className="text-center space-y-2">
-          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 text-xs font-extrabold rounded-full border border-blue-300">
+          <span className="px-3.5 py-1 bg-blue-100 text-blue-900 text-xs font-semibold rounded-full border border-blue-300">
             Pharmacist Verification Pending
           </span>
-          <h2 className="text-2xl font-black text-slate-900">Order & Prescription Submitted!</h2>
+          <h2 className="text-2xl font-semibold text-slate-900">Order & Prescription Submitted!</h2>
           <p className="text-xs text-slate-500 max-w-md mx-auto font-medium">
             Your medicine request has been safely received. Our duty Pharmacist will review your order details and prepare your medication.
           </p>
@@ -224,7 +238,7 @@ export default function CustomerRxUpload({
         <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3 text-xs">
           <div className="flex justify-between items-center pb-2 border-b border-slate-200">
             <span className="text-slate-500 font-medium">Order Reference No:</span>
-            <span className="font-mono font-black text-blue-800 text-sm">{submittedRx.rxNumber}</span>
+            <span className="font-mono font-semibold text-blue-800 text-sm">{submittedRx.rxNumber}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Patient Name:</span>
@@ -236,20 +250,35 @@ export default function CustomerRxUpload({
           </div>
           <div className="flex justify-between items-center">
             <span className="text-slate-500 font-medium">Delivery Address:</span>
-            <span className="font-medium text-slate-700">{deliveryAddress}</span>
+            <span className="font-medium text-slate-700">{deliveryAddress || "Pickup at pharmacy"}</span>
           </div>
 
           {/* Requested Items Summary */}
+          {submittedRx.medicines.length > 0 && (
           <div className="pt-2 border-t border-slate-200 space-y-1">
-            <span className="text-slate-500 font-bold block uppercase text-[10px] tracking-wider">Requested Items:</span>
+            <span className="text-slate-500 font-medium block text-[11px]">Requested Items:</span>
             {submittedRx.medicines.map((m, idx) => (
               <div key={idx} className="font-bold text-slate-800 flex justify-between bg-white p-2 rounded-lg border border-slate-200">
                 <span>{m.name}</span>
-                <span className="text-blue-700 font-black">{m.quantity} units</span>
+                <span className="text-blue-700 font-semibold">{m.quantity} units</span>
               </div>
             ))}
           </div>
+          )}
         </div>
+
+        {!currentUser && (
+          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-3">
+            <span>Keep your reference number. The pharmacist will call you on {phone}. Sign in before your next order to track it online.</span>
+            <button
+              type="button"
+              onClick={onRequestSignIn}
+              className="px-3.5 py-2 bg-white border border-amber-300 rounded-xl font-semibold hover:bg-amber-100"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
 
         <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start space-x-3">
           <ShieldCheck className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
@@ -266,7 +295,7 @@ export default function CustomerRxUpload({
           className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-md text-xs transition-all flex items-center justify-center space-x-2 cursor-pointer"
         >
           <RefreshCw className="w-4 h-4" />
-          <span>Submit Another Order / Prescription</span>
+          <span>{currentUser ? "View my orders" : "Back to the store"}</span>
         </button>
       </div>
     );
@@ -283,8 +312,8 @@ export default function CustomerRxUpload({
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h2 className="text-xl font-black text-slate-900">Order Medicines & Upload Prescription</h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-extrabold border border-blue-200">
+              <h2 className="text-xl font-semibold text-slate-900">Order Medicines & Upload Prescription</h2>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10.5px] font-semibold border border-blue-200">
                 Patient Portal
               </span>
             </div>
@@ -300,7 +329,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("both")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "both"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -313,7 +342,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("typed")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "typed"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -326,7 +355,7 @@ export default function CustomerRxUpload({
         <button
           type="button"
           onClick={() => setOrderMethod("photo")}
-          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
+          className={`flex-1 min-w-[120px] py-2.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5 cursor-pointer ${
             orderMethod === "photo"
               ? "bg-white text-blue-900 shadow-sm border border-slate-200"
               : "text-slate-600 hover:text-slate-900"
@@ -343,11 +372,11 @@ export default function CustomerRxUpload({
         {(orderMethod === "typed" || orderMethod === "both") && (
           <div className="bg-blue-50/60 p-5 rounded-3xl border border-blue-200/80 space-y-3">
             <div className="flex justify-between items-center">
-              <label className="font-black text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
+              <label className="font-semibold text-slate-900 text-xs sm:text-sm flex items-center space-x-1.5">
                 <Pencil className="w-4 h-4 text-blue-600" />
                 <span>Type Required Medicine Names & Quantities</span>
               </label>
-              <span className="text-[10.5px] font-extrabold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
+              <span className="text-[10.5px] font-semibold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-full border border-blue-300">
                 Custom Order
               </span>
             </div>
@@ -357,11 +386,11 @@ export default function CustomerRxUpload({
               <select
                 value={selectedQuickMedicine}
                 onChange={(e) => setSelectedQuickMedicine(e.target.value)}
-                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full sm:flex-1 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               >
                 <option value="">-- Select from Medicine Catalog --</option>
                 {medicines.map(m => (
-                  <option key={m.id} value={m.id}>{m.name} ({m.dosage}) - Rs. {m.unitPrice}</option>
+                  <option key={m.id} value={m.id}>{m.name}{m.genericName ? ` (${m.genericName})` : ""} - Rs. {Number(m.unitPrice).toFixed(2)}</option>
                 ))}
               </select>
 
@@ -372,7 +401,7 @@ export default function CustomerRxUpload({
                   max="100"
                   value={quickQty}
                   onChange={(e) => setQuickQty(parseInt(e.target.value) || 1)}
-                  className="w-20 px-3 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-black text-center"
+                  className="w-20 px-3 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-semibold text-center"
                   placeholder="Qty"
                 />
 
@@ -396,10 +425,10 @@ export default function CustomerRxUpload({
                   <div key={idx} className="flex justify-between items-center bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs text-xs font-bold text-slate-800">
                     <div>
                       <span>{item.name}</span>
-                      <span className="text-slate-400 font-normal ml-2">({item.dosage})</span>
+                      {item.dosage && <span className="text-slate-400 font-normal ml-2">({item.dosage})</span>}
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className="text-blue-700 font-black">{item.quantity} units</span>
+                      <span className="text-blue-700 font-semibold">{item.quantity} units</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveTypedItem(idx)}
@@ -423,7 +452,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. Paracetamol 500mg (2 strips), Cetirizine 10mg (1 box), Vitamin C 500mg..."
                 value={typedMedicinesText}
                 onChange={(e) => setTypedMedicinesText(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-hidden"
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
             </div>
           </div>
@@ -497,7 +526,7 @@ export default function CustomerRxUpload({
                   <div className="font-bold text-slate-900 text-xs">
                     Click to choose file or snap photo of prescription slip
                   </div>
-                  <p className="text-[10.5px] text-slate-400">Mobile camera photo or desktop image (JPG, PNG, PDF up to 10MB)</p>
+                  <p className="text-[10.5px] text-slate-400">{isPreparingFile ? "Preparing photo..." : "Phone camera photo, image, or PDF up to 5 MB"}</p>
                 </div>
               )}
             </div>
@@ -516,7 +545,7 @@ export default function CustomerRxUpload({
                 placeholder="e.g. K. A. Sunil Shantha"
                 value={patientName}
                 onChange={(e) => setPatientName(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
             </div>
           </div>
@@ -531,9 +560,36 @@ export default function CustomerRxUpload({
                 placeholder="+94 77 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Prescribing doctor (helps the pharmacist match the doctor database) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Doctor's Name (Optional)</label>
+            <div className="relative">
+              <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="As written on the slip"
+                value={doctorName}
+                onChange={(e) => setDoctorName(e.target.value)}
+                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block font-bold text-slate-700 mb-1">Doctor's SLMC Number (Optional)</label>
+            <input
+              type="text"
+              placeholder="e.g. SLMC-10234"
+              value={doctorSlmcNo}
+              onChange={(e) => setDoctorSlmcNo(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
+            />
           </div>
         </div>
 
@@ -547,7 +603,7 @@ export default function CustomerRxUpload({
               placeholder="e.g. 12/A, High Level Road, Nugegoda"
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+              className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
             />
           </div>
         </div>
@@ -563,24 +619,24 @@ export default function CustomerRxUpload({
             placeholder="e.g. Please send 1 month supply, or call before dispatching..."
             value={patientNotes}
             onChange={(e) => setPatientNotes(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-2 focus:ring-blue-500 outline-hidden text-xs"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
           />
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-black text-xs sm:text-sm rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer uppercase tracking-wide"
+          disabled={isSubmitting || isPreparingFile}
+          className="w-full py-4 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-[#2563EB]/25 flex items-center justify-center space-x-2 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
         >
           {isSubmitting ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>SAVING TO PHARMACY DATABASE...</span>
+              <span>Sending to the pharmacist...</span>
             </>
           ) : (
             <>
-              <span>SUBMIT ORDER TO PHARMACIST</span>
+              <span>Send to pharmacist</span>
               <ArrowRight className="w-5 h-5" />
             </>
           )}
