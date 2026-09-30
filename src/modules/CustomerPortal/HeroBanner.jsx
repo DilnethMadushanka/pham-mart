@@ -23,6 +23,8 @@ const HERO_IMAGES = [
   }
 ];
 
+const HEADLINE = ["Your", "prescription,", "checked", "and"];
+
 const FACTS = [
   { icon: Clock, label: "Open 7 days a week", value: "Weekdays until 8:00 PM" },
   { icon: ShieldCheck, label: "Every prescription", value: "Checked by a pharmacist" },
@@ -69,9 +71,24 @@ export default function HeroBanner({
 
           <h1
             id="hero-title"
-            className="text-[2.5rem] sm:text-[3.4rem] xl:text-[3.75rem] font-semibold text-[#0B2545] leading-[1.02] animate-rise [animation-delay:60ms]"
+            aria-label="Your prescription, checked and delivered."
+            className="text-[2.5rem] sm:text-[3.4rem] xl:text-[3.75rem] font-semibold text-[#0B2545] leading-[1.02]"
           >
-            Your prescription, checked and delivered<span className="text-[#2563EB]">.</span>
+            <span aria-hidden="true">
+              {HEADLINE.map((word, i) => (
+                <React.Fragment key={word}>
+                  <span className="relative inline-block">
+                    <span className="hero-line"><span className="hero-word" style={{ "--i": i }}>{word}</span></span>
+                    {word === "checked" && (
+                      <svg className="hero-mark" viewBox="0 0 200 48" preserveAspectRatio="none" aria-hidden="true">
+                        <path d="M4 38 C60 42 116 41 164 38 L176 46 L197 6" />
+                      </svg>
+                    )}
+                  </span>{" "}
+                </React.Fragment>
+              ))}
+              <span className="hero-line"><span className="hero-word" style={{ "--i": HEADLINE.length }}>delivered<span className="hero-dot text-[#2563EB]">.</span></span></span>
+            </span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-[44ch] animate-rise [animation-delay:120ms]">
