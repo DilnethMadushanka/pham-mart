@@ -12,8 +12,11 @@ function availability(med) {
   return { label: "In stock", tone: "status-chip-green" };
 }
 
-export default function StockChecker({ medicines = [], onUploadRx }) {
-  const [query, setQuery] = useState("");
+export default function StockChecker({ medicines = [], onUploadRx, query: controlledQuery, onQueryChange }) {
+  const [ownQuery, setOwnQuery] = useState("");
+  // The storefront can drive the search (a shelf tile fills it); otherwise it keeps its own.
+  const query = controlledQuery ?? ownQuery;
+  const setQuery = onQueryChange ?? setOwnQuery;
 
   // Controlled drugs are dispensed only against a prescription at the counter, so they aren't advertised here.
   const listed = useMemo(() => medicines.filter(m => !m.controlledDrug), [medicines]);

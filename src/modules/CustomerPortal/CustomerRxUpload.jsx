@@ -17,10 +17,13 @@ import {
   PlusCircle,
   Trash2,
   Pill,
-  Stethoscope
+  Stethoscope,
+  CalendarDays,
+  AlertTriangle
 } from 'lucide-react';
 import { submitPrescription } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
+import { checkRxDate, colomboToday, shiftDate, RX_VALID_DAYS } from '../../lib/rxDate';
 
 const MAX_PDF_BYTES = 5 * 1024 * 1024;
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
@@ -65,6 +68,7 @@ export default function CustomerRxUpload({
   const [patientNotes, setPatientNotes] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [doctorSlmcNo, setDoctorSlmcNo] = useState("");
+  const [rxDate, setRxDate] = useState("");
   
   // Submission mode: "photo" | "typed" | "both"
   const [orderMethod, setOrderMethod] = useState("both"); // Default "both" gives maximum flexibility!
@@ -84,6 +88,7 @@ export default function CustomerRxUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRx, setSubmittedRx] = useState(null);
+  const rxDateCheck = checkRxDate(rxDate);
 
   const handleAddQuickMedicine = () => {
     if (!selectedQuickMedicine) return;
@@ -183,6 +188,15 @@ export default function CustomerRxUpload({
       return;
     }
 
+    // A prescription photo needs its date; a typed order only if the customer gives one.
+    if (file || rxDate) {
+      const check = checkRxDate(rxDate);
+      if (!check.ok) {
+        notify(rxDate ? "Invalid prescription" : "Prescription date needed", check.message, "error");
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     const { data, error } = await submitPrescription({
       customerName: patientName,
@@ -191,6 +205,7 @@ export default function CustomerRxUpload({
       notes: patientNotes,
       doctorName: doctorName.trim() || null,
       doctorSlmcNo: doctorSlmcNo.trim() || null,
+      prescriptionDate: rxDate || null,
       medicines: compiledMedicines
     }, file);
     setIsSubmitting(false);
@@ -214,6 +229,7 @@ export default function CustomerRxUpload({
     setPatientNotes("");
     setTypedMedicinesText("");
     setCustomTypedItems([]);
+    setRxDate("");
     if (onSuccess) onSuccess();
   };
 
@@ -591,6 +607,37 @@ export default function CustomerRxUpload({
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold font-mono focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
             />
           </div>
+        </div>
+
+        {/* Prescription date: valid for 7 days from the day the doctor wrote it */}
+        <div>
+          <label htmlFor="rx-date" className="block font-bold text-slate-700 mb-1">
+            Prescription date {orderMethod === "typed" ? "(if you have one)" : "*"}
+          </label>
+          <div className="relative sm:max-w-xs">
+            <CalendarDays className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+            <input
+              id="rx-date"
+              type="date"
+              value={rxDate}
+              max={colomboToday()}
+              min={shiftDate(colomboToday(), -RX_VALID_DAYS)}
+              onChange={(e) => setRxDate(e.target.value)}
+              aria-describedby="rx-date-help"
+              aria-invalid={Boolean(rxDate) && !rxDateCheck.ok}
+              className={`w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border rounded-2xl font-semibold focus:ring-4 outline-hidden text-xs ${rxDate && !rxDateCheck.ok ? "border-rose-300 focus:ring-rose-500/15" : "border-slate-200 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50"}`}
+            />
+          </div>
+          {rxDate && !rxDateCheck.ok ? (
+            <p id="rx-date-help" role="alert" className="mt-2 flex items-start gap-2 rounded-xl bg-rose-50 ring-1 ring-rose-200 px-3 py-2 text-[12px] font-medium text-rose-800">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-px" />
+              <span>{rxDateCheck.message}</span>
+            </p>
+          ) : (
+            <p id="rx-date-help" className={`mt-1.5 text-[11px] ${rxDate ? "text-emerald-700 font-medium" : "text-slate-500"}`}>
+              {rxDate ? rxDateCheck.message : "The date your doctor wrote on the slip. Prescriptions are valid for 7 days."}
+            </p>
+          )}
         </div>
 
         {/* Delivery Address */}

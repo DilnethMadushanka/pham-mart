@@ -242,6 +242,8 @@ alter table public.prescriptions add column if not exists has_attachment boolean
 alter table public.prescriptions add column if not exists dispensed_at timestamptz;
 alter table public.prescriptions add column if not exists dispensed_txn text;
 alter table public.prescriptions add column if not exists doctor_id text;
+-- Date the doctor wrote the prescription. It is valid for 7 days from that date.
+alter table public.prescriptions add column if not exists prescription_date date;
 
 alter table public.transactions add column if not exists paid_amount numeric(10,2) default 0;
 alter table public.transactions add column if not exists change_amount numeric(10,2) default 0;
@@ -874,6 +876,7 @@ as $$
     'doctorId', r.doctor_id,
     'createdAt', r.created_at,
     'expiryDate', r.expiry_date,
+    'prescriptionDate', r.prescription_date,
     'medicines', app_private.as_array(r.medications),
     'isControlledDrug', coalesce(r.is_controlled, false),
     'status', coalesce(r.status, 'Pending'),
@@ -2101,9 +2104,30 @@ declare
   v_controlled boolean := false;
   v_id text;
   v_doctor public.doctors;
+  v_today date := (now() at time zone 'Asia/Colombo')::date;
+  v_rx_date date;
   r public.prescriptions;
 begin
   select * into p from app_private.session_principal(p_token);
+
+  -- A doctor's prescription is valid for 7 days from the date written on it.
+  begin
+    v_rx_date := nullif(btrim(p_rx ->> 'prescriptionDate'), '')::date;
+  exception when others then
+    raise exception 'Enter the prescription date as a valid date.';
+  end;
+  if v_rx_date is null and p.kind = 'staff' then
+    v_rx_date := v_today;
+  end if;
+  if v_rx_date is null and p_file is not null then
+    raise exception 'Enter the date written on the prescription.';
+  end if;
+  if v_rx_date > v_today then
+    raise exception 'The prescription date can''t be in the future.';
+  end if;
+  if v_rx_date < v_today - 7 then
+    raise exception 'Invalid prescription. It was written more than 7 days ago, and prescriptions are only valid for 7 days. Please get a new prescription from your doctor.';
+  end if;
 
   -- Link a registered doctor: staff pick one directly; otherwise match the
   -- registration number the patient typed.
@@ -2173,7 +2197,7 @@ begin
 
   insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,
                                     medications, notes, contact_phone, delivery_address, order_type,
-                                    is_controlled, expiry_date, has_attachment)
+                                    is_controlled, expiry_date, has_attachment, prescription_date)
   values (v_id, v_id, v_patient_id, v_patient_name, v_doctor.id,
           coalesce(v_doctor.name, app_private.clean_text(p_rx ->> 'doctorName', 160),
                    case when p_file is not null then 'Doctor prescription (photo)' else 'Patient direct order' end),
@@ -2190,8 +2214,8 @@ begin
             else 'Typed medicine order'
           end,
           v_controlled,
-          coalesce(nullif(p_rx ->> 'expiryDate', '')::date, current_date + 30),
-          p_file is not null)
+          coalesce(v_rx_date + 7, nullif(p_rx ->> 'expiryDate', '')::date, current_date + 30),
+          p_file is not null, v_rx_date)
   returning * into r;
 
   if p_file is not null then
@@ -2359,6 +2383,10 @@ begin
     if not found then
       raise exception 'That doctor is not in the doctor database.';
     end if;
+  end if;
+  if p_decision = 'Approved' and r.prescription_date is not null
+     and r.prescription_date < (now() at time zone 'Asia/Colombo')::date - 7 then
+    raise exception 'Invalid prescription. It was written on % and prescriptions are only valid for 7 days. Reject it and ask the patient for a new one.', r.prescription_date;
   end if;
   if p_decision = 'Approved' and v_needs_rx then
     if v_doctor.id is null then
@@ -2773,7 +2801,7 @@ do $$
 begin
   if not exists (select 1 from public.staff) then
     insert into public.staff (id, name, username, role, email, phone, status, permissions, last_active) values
-      ('STF-001', 'Ms. Chathurangika Kahandawaarachchi', 'admin_chathurangika', 'Owner/Admin', 'owner@pharmart.lk', '+94 77 123 4567', 'Active', '["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access"]', 'Never'),
+      ('STF-001', 'Fernando', 'admin_fernando', 'Owner/Admin', 'fernando@gmail.com', '+94 77 123 4567', 'Active', '["user_management", "inventory_full", "prescription_approve", "pos_checkout", "reports_access"]', 'Never'),
       ('STF-002', 'Mendis M.M.N', 'pharmacist_mendis', 'Pharmacist', 'mendis@pharmart.lk', '+94 71 987 6543', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', 'Never'),
       ('STF-003', 'Pathiraja M.M.S', 'cashier_pathiraja', 'Cashier', 'pathiraja@pharmart.lk', '+94 76 555 4321', 'Active', '["pos_checkout", "customer_register", "inventory_view"]', 'Never'),
       ('STF-004', 'Madushanka E.D', 'pharmacist_madushanka', 'Pharmacist', 'madushanka@pharmart.lk', '+94 70 111 2233', 'Active', '["inventory_view", "inventory_edit", "prescription_verify", "prescription_approve"]', 'Never');

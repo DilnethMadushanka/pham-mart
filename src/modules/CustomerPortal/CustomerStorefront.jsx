@@ -15,6 +15,9 @@ import LocationContactModal from './LocationContactModal';
 import CustomerRxUpload from './CustomerRxUpload';
 import MyOrders from './MyOrders';
 import StockChecker from './StockChecker';
+import ShopByNeed from './ShopByNeed';
+import AskPharmacistBanner from './AskPharmacistBanner';
+import HealthTips from './HealthTips';
 import GoogleFeedbackModal from '../../components/GoogleFeedbackModal';
 
 export default function CustomerStorefront({ 
@@ -38,6 +41,16 @@ export default function CustomerStorefront({
     });
   };
 
+  const [stockQuery, setStockQuery] = useState("");
+  const scrollToStock = (focus) => {
+    setActivePortalTab("store");
+    requestAnimationFrame(() => {
+      const el = document.getElementById("stock-section");
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (focus) setTimeout(() => el?.querySelector("input")?.focus({ preventScroll: true }), 500);
+    });
+  };
+
   const portalTabs = [
     { id: "store", label: "Wellness store", short: "Store", icon: Pill },
     { id: "upload_rx", label: "Upload prescription", short: "Upload Rx", icon: Upload },
@@ -49,14 +62,7 @@ export default function CustomerStorefront({
 
       <HeroBanner
         onUploadRx={() => openPortalTab("upload_rx")}
-        onCheckStock={() => {
-          setActivePortalTab("store");
-          requestAnimationFrame(() => {
-            const el = document.getElementById("stock-section");
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            setTimeout(() => el?.querySelector("input")?.focus({ preventScroll: true }), 500);
-          });
-        }}
+        onCheckStock={() => scrollToStock(true)}
         onOpenLocation={() => setIsLocationOpen(true)}
         onOpenGoogleFeedback={() => setIsGoogleFeedbackOpen(true)}
       />
@@ -117,8 +123,16 @@ export default function CustomerStorefront({
             />
           </div>
 
+          <div className="reveal">
+            <ShopByNeed medicines={medicines} onPick={(category) => { setStockQuery(category); scrollToStock(false); }} />
+          </div>
+
           <div id="stock-section" className="scroll-mt-24 reveal">
-            <StockChecker medicines={medicines} onUploadRx={() => openPortalTab("upload_rx")} />
+            <StockChecker medicines={medicines} onUploadRx={() => openPortalTab("upload_rx")} query={stockQuery} onQueryChange={setStockQuery} />
+          </div>
+
+          <div className="reveal">
+            <AskPharmacistBanner onUploadRx={() => openPortalTab("upload_rx")} />
           </div>
 
           <div className="reveal">
@@ -133,6 +147,10 @@ export default function CustomerStorefront({
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
             />
+          </div>
+
+          <div className="reveal">
+            <HealthTips />
           </div>
 
           <div className="reveal">

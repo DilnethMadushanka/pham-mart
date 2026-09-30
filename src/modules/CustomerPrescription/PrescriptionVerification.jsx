@@ -18,6 +18,7 @@ import NewPrescriptionModal from './NewPrescriptionModal';
 import DoctorDatabase from './DoctorDatabase';
 import { findDoctorForPrescription, doctorLabel } from '../../lib/doctors';
 import { submitPrescription, reviewPrescription, fetchPrescriptionFile } from '../../services/supabaseService';
+import { checkRxDate } from '../../lib/rxDate';
 import { promptDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 
@@ -285,6 +286,9 @@ export default function PrescriptionVerification({
                     <span className="truncate">{rx.doctorName}{rx.doctorSlmcNo ? ` (${rx.doctorSlmcNo})` : ""}</span>
                   </div>
                   <span className="text-xs text-slate-400 font-medium">{rx.uploadDate}</span>
+                  {rx.status === "Pending" && rx.prescriptionDate && !checkRxDate(rx.prescriptionDate).ok && (
+                    <span className="status-chip status-chip-red">Invalid, older than 7 days</span>
+                  )}
                   {(() => {
                     const { doctor, how } = findDoctorForPrescription(rx, doctors);
                     if (doctor && how === "linked") return <span className="status-chip status-chip-green"><BadgeCheck className="w-3.5 h-3.5" /> Doctor verified</span>;
@@ -330,6 +334,20 @@ export default function PrescriptionVerification({
                   <span className="text-slate-400 font-medium text-[11px] block">Order / Physician Type</span>
                   <span className="font-semibold text-slate-900 text-sm">{selectedRx.doctorName}</span>
                   <span className="text-[11px] text-blue-700 block font-mono font-bold">{selectedRx.orderType || "SLMC Reg: " + selectedRx.doctorSlmcNo}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-slate-400 font-medium text-[11px] block">Prescription date</span>
+                  {selectedRx.prescriptionDate ? (() => {
+                    const check = checkRxDate(selectedRx.prescriptionDate);
+                    return (
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-900 text-sm">{selectedRx.prescriptionDate}</span>
+                        {selectedRx.status === "Pending" && (check.ok
+                          ? <span className="status-chip status-chip-green">Within 7 days</span>
+                          : <span className="status-chip status-chip-red">Invalid, older than 7 days</span>)}
+                      </span>
+                    );
+                  })() : <span className="text-slate-500">Not given</span>}
                 </div>
               </div>
 
