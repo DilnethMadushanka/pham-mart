@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, FileText, Plus, User, Stethoscope } from 'lucide-react';
 import { notify } from '../../lib/notify';
+import { checkRxDate, colomboToday, shiftDate, RX_VALID_DAYS } from '../../lib/rxDate';
 
 export default function NewPrescriptionModal({ isOpen, onClose, onSave, customers, medicines, doctors = [] }) {
   const [customerId, setCustomerId] = useState('');
@@ -11,6 +12,7 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
   const [dosage, setDosage] = useState('1 tablet twice daily');
   const [durationDays, setDurationDays] = useState(30);
   const [qty, setQty] = useState(60);
+  const [rxDate, setRxDate] = useState(colomboToday());
 
   if (!isOpen) return null;
 
@@ -29,8 +31,15 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
       return;
     }
 
+    const dateCheck = checkRxDate(rxDate);
+    if (!dateCheck.ok) {
+      notify("Invalid prescription", dateCheck.message, "error");
+      return;
+    }
+
     onSave({
       customerId: cust.id,
+      prescriptionDate: rxDate,
       doctorId: doctor?.id || null,
       doctorName: doctor ? doctor.name : doctorName.trim(),
       doctorSlmcNo: doctor ? doctor.slmcNo : doctorSlmcNo.trim(),
@@ -123,6 +132,20 @@ export default function NewPrescriptionModal({ isOpen, onClose, onSave, customer
             </div>
           </div>
           )}
+
+          <div>
+            <label htmlFor="staff-rx-date" className="block font-bold text-slate-700 mb-1">Prescription date *</label>
+            <input
+              id="staff-rx-date"
+              type="date"
+              value={rxDate}
+              max={colomboToday()}
+              min={shiftDate(colomboToday(), -RX_VALID_DAYS)}
+              onChange={(e) => setRxDate(e.target.value)}
+              className={`w-full px-3 py-2 border rounded-xl ${checkRxDate(rxDate).ok ? "border-slate-300" : "border-rose-300"}`}
+            />
+            <p className={`mt-1 text-[11px] ${checkRxDate(rxDate).ok ? "text-slate-500" : "text-rose-700 font-medium"}`}>{checkRxDate(rxDate).message}</p>
+          </div>
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Prescribed Medication *</label>
