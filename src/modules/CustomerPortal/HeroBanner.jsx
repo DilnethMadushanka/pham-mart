@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Phone,
   MapPin,
   Star,
   Upload,
@@ -8,8 +7,10 @@ import {
   Truck,
   ShieldCheck,
   ArrowRight,
-  PenLine
+  PenLine,
+  Search
 } from 'lucide-react';
+import { openStatus } from '../../lib/hours';
 
 const HERO_IMAGES = [
   {
@@ -30,10 +31,17 @@ const FACTS = [
 
 export default function HeroBanner({
   onUploadRx,
+  onCheckStock,
   onOpenLocation,
   onOpenGoogleFeedback
 }) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [status, setStatus] = useState(() => openStatus());
+
+  useEffect(() => {
+    const t = setInterval(() => setStatus(openStatus()), 60000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -45,23 +53,32 @@ export default function HeroBanner({
   }, []);
 
   return (
-    <section aria-labelledby="hero-title" className="space-y-6">
+    <section aria-labelledby="hero-title" className="relative space-y-6">
+      <div aria-hidden className="pointer-events-none absolute -z-10 -top-24 right-0 w-[70%] h-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(37,99,235,0.10),transparent)]" />
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center pt-4 lg:pt-10">
 
         {/* Copy */}
-        <div className="lg:col-span-6 xl:col-span-5 space-y-7 animate-rise">
+        <div className="lg:col-span-6 space-y-7">
+          <p className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 animate-rise">
+            <span className="relative flex w-2 h-2" aria-hidden>
+              {status.open && <span className="absolute inset-0 rounded-full bg-[#10B981] opacity-60 animate-ping"></span>}
+              <span className={`relative w-2 h-2 rounded-full ${status.open ? "bg-[#10B981]" : "bg-slate-400"}`}></span>
+            </span>
+            {status.text}
+          </p>
+
           <h1
             id="hero-title"
-            className="text-4xl sm:text-5xl lg:text-[3.5rem] font-semibold text-[#0B2545] leading-[1.02]"
+            className="text-[2.5rem] sm:text-[3.4rem] xl:text-[3.75rem] font-semibold text-[#0B2545] leading-[1.02] animate-rise [animation-delay:60ms]"
           >
             Your prescription, checked and delivered<span className="text-[#2563EB]">.</span>
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-[46ch]">
+          <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-[44ch] animate-rise [animation-delay:120ms]">
             Upload a photo of your prescription. A licensed pharmacist reviews it, and we deliver to your door.
           </p>
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+          <div className="flex flex-wrap items-center gap-3 animate-rise [animation-delay:180ms]">
             <button
               onClick={onUploadRx}
               className="group inline-flex items-center gap-2.5 pl-5 pr-4 py-3.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold shadow-lg shadow-[#2563EB]/25 hover:-translate-y-0.5"
@@ -71,19 +88,22 @@ export default function HeroBanner({
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
             </button>
 
-            <a
-              href="tel:055-222-8292"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0B2545] hover:text-[#2563EB]"
-            >
-              <Phone className="w-4 h-4 text-[#2563EB]" />
-              <span className="underline decoration-slate-300 underline-offset-4 hover:decoration-[#2563EB]">055-222-8292</span>
-            </a>
+            {onCheckStock && (
+              <button
+                onClick={onCheckStock}
+                className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl bg-white ring-1 ring-slate-200 hover:ring-slate-300 text-sm font-semibold text-[#0B2545] shadow-xs"
+              >
+                <Search className="w-4 h-4 text-[#2563EB]" />
+                <span>Check stock</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Visual */}
-        <div className="lg:col-span-6 xl:col-span-7 relative animate-rise [animation-delay:120ms]">
-          <div className="relative aspect-[4/3] lg:aspect-[5/4] xl:aspect-[16/12] rounded-3xl overflow-hidden bg-slate-200 shadow-xl ring-1 ring-[#0B2545]/5">
+        <div className="lg:col-span-6 relative animate-rise [animation-delay:160ms]">
+          <div className="relative aspect-[4/3] lg:aspect-[5/4.2] rounded-[28px] overflow-hidden bg-slate-200 shadow-xl ring-1 ring-[#0B2545]/5">
+            <div aria-hidden className="absolute inset-0 z-10 bg-gradient-to-t from-[#0B2545]/25 via-transparent to-transparent pointer-events-none" />
             {HERO_IMAGES.map((img, index) => (
               <img
                 key={img.url}

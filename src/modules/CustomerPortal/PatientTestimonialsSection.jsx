@@ -43,13 +43,14 @@ export default function PatientTestimonialsSection({ onOpenGoogleFeedback }) {
   const [featured, ...rest] = REVIEWS;
 
   return (
-    <section aria-labelledby="reviews-title" className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12">
+    <section aria-labelledby="reviews-title" className="space-y-10">
 
       {/* Summary */}
-      <div className="lg:col-span-4 space-y-5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <h2 id="reviews-title" className="text-3xl sm:text-4xl font-semibold text-[#0B2545]">
           What patients say
         </h2>
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-4">
         <div className="flex items-end gap-4">
           <span className="text-6xl font-semibold tracking-tight text-[#0B2545] leading-none tabular-nums">4.8</span>
           <div className="pb-1 space-y-1">
@@ -66,12 +67,14 @@ export default function PatientTestimonialsSection({ onOpenGoogleFeedback }) {
             Write a review
           </button>
         )}
+        </div>
       </div>
 
       {/* Quotes */}
-      <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <figure className="md:col-span-2 rounded-3xl bg-white ring-1 ring-slate-200/80 p-7 sm:p-9 space-y-6 shadow-sm">
-          <blockquote className="text-lg sm:text-xl text-[#0B2545] leading-relaxed font-medium max-w-[60ch]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <figure className="relative md:col-span-2 lg:col-span-3 lg:row-span-2 rounded-3xl bg-white ring-1 ring-slate-200/80 p-7 sm:p-10 flex flex-col justify-between gap-10 shadow-sm overflow-hidden">
+          <span aria-hidden className="absolute -top-6 right-6 text-[10rem] leading-none font-semibold text-[#EFF6FF] select-none">&rdquo;</span>
+          <blockquote className="relative text-xl sm:text-2xl text-[#0B2545] leading-relaxed font-medium max-w-[60ch]">
             &ldquo;{featured.text}&rdquo;
           </blockquote>
           <figcaption className="flex items-center gap-3">
@@ -84,7 +87,7 @@ export default function PatientTestimonialsSection({ onOpenGoogleFeedback }) {
         </figure>
 
         {rest.map(rev => (
-          <figure key={rev.name} className="rounded-3xl bg-slate-100/70 p-6 sm:p-7 flex flex-col justify-between gap-6">
+          <figure key={rev.name} className="lg:col-span-2 rounded-3xl bg-slate-100/70 p-6 sm:p-7 flex flex-col justify-between gap-6">
             <blockquote className="text-sm sm:text-base text-slate-700 leading-relaxed">
               &ldquo;{rev.text}&rdquo;
             </blockquote>

@@ -37,47 +37,50 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
         </p>
       </div>
 
-      <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 stagger">
+      <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8 stagger">
+        <span aria-hidden className="hidden lg:block absolute top-6 left-6 right-6 h-px bg-gradient-to-r from-[#2563EB]/60 via-slate-200 to-slate-200" />
         {STEPS.map((step, idx) => {
           const Icon = step.icon;
           return (
-            <li key={step.title} style={{ '--i': idx }} className="relative pt-6 border-t-2 border-slate-200 group">
-              <span
-                aria-hidden
-                className="absolute -top-[2px] left-0 h-[2px] w-10 bg-[#2563EB] transition-all duration-500 group-hover:w-full"
-              />
-              <div className="flex items-center justify-between mb-5">
-                <span className="text-sm font-mono text-slate-400">{idx + 1}</span>
-                <Icon className="w-5 h-5 text-[#2563EB]" strokeWidth={1.75} />
+            <li key={step.title} style={{ '--i': idx }} className="relative group">
+              <div className="relative flex items-center gap-3 mb-5">
+                <span className={`w-12 h-12 rounded-2xl flex items-center justify-center ring-1 transition-colors duration-300 ${idx === 0 ? "bg-[#2563EB] text-white ring-[#2563EB] shadow-lg shadow-[#2563EB]/25" : "bg-white text-[#2563EB] ring-slate-200 group-hover:ring-[#2563EB]/40"}`}>
+                  <Icon className="w-5 h-5" strokeWidth={1.75} />
+                </span>
               </div>
               <h3 className="text-lg font-semibold text-[#0B2545] mb-2">{step.title}</h3>
-              <p className="text-sm text-slate-600 leading-relaxed">{step.desc}</p>
+              <p className="text-sm text-slate-600 leading-relaxed max-w-[34ch]">{step.desc}</p>
             </li>
           );
         })}
       </ol>
 
-      {/* CTA band */}
-      <div className="rounded-3xl bg-[#EFF6FF] ring-1 ring-[#2563EB]/10 px-6 py-8 sm:px-10 sm:py-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1.5">
-          <h3 className="text-xl sm:text-2xl font-semibold text-[#0B2545]">Have a prescription ready?</h3>
-          <p className="text-sm text-slate-600">Upload it now and a pharmacist will start the review.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-5">
-          <button
-            onClick={onUploadRx}
-            className="group inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold shadow-md shadow-[#2563EB]/20"
-          >
-            <Upload className="w-4 h-4" />
-            Upload prescription
-          </button>
-          <button
-            onClick={onShop}
-            className="group inline-flex items-center gap-1.5 text-sm font-semibold text-[#0B2545] hover:text-[#2563EB]"
-          >
-            Browse the store
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-          </button>
+      {/* Closing call to action: the page's one navy block */}
+      <div className="relative overflow-hidden rounded-[28px] bg-[#0B2545] text-white">
+        <img src="/images/hero_pharmacist.png" alt="" aria-hidden loading="lazy"
+          className="absolute inset-y-0 right-0 w-full md:w-3/5 h-full object-cover opacity-30 md:opacity-60 [mask-image:linear-gradient(90deg,transparent,#000_45%)]" />
+        <div aria-hidden className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-[#2563EB]/35 blur-3xl" />
+        <div className="relative px-6 py-10 sm:px-12 sm:py-14 max-w-xl space-y-6">
+          <div className="space-y-3">
+            <h3 className="text-2xl sm:text-4xl font-semibold leading-tight">Have a prescription ready?</h3>
+            <p className="text-slate-300 leading-relaxed">Upload it now. A pharmacist starts the review and sends you an itemised price.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-5">
+            <button
+              onClick={onUploadRx}
+              className="group inline-flex items-center gap-2.5 px-5 py-3.5 rounded-xl bg-white hover:bg-blue-50 text-[#0B2545] text-sm font-semibold shadow-lg shadow-black/20"
+            >
+              <Upload className="w-4 h-4 text-[#2563EB]" />
+              Upload prescription
+            </button>
+            <button
+              onClick={onShop}
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-white/90 hover:text-white"
+            >
+              Browse the store
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
         </div>
       </div>
     </section>

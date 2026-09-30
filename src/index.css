@@ -215,6 +215,15 @@
   }
 }
 
+/* Storefront range marquee: slow, pauses on hover, stops for reduced motion */
+.marquee-track { animation: marquee 40s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(calc(-50% - 0.375rem)); } }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; flex-wrap: wrap; width: auto; }
+  .marquee-track > [aria-hidden="true"] { display: none; }
+}
+
 /* Scrollbar: quiet slate, brand blue on hover */
 * {
   scrollbar-width: thin;
