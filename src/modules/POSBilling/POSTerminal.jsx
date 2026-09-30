@@ -18,10 +18,12 @@ import {
   FileText,
   X,
   Percent,
-  RefreshCw
+  RefreshCw,
+  Undo2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ReceiptModal from './ReceiptModal';
+import ReturnsModal from './ReturnsModal';
 import { saveCustomer, posCheckout } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
 import { newlyLowStock } from '../../lib/reorder';
@@ -29,7 +31,10 @@ import PageHeader from '../../components/PageHeader';
 
 const needsPrescription = (med) => Boolean(med.prescriptionRequired || med.controlledDrug);
 const localToday = () => new Date().toLocaleDateString("en-CA");
-const isExpired = (med) => Boolean(med.expiryDate && med.expiryDate < localToday());
+// Units that can be sold: stock in batches that haven't expired.
+const sellable = (med) => Math.max(0, med.sellableStock ?? med.stock);
+const isExpired = (med) => sellable(med) <= 0 &&
+  ((med.expiredStock || 0) > 0 || Boolean(med.expiryDate && med.expiryDate < localToday()));
 
 // Does this prescription list the medicine, and how many units may be dispensed?
 function prescribedQty(rx, med) {
@@ -60,8 +65,13 @@ export default function POSTerminal({
   setPrescriptions,
   transactions, 
   setTransactions, 
+  setBatches,
+  salesReturns = [],
+  setSalesReturns,
+  canProcessReturns = false,
   addAuditLog 
 }) {
+  const [isReturnsOpen, setIsReturnsOpen] = useState(false);
   const [cart, setCart] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedRxId, setSelectedRxId] = useState("");
@@ -135,17 +145,33 @@ export default function POSTerminal({
   };
 
   // Filter medicines for POS grid
-  const term = searchTerm.toLowerCase();
-  const availableMedicines = medicines.filter(m => 
+  const term = searchTerm.trim().toLowerCase();
+  const compactTerm = term.replace(/\s/g, "");
+  const availableMedicines = medicines.filter(m =>
     m.name.toLowerCase().includes(term) ||
     (m.genericName || "").toLowerCase().includes(term) ||
-    (m.code || "").toLowerCase().includes(term)
+    (m.code || "").toLowerCase().includes(term) ||
+    (compactTerm && (m.barcode || "").toLowerCase().includes(compactTerm))
   );
+
+  // Barcode scanners type the code and press Enter: add that item straight to the bill.
+  const handleSearchKey = (e) => {
+    if (e.key !== "Enter" || !compactTerm) return;
+    const exact = medicines.find(m => (m.barcode || "").toLowerCase() === compactTerm || (m.code || "").toLowerCase() === compactTerm);
+    const only = availableMedicines.length === 1 ? availableMedicines[0] : null;
+    const med = exact || only;
+    if (!med) {
+      notify("No match", `No medicine has the barcode or code "${searchTerm.trim()}".`, "error");
+      return;
+    }
+    addToCart(med);
+    setSearchTerm("");
+  };
 
   // Most units of this item that may go in the cart: stock, and for prescription
   // items the quantity on the linked prescription.
   const maxQtyFor = (med, rx = linkedRx) => {
-    const stockCap = med.stock;
+    const stockCap = sellable(med);
     if (!needsPrescription(med)) return stockCap;
     return rx ? Math.min(stockCap, prescribedQty(rx, med)) : 0;
   };
@@ -163,6 +189,10 @@ export default function POSTerminal({
   const addToCart = (med) => {
     if (isExpired(med)) {
       notify("Expired stock", `${med.name} expired on ${med.expiryDate} and can't be sold.`, "error");
+      return;
+    }
+    if (sellable(med) < 1) {
+      notify("Out of stock", `${med.name} is out of stock.`, "error");
       return;
     }
     let rx = linkedRx;
@@ -191,14 +221,10 @@ export default function POSTerminal({
 
     const existing = cart.find(item => item.id === med.id);
     const nextQty = (existing?.qty || 0) + 1;
-    if (med.stock < 1) {
-      notify("Out of stock", `${med.name} is out of stock.`, "error");
-      return;
-    }
     if (nextQty > maxQtyFor(med, rx)) {
-      notify("Limit reached", needsPrescription(med) && nextQty <= med.stock
+      notify("Limit reached", needsPrescription(med) && nextQty <= sellable(med)
         ? `Prescription ${rx.rxNumber} allows ${prescribedQty(rx, med)} units of ${med.name}.`
-        : `Only ${med.stock} units of ${med.name} in stock.`, "error");
+        : `Only ${sellable(med)} units of ${med.name} can be sold.`, "error");
       return;
     }
     setCart(prev => existing
@@ -213,9 +239,9 @@ export default function POSTerminal({
     }
     const med = medicines.find(m => m.id === id);
     if (med && newQty > maxQtyFor(med)) {
-      notify("Limit reached", needsPrescription(med) && newQty <= med.stock && linkedRx
+      notify("Limit reached", needsPrescription(med) && newQty <= sellable(med) && linkedRx
         ? `Prescription ${linkedRx.rxNumber} allows ${prescribedQty(linkedRx, med)} units of ${med.name}.`
-        : `Only ${med.stock} units of ${med.name} in stock.`, "error");
+        : `Only ${sellable(med)} units of ${med.name} can be sold.`, "error");
       return;
     }
     setCart(prev => prev.map(item => item.id === id ? { ...item, qty: newQty } : item));
@@ -272,9 +298,13 @@ export default function POSTerminal({
     }
 
     // The server has already taken the stock off, saved the sale and closed the prescription.
-    const { transaction, medicines: updatedMeds, prescription } = data;
+    const { transaction, medicines: updatedMeds, prescription, batches: updatedBatches } = data;
     setTransactions(prev => [transaction, ...prev]);
     setMedicines(prev => prev.map(m => updatedMeds.find(u => u.id === m.id) || m));
+    if (setBatches && updatedBatches) {
+      const ids = new Set(updatedMeds.map(m => m.id));
+      setBatches(prev => [...prev.filter(b => !ids.has(b.medicineId)), ...updatedBatches]);
+    }
 
     // Suggest a reorder the moment a sale takes a medicine down to its reorder level.
     const nowLow = newlyLowStock(medicines, updatedMeds);
@@ -311,6 +341,13 @@ export default function POSTerminal({
           <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
           Counter open
         </span>
+        <button
+          type="button"
+          onClick={() => setIsReturnsOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <Undo2 className="w-4 h-4" /> Returns
+        </button>
       </PageHeader>
 
       {/* Expanded Dedicated Customer Toolbar */}
@@ -371,11 +408,13 @@ export default function POSTerminal({
           
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-            <input 
-              type="text"
-              placeholder="Quick search medicine by name, generic code or brand..."
+            <input
+              type="search"
+              aria-label="Search medicines or scan a barcode"
+              placeholder="Search by name or barcode, or scan a barcode and press Enter"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchKey}
               className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden shadow-xs"
             />
           </div>
@@ -383,7 +422,7 @@ export default function POSTerminal({
           <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3 lg:max-h-[620px] lg:overflow-y-auto lg:pr-1">
             {availableMedicines.map((med) => {
               const expired = isExpired(med);
-              const isOut = med.stock <= 0 || expired;
+              const isOut = sellable(med) <= 0 || expired;
 
               return (
                 <div
@@ -421,8 +460,11 @@ export default function POSTerminal({
                     <div>
                       <span className="text-[11px] text-slate-400 block font-medium">Stock Level</span>
                       <span className={`font-semibold text-xs ${med.stock <= med.reorderLevel ? "text-rose-600" : "text-blue-700"}`}>
-                        {med.stock} units
+                        {sellable(med)} units
                       </span>
+                      {med.expiredStock > 0 && !expired && (
+                        <span className="block text-[10px] text-rose-600">{med.expiredStock} expired, not for sale</span>
+                      )}
                     </div>
 
                     <div className="text-right">
@@ -641,6 +683,25 @@ export default function POSTerminal({
         <ReceiptModal
           txn={completedTxn}
           onClose={() => setCompletedTxn(null)}
+        />
+      )}
+
+      {isReturnsOpen && (
+        <ReturnsModal
+          transactions={transactions}
+          salesReturns={salesReturns}
+          canProcess={canProcessReturns}
+          onClose={() => setIsReturnsOpen(false)}
+          onViewInvoice={(t) => setCompletedTxn(t)}
+          onDone={(data) => {
+            setTransactions(prev => prev.map(t => (t.id === data.transaction.id ? data.transaction : t)));
+            setSalesReturns?.(prev => [data.return, ...prev]);
+            if (data.medicines.length) setMedicines(prev => prev.map(m => data.medicines.find(u => u.id === m.id) || m));
+            if (setBatches && data.medicines.length) {
+              const ids = new Set(data.medicines.map(m => m.id));
+              setBatches(prev => [...prev.filter(b => !ids.has(b.medicineId)), ...data.batches]);
+            }
+          }}
         />
       )}
 

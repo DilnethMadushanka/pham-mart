@@ -12,16 +12,16 @@ import {
   Trash2, 
   Package, 
   Truck,
-  CheckCircle2,
-  ExternalLink,
   ShieldCheck,
-  Building
+  Tags
 } from 'lucide-react';
 import AddSupplierModal from './AddSupplierModal';
+import SupplierPriceModal from './SupplierPriceModal';
 import { confirmDialog } from '../../lib/notify';
 
 export default function SupplierList({ 
   suppliers, 
+  setSuppliers,
   medicines = [],
   purchaseOrders = [],
   onSaveSupplier,
@@ -31,6 +31,8 @@ export default function SupplierList({
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [pricingId, setPricingId] = useState(null);
+  const pricing = suppliers.find(s => s.id === pricingId);
 
   const filteredSuppliers = suppliers.filter(s => {
     const term = searchTerm.toLowerCase();
@@ -313,12 +315,27 @@ export default function SupplierList({
                       <span>{supplierPOsCount} Orders</span>
                     </div>
                   </div>
+                  <button
+                    onClick={() => setPricingId(supplier.id)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50"
+                  >
+                    <Tags className="w-3.5 h-3.5" /> Price list ({(supplier.prices || []).length})
+                  </button>
                 </div>
 
               </div>
             );
           })}
         </div>
+      )}
+
+      {pricing && (
+        <SupplierPriceModal
+          supplier={pricing}
+          medicines={medicines}
+          onClose={() => setPricingId(null)}
+          onSaved={(updated) => setSuppliers?.(prev => prev.map(s => (s.id === updated.id ? updated : s)))}
+        />
       )}
 
       {/* Add / Edit Supplier Modal */}

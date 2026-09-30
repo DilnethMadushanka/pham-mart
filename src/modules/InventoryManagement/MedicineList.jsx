@@ -1,27 +1,30 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Filter, 
-  AlertTriangle, 
-  Clock, 
-  ShieldCheck, 
-  Edit, 
-  Trash2, 
-  Truck, 
-  CheckCircle,
-  FileCheck,
+import {
+  Package,
+  Plus,
+  Search,
+  AlertTriangle,
+  Clock,
+  ShieldCheck,
+  Edit,
+  Trash2,
+  Truck,
   Building,
   TrendingDown,
-  ArrowRight
+  ArrowRight,
+  Layers,
+  CalendarX,
+  ScanBarcode
 } from 'lucide-react';
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
 import SupplierList from './SupplierList';
 import ReorderSuggestions from './ReorderSuggestions';
+import ExpiryTracking from './ExpiryTracking';
+import BatchesModal from './BatchesModal';
+import { expiryAlerts, expiryStatus, EXPIRY_LABEL } from '../../lib/expiry';
 import { buildReorderSuggestions } from '../../lib/reorder';
-import { saveMedicine, deleteMedicine } from '../../services/supabaseService';
+import { saveMedicine, deleteMedicine, loadData } from '../../services/supabaseService';
 import { confirmDialog, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 import MetricCard from '../../components/MetricCard';
@@ -32,8 +35,14 @@ export default function MedicineList({
   purchaseOrders, 
   setPurchaseOrders,
   suppliers,
+  setSuppliers,
   onSaveSupplier,
   onDeleteSupplier,
+  batches = [],
+  setBatches,
+  stockMovements = [],
+  setStockMovements,
+  canApproveOrders = false,
   transactions = [],
   focusSection = null,
   onFocusHandled,
@@ -55,7 +64,9 @@ export default function MedicineList({
   );
   const toReorder = reorderSuggestions.filter(s => s.openOrders.length === 0).length;
   // Read-only roles only see the catalogue; procurement screens need edit rights.
-  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "purchase_orders" | "suppliers"
+  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "expiry" | "purchase_orders" | "suppliers"
+  const alerts = useMemo(() => expiryAlerts(batches, medicines), [batches, medicines]);
+  const [batchesFor, setBatchesFor] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -63,22 +74,36 @@ export default function MedicineList({
   const [isAddMedicineOpen, setIsAddMedicineOpen] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState(null);
 
-  // Filter catalogue
+  // Filter catalogue. Search covers name, generic name, code, barcode and every batch number.
+  const warnedIds = new Set(alerts.map(a => a.medicineId));
+  const term = searchTerm.trim().toLowerCase();
+  const compactTerm = term.replace(/\s/g, "");
   const filteredMedicines = medicines.filter(m => {
-    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          m.genericName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          m.batchNo.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !term ||
+      m.name.toLowerCase().includes(term) ||
+      (m.genericName || "").toLowerCase().includes(term) ||
+      (m.code || "").toLowerCase().includes(term) ||
+      (compactTerm && (m.barcode || "").toLowerCase().includes(compactTerm)) ||
+      (m.batchNo || "").toLowerCase().includes(term) ||
+      batches.some(b => b.medicineId === m.id && b.batchNo.toLowerCase().includes(term));
     const matchesCategory = categoryFilter === "ALL" || m.category === categoryFilter;
-    
+
     let matchesStatus = true;
-    const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
     if (statusFilter === "LOW_STOCK") matchesStatus = m.stock <= m.reorderLevel;
+    if (statusFilter === "OUT") matchesStatus = (m.sellableStock ?? m.stock) <= 0;
     if (statusFilter === "CONTROLLED") matchesStatus = m.controlledDrug;
-    if (statusFilter === "EXPIRED") matchesStatus = m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow;
+    if (statusFilter === "EXPIRED") matchesStatus = (m.expiredStock || 0) > 0;
+    if (statusFilter === "NEAR_EXPIRY") matchesStatus = warnedIds.has(m.id);
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  // A barcode scanner types the code and presses Enter: open that medicine's batches.
+  const handleSearchKey = (e) => {
+    if (e.key !== "Enter" || !compactTerm) return;
+    const exact = medicines.find(m => (m.barcode || "").toLowerCase() === compactTerm || (m.code || "").toLowerCase() === compactTerm);
+    if (exact) setBatchesFor(exact);
+  };
 
   const categories = Array.from(new Set(medicines.map(m => m.category)));
 
@@ -100,6 +125,12 @@ export default function MedicineList({
     }
     setIsAddMedicineOpen(false);
     setEditingMedicine(null);
+    // Opening stock and stock corrections are booked into batches on the server.
+    const fresh = await loadData(['medicine_batches', 'stock_movements']);
+    if (fresh.data) {
+      setBatches?.(fresh.data.medicine_batches || []);
+      setStockMovements?.(fresh.data.stock_movements || []);
+    }
     return true;
   };
 
@@ -122,8 +153,8 @@ export default function MedicineList({
   };
 
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
-  const ninetyDaysThreshold = new Date(Date.now() + 90 * 86400000);
-  const expiredCount = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysThreshold).length;
+  const expiredCount = alerts.length;
+  const batchSetters = { setMedicines, setBatches, setStockMovements };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -167,6 +198,23 @@ export default function MedicineList({
             )}
           </button>
           <button
+            onClick={() => setActiveSubTab("expiry")}
+            aria-current={activeSubTab === "expiry" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              activeSubTab === "expiry"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            <CalendarX className="w-4 h-4" />
+            <span>Expiry tracking</span>
+            {alerts.length > 0 ? (
+              <span className="min-w-5 h-5 px-1.5 rounded-full bg-rose-100 text-rose-800 text-[11px] font-semibold font-mono flex items-center justify-center">{alerts.length}</span>
+            ) : (
+              <span className="text-xs font-mono text-slate-400">0</span>
+            )}
+          </button>
+          <button
             onClick={() => setActiveSubTab("purchase_orders")}
             aria-current={activeSubTab === "purchase_orders" ? "page" : undefined}
             className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
@@ -195,7 +243,15 @@ export default function MedicineList({
       </nav>
       )}
 
-      {activeSubTab === "reorder" ? (
+      {activeSubTab === "expiry" ? (
+        <ExpiryTracking
+          medicines={medicines}
+          batches={batches}
+          canEdit={canEdit}
+          onOpenBatches={setBatchesFor}
+          {...batchSetters}
+        />
+      ) : activeSubTab === "reorder" ? (
         <ReorderSuggestions
           medicines={medicines}
           transactions={transactions}
@@ -208,6 +264,7 @@ export default function MedicineList({
       ) : activeSubTab === "suppliers" ? (
         <SupplierList
           suppliers={suppliers}
+          setSuppliers={setSuppliers}
           medicines={medicines}
           purchaseOrders={purchaseOrders}
           onSaveSupplier={onSaveSupplier}
@@ -220,8 +277,11 @@ export default function MedicineList({
           setPurchaseOrders={setPurchaseOrders}
           medicines={medicines}
           setMedicines={setMedicines}
+          setBatches={setBatches}
+          setStockMovements={setStockMovements}
           suppliers={suppliers}
-          addAuditLog={addAuditLog}
+          transactions={transactions}
+          canApprove={canApproveOrders}
         />
       ) : (
         <>
@@ -255,7 +315,7 @@ export default function MedicineList({
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <MetricCard title="Catalogue items" value={medicines.length} subtitle="Tracked by batch and expiry" icon={Package} />
             <MetricCard title="Low stock" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} badge="Reorder" colorScheme="amber" />
-            <MetricCard title="Expiring within 90 days" value={expiredCount} subtitle="Flagged for inspection" icon={Clock} badge="Inspect" colorScheme="rose" />
+            <MetricCard title="Batches expiring or expired" value={expiredCount} subtitle="Within the next 90 days" icon={Clock} badge="Inspect" colorScheme="rose" />
             <MetricCard title="Controlled drugs" value={medicines.filter(m => m.controlledDrug).length} subtitle="Pharmacist sign-off required" icon={ShieldCheck} />
           </div>
 
@@ -264,11 +324,13 @@ export default function MedicineList({
             
             <div className="relative w-full md:w-96">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-              <input 
-                type="text"
-                placeholder="Search medicine name, code or batch..."
+              <input
+                type="search"
+                aria-label="Search medicines"
+                placeholder="Search name, barcode or batch, or scan a barcode"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKey}
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-800 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               />
             </div>
@@ -276,6 +338,7 @@ export default function MedicineList({
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               
               <select
+                aria-label="Filter by category"
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
                 className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
@@ -287,14 +350,17 @@ export default function MedicineList({
               </select>
 
               <select
+                aria-label="Filter by stock status"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
                 className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               >
                 <option value="ALL">All Stock Statuses</option>
-                <option value="LOW_STOCK">Low Stock Only</option>
-                <option value="CONTROLLED">Controlled Drugs Only</option>
-                <option value="EXPIRED">Near Expiry Only</option>
+                <option value="LOW_STOCK">Needs reordering</option>
+                <option value="OUT">Out of stock</option>
+                <option value="NEAR_EXPIRY">Expiring within 90 days</option>
+                <option value="EXPIRED">Has expired stock</option>
+                <option value="CONTROLLED">Controlled drugs</option>
               </select>
 
               {canEdit && (
@@ -323,13 +389,14 @@ export default function MedicineList({
                     <th className="py-3.5 px-4">Unit Price (LKR)</th>
                     <th className="py-3.5 px-4">Batch & Expiry</th>
                     <th className="py-3.5 px-4">Supplier</th>
-                    {canEdit && <th className="py-3.5 px-4 text-right">Actions</th>}
+                    <th className="py-3.5 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="block md:table-row-group divide-y divide-slate-100">
                   {filteredMedicines.map((med) => {
                     const isLowStock = med.stock <= med.reorderLevel;
-                    const isNearExpiry = med.expiryDate && new Date(med.expiryDate) <= ninetyDaysThreshold;
+                    const status = med.stock > 0 ? expiryStatus(med.expiryDate) : "ok";
+                    const isNearExpiry = status !== "ok";
 
                     return (
                       <tr key={med.id} className="grid grid-cols-2 gap-x-3 gap-y-2.5 p-4 md:table-row md:p-0 hover:bg-slate-50/80 transition-colors">
@@ -351,6 +418,11 @@ export default function MedicineList({
                           </div>
                           <div className="text-[11px] text-slate-500 mt-0.5">
                             {med.genericName} <span className="font-mono text-slate-400">{med.code}</span>
+                            {med.barcode && (
+                              <span className="inline-flex items-center gap-1 ml-2 font-mono text-slate-400">
+                                <ScanBarcode className="w-3 h-3" />{med.barcode}
+                              </span>
+                            )}
                           </div>
                         </td>
 
@@ -373,6 +445,10 @@ export default function MedicineList({
                               </span>
                             )}
                           </div>
+                          <div className="text-[11px] text-slate-500 mt-0.5 text-right md:text-left">
+                            {med.batchCount > 0 ? `${med.batchCount} batch${med.batchCount === 1 ? "" : "es"}` : "No batches"}
+                            {med.expiredStock > 0 && <span className="text-rose-600 font-semibold"> · {med.expiredStock} expired</span>}
+                          </div>
                         </td>
 
                         {/* Price */}
@@ -382,11 +458,20 @@ export default function MedicineList({
 
                         {/* Batch & Expiry */}
                         <td className="justify-self-end text-right md:text-left md:justify-self-auto md:py-3.5 md:px-4">
-                          <div className="text-slate-800 font-mono whitespace-nowrap">{med.batchNo}</div>
-                          <div className={`text-[11px] flex items-center justify-end md:justify-start whitespace-nowrap ${isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}>
-                            <Clock className="w-3 h-3 mr-1" />
-                            Exp: {med.expiryDate}
-                          </div>
+                          {med.stock > 0 ? (
+                            <>
+                              <div className="text-slate-800 font-mono whitespace-nowrap">{med.batchNo}</div>
+                              <div
+                                title={isNearExpiry ? EXPIRY_LABEL[status].label : undefined}
+                                className={`text-[11px] flex items-center justify-end md:justify-start whitespace-nowrap ${status === "watch" ? "text-amber-700 font-bold" : isNearExpiry ? "text-rose-600 font-bold" : "text-slate-500"}`}
+                              >
+                                <Clock className="w-3 h-3 mr-1" />
+                                {status === "expired" ? "Expired " : "Exp: "}{med.expiryDate}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-slate-400">No stock</div>
+                          )}
                         </td>
 
                         {/* Supplier */}
@@ -395,9 +480,17 @@ export default function MedicineList({
                         </td>
 
                         {/* Actions */}
-                        {canEdit && (
                         <td className="md:py-3.5 md:px-4 text-right">
                           <div className="flex items-center justify-end space-x-1">
+                            <button
+                              onClick={() => setBatchesFor(med)}
+                              title="Batches and stock"
+                              aria-label={`Batches of ${med.name}`}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                            >
+                              <Layers className="w-4 h-4" />
+                            </button>
+                            {canEdit && (<>
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
@@ -412,9 +505,9 @@ export default function MedicineList({
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
+                            </>)}
                           </div>
                         </td>
-                        )}
 
                       </tr>
                     );
@@ -426,6 +519,17 @@ export default function MedicineList({
         </>
       )}
 
+      {batchesFor && (
+        <BatchesModal
+          medicine={medicines.find(m => m.id === batchesFor.id) || batchesFor}
+          batches={batches}
+          stockMovements={stockMovements}
+          canEdit={canEdit}
+          onClose={() => setBatchesFor(null)}
+          {...batchSetters}
+        />
+      )}
+
       {/* Add / Edit Medicine Modal */}
       <AddMedicineModal
         isOpen={isAddMedicineOpen}
@@ -433,6 +537,7 @@ export default function MedicineList({
         onSave={handleSaveMedicine}
         medicineToEdit={editingMedicine}
         suppliers={suppliers}
+        categories={categories}
       />
 
     </div>

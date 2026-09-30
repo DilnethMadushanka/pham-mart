@@ -150,6 +150,60 @@ create table if not exists public.doctors (
   updated_at timestamptz default current_timestamp
 );
 
+-- Stock is held in batches. medicines.stock is always the sum of its batches.
+create table if not exists public.medicine_batches (
+  id text primary key,
+  medicine_id text not null references public.medicines (id) on delete cascade,
+  batch_no text not null,
+  expiry_date date,
+  quantity int not null default 0 check (quantity >= 0),
+  received_date date default current_date,
+  source text,
+  created_at timestamptz default current_timestamp
+);
+
+-- Every stock change other than a sale: deliveries, counts, write-offs, returns.
+create table if not exists public.stock_movements (
+  id text primary key,
+  medicine_id text,
+  medicine_name text,
+  batch_id text,
+  batch_no text,
+  change int not null,
+  quantity_after int,
+  reason text not null,
+  note text,
+  user_id text,
+  user_name text,
+  created_at timestamptz default current_timestamp
+);
+
+-- Each supplier's price for a medicine.
+create table if not exists public.supplier_prices (
+  supplier_id text not null references public.suppliers (id) on delete cascade,
+  medicine_id text not null references public.medicines (id) on delete cascade,
+  unit_cost numeric(10,2) not null check (unit_cost >= 0),
+  min_order_qty int default 1,
+  updated_at timestamptz default current_timestamp,
+  primary key (supplier_id, medicine_id)
+);
+
+-- Returned medicines and the refund paid for them.
+create table if not exists public.sales_returns (
+  id text primary key,
+  transaction_id text not null,
+  invoice_no text,
+  customer_id text,
+  customer_name text,
+  items jsonb not null,
+  refund_amount numeric(10,2) not null,
+  refund_method text not null,
+  reason text,
+  processed_by_id text,
+  processed_by text,
+  created_at timestamptz default current_timestamp
+);
+
 -- --------------------------------------------------------------------
 -- 2. Columns the app needs but the old schema did not store
 -- --------------------------------------------------------------------
@@ -160,6 +214,7 @@ alter table public.medicines add column if not exists generic_name text;
 alter table public.medicines add column if not exists batch_no text;
 alter table public.medicines add column if not exists supplier_id text;
 alter table public.medicines add column if not exists supplier_name text;
+alter table public.medicines add column if not exists barcode text;
 
 alter table public.suppliers add column if not exists address text;
 
@@ -167,6 +222,11 @@ alter table public.purchase_orders add column if not exists order_date date;
 alter table public.purchase_orders add column if not exists expected_delivery date;
 alter table public.purchase_orders add column if not exists received_date date;
 alter table public.purchase_orders add column if not exists received_by text;
+alter table public.purchase_orders add column if not exists created_by text;
+alter table public.purchase_orders add column if not exists approved_by text;
+alter table public.purchase_orders add column if not exists approved_at timestamptz;
+alter table public.purchase_orders add column if not exists deliveries jsonb default '[]'::jsonb;
+alter table public.purchase_orders add column if not exists notes text;
 
 alter table public.prescriptions add column if not exists rx_number text;
 alter table public.prescriptions add column if not exists notes text;
@@ -190,6 +250,7 @@ alter table public.transactions add column if not exists tax_pct numeric(5,2);
 alter table public.transactions add column if not exists customer_id text;
 alter table public.transactions add column if not exists cashier_id text;
 alter table public.transactions add column if not exists prescription_id text;
+alter table public.transactions add column if not exists refunded_amount numeric(10,2) default 0;
 
 alter table public.audit_logs add column if not exists user_id text;
 
@@ -200,6 +261,11 @@ create index if not exists transactions_customer_idx on public.transactions (cus
 create index if not exists audit_logs_created_idx on public.audit_logs (created_at desc);
 create unique index if not exists doctors_slmc_idx on public.doctors (upper(slmc_no));
 create index if not exists prescriptions_doctor_idx on public.prescriptions (doctor_id);
+create unique index if not exists medicine_batches_no_idx on public.medicine_batches (medicine_id, upper(batch_no));
+create index if not exists medicine_batches_expiry_idx on public.medicine_batches (medicine_id, expiry_date);
+create index if not exists stock_movements_medicine_idx on public.stock_movements (medicine_id, created_at desc);
+create index if not exists sales_returns_txn_idx on public.sales_returns (transaction_id);
+create unique index if not exists medicines_barcode_idx on public.medicines (barcode) where barcode is not null;
 
 -- Stock can never go negative (NOT VALID keeps any odd historic rows untouched).
 do $$
@@ -307,6 +373,11 @@ update public.medicines set generic_name = dosage where generic_name is null;
 
 update public.purchase_orders set order_date = created_at::date where order_date is null;
 
+-- Purchase orders now go Pending -> Approved -> Received. Older orders were
+-- sent straight to the supplier, so they count as approved.
+update public.purchase_orders set status = 'Approved' where status = 'Issued' or status is null;
+update public.purchase_orders set status = 'Received' where status = 'Goods Received';
+
 -- --------------------------------------------------------------------
 -- 5. Change counters (the app listens to these for live updates)
 -- --------------------------------------------------------------------
@@ -333,7 +404,8 @@ end $$;
 do $$
 declare t text;
 begin
-  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors'] loop
+  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns'] loop
     execute format('drop trigger if exists bump_data_version on public.%I', t);
     execute format('create trigger bump_data_version after insert or update or delete on public.%I
                     for each statement execute function app_private.bump_data_version()', t);
@@ -359,6 +431,15 @@ language sql
 volatile
 as $$
   select prefix || '-' || upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))
+$$;
+
+-- Today's date in Sri Lanka (the database clock runs in UTC).
+create or replace function app_private.today()
+returns date
+language sql
+stable
+as $$
+  select (now() at time zone 'Asia/Colombo')::date
 $$;
 
 create or replace function app_private.hash_token(p_token text)
@@ -517,9 +598,157 @@ as $$
     'prescriptionRequired', coalesce(m.is_prescription, false) or coalesce(m.is_controlled, false),
     'controlledDrug', coalesce(m.is_controlled, false),
     'supplierId', m.supplier_id,
-    'supplierName', coalesce(m.supplier_name, '')
+    'supplierName', coalesce(m.supplier_name, ''),
+    'barcode', coalesce(m.barcode, ''),
+    'batchCount', (select count(*) from public.medicine_batches b where b.medicine_id = m.id and b.quantity > 0),
+    'expiredStock', coalesce((select sum(b.quantity) from public.medicine_batches b
+                              where b.medicine_id = m.id and b.expiry_date < app_private.today()), 0),
+    'sellableStock', greatest(0, m.stock - coalesce((select sum(b.quantity) from public.medicine_batches b
+                              where b.medicine_id = m.id and b.expiry_date < app_private.today()), 0))
   )
 $$;
+
+create or replace function app_private.batch_json(b public.medicine_batches)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', b.id,
+    'medicineId', b.medicine_id,
+    'batchNo', b.batch_no,
+    'expiryDate', b.expiry_date,
+    'quantity', b.quantity,
+    'receivedDate', b.received_date,
+    'source', coalesce(b.source, '')
+  )
+$$;
+
+create or replace function app_private.movement_json(v public.stock_movements)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', v.id,
+    'medicineId', v.medicine_id,
+    'medicineName', coalesce(v.medicine_name, ''),
+    'batchId', v.batch_id,
+    'batchNo', coalesce(v.batch_no, ''),
+    'change', v.change,
+    'quantityAfter', v.quantity_after,
+    'reason', v.reason,
+    'note', coalesce(v.note, ''),
+    'user', coalesce(v.user_name, ''),
+    'createdAt', v.created_at
+  )
+$$;
+
+create or replace function app_private.return_json(r public.sales_returns)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', r.id,
+    'returnNo', r.id,
+    'transactionId', r.transaction_id,
+    'invoiceNo', r.invoice_no,
+    'customerId', r.customer_id,
+    'customerName', coalesce(r.customer_name, 'Walk-in Customer'),
+    'items', app_private.as_array(r.items),
+    'refundAmount', r.refund_amount,
+    'refundMethod', r.refund_method,
+    'reason', coalesce(r.reason, ''),
+    'processedBy', coalesce(r.processed_by, ''),
+    'createdAt', r.created_at
+  )
+$$;
+
+-- Recomputes a medicine's stock, earliest expiry and current batch from its batches.
+create or replace function app_private.sync_medicine_stock(p_medicine_id text)
+returns public.medicines
+language sql
+as $$
+  update public.medicines m set
+    stock = coalesce((select sum(b.quantity) from public.medicine_batches b where b.medicine_id = m.id), 0),
+    expiry_date = coalesce((select min(b.expiry_date) from public.medicine_batches b
+                            where b.medicine_id = m.id and b.quantity > 0), m.expiry_date),
+    batch_no = coalesce((select b.batch_no from public.medicine_batches b
+                         where b.medicine_id = m.id and b.quantity > 0
+                         order by b.expiry_date nulls last, b.received_date, b.created_at limit 1), m.batch_no)
+  where m.id = p_medicine_id
+  returning m.*
+$$;
+
+-- Adds units to a batch, creating it when this batch number is new for the medicine.
+create or replace function app_private.add_batch_stock(p_medicine_id text, p_batch_no text, p_expiry date, p_qty int, p_source text)
+returns public.medicine_batches
+language plpgsql
+as $$
+declare
+  b public.medicine_batches;
+  v_no text := upper(coalesce(nullif(trim(p_batch_no), ''), 'NO-BATCH'));
+begin
+  select * into b from public.medicine_batches
+  where medicine_id = p_medicine_id and upper(batch_no) = v_no for update;
+  if found then
+    if p_expiry is not null and b.expiry_date is not null and b.expiry_date <> p_expiry then
+      raise exception 'Batch % is already recorded with expiry date %. Check the batch number or the expiry date.', b.batch_no, b.expiry_date;
+    end if;
+    update public.medicine_batches set quantity = quantity + p_qty, expiry_date = coalesce(expiry_date, p_expiry)
+    where id = b.id returning * into b;
+  else
+    insert into public.medicine_batches (id, medicine_id, batch_no, expiry_date, quantity, received_date, source)
+    values (app_private.new_id('BAT'), p_medicine_id, v_no, p_expiry, p_qty, app_private.today(), p_source)
+    returning * into b;
+  end if;
+  return b;
+end $$;
+
+-- Takes units out of batches, earliest expiry first. Sales skip expired batches.
+create or replace function app_private.take_batch_stock(p_medicine_id text, p_qty int, p_include_expired boolean)
+returns jsonb
+language plpgsql
+as $$
+declare
+  b public.medicine_batches;
+  v_left int := p_qty;
+  v_take int;
+  v_used jsonb := '[]'::jsonb;
+begin
+  for b in
+    select * from public.medicine_batches
+    where medicine_id = p_medicine_id and quantity > 0
+      and (p_include_expired or expiry_date is null or expiry_date >= app_private.today())
+    order by expiry_date nulls last, received_date, created_at
+    for update
+  loop
+    exit when v_left <= 0;
+    v_take := least(v_left, b.quantity);
+    update public.medicine_batches set quantity = quantity - v_take where id = b.id;
+    v_used := v_used || jsonb_build_object('batchId', b.id, 'batchNo', b.batch_no, 'expiryDate', b.expiry_date, 'qty', v_take);
+    v_left := v_left - v_take;
+  end loop;
+  if v_left > 0 then
+    raise exception 'Not enough stock in date to take % units.', p_qty;
+  end if;
+  return v_used;
+end $$;
+
+create or replace function app_private.log_movement(p_user_id text, p_user text, b public.medicine_batches, p_change int, p_reason text, p_note text)
+returns jsonb
+language plpgsql
+as $$
+declare
+  r public.stock_movements;
+begin
+  insert into public.stock_movements (id, medicine_id, medicine_name, batch_id, batch_no, change, quantity_after, reason, note, user_id, user_name)
+  values (app_private.new_id('MOV'), b.medicine_id, (select name from public.medicines where id = b.medicine_id),
+          b.id, b.batch_no, p_change, b.quantity, p_reason, nullif(p_note, ''), p_user_id, p_user)
+  returning * into r;
+  return app_private.movement_json(r);
+end $$;
 
 create or replace function app_private.staff_json(s public.staff)
 returns jsonb
@@ -576,7 +805,12 @@ as $$
     'email', coalesce(s.email, ''),
     'phone', coalesce(s.phone, ''),
     'address', coalesce(s.address, ''),
-    'leadTimeDays', coalesce(s.lead_days, 3)
+    'leadTimeDays', coalesce(s.lead_days, 3),
+    'prices', (select coalesce(jsonb_agg(jsonb_build_object(
+                 'medicineId', sp.medicine_id, 'unitCost', sp.unit_cost,
+                 'minOrderQty', coalesce(sp.min_order_qty, 1), 'updatedAt', sp.updated_at)
+                 order by sp.medicine_id), '[]'::jsonb)
+               from public.supplier_prices sp where sp.supplier_id = s.id)
   )
 $$;
 
@@ -591,10 +825,15 @@ as $$
     'supplierId', po.supplier_id,
     'supplierName', po.supplier_name,
     'orderDate', coalesce(po.order_date, po.created_at::date),
-    'status', coalesce(po.status, 'Issued'),
+    'status', coalesce(po.status, 'Pending'),
     'expectedDelivery', po.expected_delivery,
     'receivedDate', po.received_date,
     'receivedBy', po.received_by,
+    'createdBy', coalesce(po.created_by, ''),
+    'approvedBy', po.approved_by,
+    'approvedAt', po.approved_at,
+    'deliveries', coalesce(po.deliveries, '[]'::jsonb),
+    'notes', coalesce(po.notes, ''),
     'items', app_private.as_array(po.items),
     'totalAmount', po.total_amount
   )
@@ -678,7 +917,10 @@ as $$
     'paidAmount', coalesce(nullif(t.paid_amount, 0), t.total, 0),
     'changeAmount', coalesce(t.change_amount, 0),
     'prescriptionId', t.prescription_id,
-    'status', 'Completed'
+    'refundedAmount', coalesce(t.refunded_amount, 0),
+    'status', case when coalesce(t.refunded_amount, 0) >= coalesce(t.total, 0) and coalesce(t.refunded_amount, 0) > 0 then 'Refunded'
+                   when coalesce(t.refunded_amount, 0) > 0 then 'Partly refunded'
+                   else 'Completed' end
   )
 $$;
 
@@ -934,7 +1176,8 @@ set search_path = public, extensions, app_private
 as $$
 declare
   p record;
-  v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors'];
+  v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
+                         'medicine_batches','stock_movements','sales_returns'];
   v_want text[] := coalesce(p_tables, v_all);
   v_is_staff boolean;
   v_can_stock boolean;
@@ -1002,6 +1245,29 @@ begin
     v_out := v_out || jsonb_build_object('doctors', case
       when v_is_staff then
         (select coalesce(jsonb_agg(app_private.doctor_json(d) order by d.name), '[]'::jsonb) from public.doctors d)
+      else '[]'::jsonb end);
+  end if;
+
+  if 'medicine_batches' = any (v_want) then
+    v_out := v_out || jsonb_build_object('medicine_batches', case
+      when v_is_staff then
+        (select coalesce(jsonb_agg(app_private.batch_json(b) order by b.expiry_date nulls last, b.batch_no), '[]'::jsonb)
+         from public.medicine_batches b)
+      else '[]'::jsonb end);
+  end if;
+
+  if 'stock_movements' = any (v_want) then
+    v_out := v_out || jsonb_build_object('stock_movements', case
+      when v_can_stock then
+        (select coalesce(jsonb_agg(app_private.movement_json(v) order by v.created_at desc), '[]'::jsonb)
+         from (select * from public.stock_movements order by created_at desc limit 500) v)
+      else '[]'::jsonb end);
+  end if;
+
+  if 'sales_returns' = any (v_want) then
+    v_out := v_out || jsonb_build_object('sales_returns', case
+      when v_is_staff then
+        (select coalesce(jsonb_agg(app_private.return_json(r) order by r.created_at desc), '[]'::jsonb) from public.sales_returns r)
       else '[]'::jsonb end);
   end if;
 
@@ -1073,12 +1339,20 @@ declare
   v_controlled boolean := coalesce((p_medicine ->> 'controlledDrug')::boolean, false);
   v_rx boolean := coalesce((p_medicine ->> 'prescriptionRequired')::boolean, false) or v_controlled;
   v_supplier public.suppliers;
+  v_barcode text := app_private.clean_text(regexp_replace(coalesce(p_medicine ->> 'barcode', ''), '\s', '', 'g'), 64);
+  v_delta int;
+  v_used jsonb;
+  v_part jsonb;
+  b public.medicine_batches;
   r public.medicines;
 begin
   select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
 
   if v_name is null then
     raise exception 'Medicine name is required.';
+  end if;
+  if v_barcode is not null and exists (select 1 from public.medicines where barcode = v_barcode and id is distinct from v_id) then
+    raise exception 'Another medicine already uses the barcode %.', v_barcode;
   end if;
   v_price := (p_medicine ->> 'unitPrice')::numeric;
   v_stock := (p_medicine ->> 'stock')::int;
@@ -1103,43 +1377,70 @@ begin
       raise exception 'Another medicine already uses the code %.', v_code;
     end if;
     insert into public.medicines (id, code, name, category, dosage, generic_name, price, stock, reorder_level,
-                                  is_prescription, is_controlled, expiry_date, batch_no, supplier_id, supplier_name)
+                                  is_prescription, is_controlled, expiry_date, batch_no, supplier_id, supplier_name, barcode)
     values (app_private.new_id('MED'), v_code, v_name,
             coalesce(app_private.clean_text(p_medicine ->> 'category', 80), 'General'),
             app_private.clean_text(p_medicine ->> 'dosage', 120),
             app_private.clean_text(p_medicine ->> 'genericName', 160),
-            v_price, v_stock, v_reorder, v_rx, v_controlled,
+            v_price, 0, v_reorder, v_rx, v_controlled,
             nullif(p_medicine ->> 'expiryDate', '')::date,
-            app_private.clean_text(p_medicine ->> 'batchNo', 60),
-            v_supplier.id, v_supplier.name)
+            upper(app_private.clean_text(p_medicine ->> 'batchNo', 60)),
+            v_supplier.id, v_supplier.name, v_barcode)
     returning * into r;
+    -- The opening stock becomes the medicine's first batch.
+    if v_stock > 0 then
+      b := app_private.add_batch_stock(r.id, p_medicine ->> 'batchNo', nullif(p_medicine ->> 'expiryDate', '')::date, v_stock, 'Opening stock');
+      perform app_private.log_movement(s.principal_id, s.display_name, b, v_stock, 'Opening stock', null);
+      r := app_private.sync_medicine_stock(r.id);
+    end if;
   else
     if v_code is not null and exists (select 1 from public.medicines where upper(code) = v_code and id <> v_id) then
       raise exception 'Another medicine already uses the code %.', v_code;
     end if;
+    select * into r from public.medicines where id = v_id for update;
+    if not found then
+      raise exception 'This medicine no longer exists. Refresh the page and try again.';
+    end if;
+    -- The edit form sends the stock it started from, so sales made while the
+    -- form was open are kept: only the change the user typed is applied.
+    v_delta := case when p_medicine ? 'stockBefore' then v_stock - (p_medicine ->> 'stockBefore')::int
+                    else v_stock - r.stock end;
     update public.medicines set
       code = coalesce(v_code, code),
       name = v_name,
       category = coalesce(app_private.clean_text(p_medicine ->> 'category', 80), category),
       generic_name = app_private.clean_text(p_medicine ->> 'genericName', 160),
       price = v_price,
-      -- The edit form sends the stock it started from, so sales made while the
-      -- form was open are kept: only the change the user typed is applied.
-      stock = case when p_medicine ? 'stockBefore'
-                   then greatest(0, stock + (v_stock - (p_medicine ->> 'stockBefore')::int))
-                   else v_stock end,
       reorder_level = v_reorder,
       is_prescription = v_rx,
       is_controlled = v_controlled,
-      expiry_date = nullif(p_medicine ->> 'expiryDate', '')::date,
-      batch_no = app_private.clean_text(p_medicine ->> 'batchNo', 60),
+      barcode = case when p_medicine ? 'barcode' then v_barcode else barcode end,
       supplier_id = case when p_medicine ? 'supplierId' then v_supplier.id else supplier_id end,
       supplier_name = case when p_medicine ? 'supplierId' then v_supplier.name else supplier_name end
     where id = v_id
     returning * into r;
-    if not found then
-      raise exception 'This medicine no longer exists. Refresh the page and try again.';
+    -- Stock itself lives in batches. A change typed into the form is booked
+    -- as a correction: added to the earliest in-date batch, or taken from
+    -- the earliest-expiring batches.
+    if v_delta > 0 then
+      select * into b from public.medicine_batches
+      where medicine_id = r.id and (expiry_date is null or expiry_date >= app_private.today())
+      order by quantity = 0, expiry_date nulls last, received_date limit 1 for update;
+      if found then
+        update public.medicine_batches set quantity = quantity + v_delta where id = b.id returning * into b;
+      else
+        b := app_private.add_batch_stock(r.id, coalesce(nullif(p_medicine ->> 'batchNo', ''), 'ADJ-' || to_char(app_private.today(), 'YYYYMMDD')),
+                                         nullif(p_medicine ->> 'expiryDate', '')::date, v_delta, 'Stock correction');
+      end if;
+      perform app_private.log_movement(s.principal_id, s.display_name, b, v_delta, 'Correction', 'Changed in the medicine form');
+    elsif v_delta < 0 and r.stock > 0 then
+      v_used := app_private.take_batch_stock(r.id, least(-v_delta, r.stock), true);
+      for v_part in select * from jsonb_array_elements(v_used) loop
+        select * into b from public.medicine_batches where id = v_part ->> 'batchId';
+        perform app_private.log_movement(s.principal_id, s.display_name, b, -(v_part ->> 'qty')::int, 'Correction', 'Changed in the medicine form');
+      end loop;
     end if;
+    r := app_private.sync_medicine_stock(r.id);
   end if;
 
   return app_private.medicine_json(r);
@@ -1157,6 +1458,142 @@ begin
   if not found then
     raise exception 'This medicine no longer exists.';
   end if;
+end $$;
+
+-- Receive stock into a new or existing batch without a purchase order, or
+-- correct a batch's number or expiry date.
+create or replace function public.save_batch(p_token text, p_batch jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  v_id text := app_private.clean_text(p_batch ->> 'id', 60);
+  v_no text := upper(app_private.clean_text(p_batch ->> 'batchNo', 60));
+  v_expiry date := nullif(p_batch ->> 'expiryDate', '')::date;
+  v_qty int := coalesce((p_batch ->> 'quantity')::int, 0);
+  v_note text := app_private.clean_text(p_batch ->> 'note', 300);
+  v_move jsonb;
+  b public.medicine_batches;
+  m public.medicines;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  if v_no is null then
+    raise exception 'Enter the batch number.';
+  end if;
+  if v_expiry is null then
+    raise exception 'Enter the expiry date.';
+  end if;
+
+  if v_id is null then
+    select * into m from public.medicines where id = p_batch ->> 'medicineId' for update;
+    if not found then
+      raise exception 'This medicine is no longer in the catalogue.';
+    end if;
+    if v_qty <= 0 then
+      raise exception 'Enter how many units were received.';
+    end if;
+    if v_expiry < app_private.today() then
+      raise exception 'This batch expired on %. Expired stock can''t be added.', v_expiry;
+    end if;
+    b := app_private.add_batch_stock(m.id, v_no, v_expiry, v_qty, 'Received without order');
+    v_move := app_private.log_movement(s.principal_id, s.display_name, b, v_qty, 'Stock received', v_note);
+    perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Stock Received',
+      m.name || ': ' || v_qty || ' units into batch ' || b.batch_no || ' (expires ' || v_expiry || ')', 'success');
+  else
+    select * into b from public.medicine_batches where id = v_id;
+    if not found then
+      raise exception 'This batch no longer exists.';
+    end if;
+    select * into m from public.medicines where id = b.medicine_id for update;
+    if exists (select 1 from public.medicine_batches where medicine_id = b.medicine_id and upper(batch_no) = v_no and id <> b.id) then
+      raise exception 'This medicine already has a batch %.', v_no;
+    end if;
+    if b.batch_no = v_no and b.expiry_date is not distinct from v_expiry then
+      raise exception 'Nothing changed.';
+    end if;
+    update public.medicine_batches set batch_no = v_no, expiry_date = v_expiry where id = b.id;
+    v_move := app_private.log_movement(s.principal_id, s.display_name, (select x from public.medicine_batches x where x.id = b.id), 0,
+      'Batch details corrected',
+      concat_ws('; ', case when b.batch_no <> v_no then 'Batch ' || b.batch_no || ' renamed to ' || v_no end,
+                      case when b.expiry_date is distinct from v_expiry then 'Expiry ' || coalesce(b.expiry_date::text, 'none') || ' changed to ' || v_expiry end,
+                      v_note));
+    select * into b from public.medicine_batches where id = v_id;
+  end if;
+
+  m := app_private.sync_medicine_stock(m.id);
+  return jsonb_build_object('medicine', app_private.medicine_json(m), 'batch', app_private.batch_json(b), 'movement', v_move);
+end $$;
+
+-- Sets a batch to the quantity actually on the shelf (stock count, damage,
+-- expiry write-off, return to supplier) and records why.
+create or replace function public.adjust_batch(p_token text, p_batch_id text, p_quantity int, p_reason text, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  b public.medicine_batches;
+  m public.medicines;
+  v_change int;
+  v_move jsonb;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  if p_reason is null or p_reason not in ('Stock count', 'Damaged', 'Expired write-off', 'Returned to supplier', 'Correction') then
+    raise exception 'Choose a reason for the change.';
+  end if;
+  if p_quantity is null or p_quantity < 0 then
+    raise exception 'Enter a quantity of 0 or more.';
+  end if;
+  select * into b from public.medicine_batches where id = p_batch_id;
+  if not found then
+    raise exception 'This batch no longer exists.';
+  end if;
+  select * into m from public.medicines where id = b.medicine_id for update;
+  select * into b from public.medicine_batches where id = p_batch_id for update;
+  v_change := p_quantity - b.quantity;
+  if v_change = 0 then
+    raise exception 'The quantity is already %. Nothing to change.', b.quantity;
+  end if;
+  if v_change > 0 and p_reason in ('Damaged', 'Expired write-off', 'Returned to supplier') then
+    raise exception '% can only lower the quantity.', p_reason;
+  end if;
+  update public.medicine_batches set quantity = p_quantity where id = b.id returning * into b;
+  v_move := app_private.log_movement(s.principal_id, s.display_name, b, v_change, p_reason, app_private.clean_text(p_note, 300));
+  m := app_private.sync_medicine_stock(m.id);
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Stock Adjusted',
+    m.name || ' batch ' || b.batch_no || ': ' || case when v_change > 0 then '+' else '' end || v_change
+      || ' (' || p_reason || coalesce(', ' || nullif(trim(p_note), ''), '') || '). Now ' || b.quantity || '.',
+    case when v_change < 0 then 'warning' else 'info' end);
+  return jsonb_build_object('medicine', app_private.medicine_json(m), 'batch', app_private.batch_json(b), 'movement', v_move);
+end $$;
+
+-- Removes an empty batch.
+create or replace function public.delete_batch(p_token text, p_batch_id text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  b public.medicine_batches;
+  m public.medicines;
+begin
+  perform app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  select * into b from public.medicine_batches where id = p_batch_id;
+  if not found then
+    raise exception 'This batch no longer exists.';
+  end if;
+  if b.quantity > 0 then
+    raise exception 'Batch % still has % units. Adjust it to 0 first.', b.batch_no, b.quantity;
+  end if;
+  delete from public.medicine_batches where id = b.id;
+  m := app_private.sync_medicine_stock(b.medicine_id);
+  return jsonb_build_object('medicine', app_private.medicine_json(m));
 end $$;
 
 create or replace function public.save_supplier(p_token text, p_supplier jsonb)
@@ -1238,9 +1675,10 @@ declare
   v_qty int;
   v_cost numeric;
   v_total numeric := 0;
+  s record;
   r public.purchase_orders;
 begin
-  perform app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
 
   select * into v_supplier from public.suppliers where id = p_order ->> 'supplierId';
   if not found then
@@ -1256,7 +1694,13 @@ begin
     if v_qty is null or v_qty <= 0 then
       raise exception 'Order quantities must be more than 0.';
     end if;
-    v_cost := round(coalesce((v_item ->> 'unitCost')::numeric, v_med.price * 0.7), 2);
+    -- Cost: what the user entered, else the supplier's price list, else 70% of the selling price.
+    v_cost := round(coalesce((v_item ->> 'unitCost')::numeric,
+                             (select unit_cost from public.supplier_prices where supplier_id = v_supplier.id and medicine_id = v_med.id),
+                             v_med.price * 0.7), 2);
+    if exists (select 1 from jsonb_array_elements(v_items) x where x ->> 'medicineId' = v_med.id) then
+      raise exception '% is on this order twice. Combine the quantities into one line.', v_med.name;
+    end if;
     if v_cost < 0 then
       raise exception 'Unit cost cannot be negative.';
     end if;
@@ -1269,16 +1713,104 @@ begin
     raise exception 'Add at least one medicine to the order.';
   end if;
 
-  insert into public.purchase_orders (id, supplier_id, supplier_name, items, total_amount, status, order_date, expected_delivery)
+  insert into public.purchase_orders (id, supplier_id, supplier_name, items, total_amount, status, order_date, expected_delivery,
+                                     created_by, notes, deliveries)
   values ('PO-' || to_char(now(), 'YYYY') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6)),
-          v_supplier.id, v_supplier.name, v_items, v_total, 'Issued', current_date,
-          current_date + coalesce(v_supplier.lead_days, 3))
+          v_supplier.id, v_supplier.name, v_items, v_total, 'Pending', app_private.today(),
+          app_private.today() + coalesce(v_supplier.lead_days, 3),
+          s.display_name, app_private.clean_text(p_order ->> 'notes', 500), '[]'::jsonb)
   returning * into r;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Purchase Order Created',
+    r.id || ' for ' || v_supplier.name || ', Rs. ' || to_char(v_total, 'FM999999990.00') || '. Waiting for approval.', 'info');
 
   return app_private.purchase_order_json(r);
 end $$;
 
-create or replace function public.receive_purchase_order(p_token text, p_po_id text, p_items jsonb)
+-- Owner approves a pending order (it can then be sent and received) or cancels it.
+create or replace function public.set_purchase_order_status(p_token text, p_po_id text, p_status text, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  r public.purchase_orders;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  select * into r from public.purchase_orders where id = p_po_id for update;
+  if not found then
+    raise exception 'This purchase order no longer exists.';
+  end if;
+
+  if p_status = 'Approved' then
+    if s.role <> 'Owner/Admin' then
+      raise exception 'Only the owner can approve purchase orders.' using errcode = '42501';
+    end if;
+    if r.status <> 'Pending' then
+      raise exception 'Only pending orders can be approved. This one is %.', r.status;
+    end if;
+    update public.purchase_orders set status = 'Approved', approved_by = s.display_name, approved_at = now(),
+      expected_delivery = app_private.today() + coalesce((select lead_days from public.suppliers where id = r.supplier_id), 3)
+    where id = r.id returning * into r;
+  elsif p_status = 'Cancelled' then
+    if r.status not in ('Pending', 'Approved') then
+      raise exception 'A % order can''t be cancelled.', lower(r.status);
+    end if;
+    if r.status = 'Approved' and s.role <> 'Owner/Admin' then
+      raise exception 'Only the owner can cancel an approved order.' using errcode = '42501';
+    end if;
+    update public.purchase_orders set status = 'Cancelled',
+      notes = concat_ws(E'\n', nullif(notes, ''), 'Cancelled by ' || s.display_name || coalesce(': ' || nullif(trim(p_note), ''), ''))
+    where id = r.id returning * into r;
+  else
+    raise exception 'Unknown status %.', p_status;
+  end if;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Purchase Order ' || p_status,
+    r.id || ' for ' || r.supplier_name, case when p_status = 'Approved' then 'success' else 'warning' end);
+  return app_private.purchase_order_json(r);
+end $$;
+
+-- A supplier's price for one medicine. A null cost removes it from the price list.
+create or replace function public.save_supplier_price(p_token text, p_supplier_id text, p_medicine_id text, p_unit_cost numeric, p_min_qty int default 1)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  r public.suppliers;
+begin
+  perform app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  select * into r from public.suppliers where id = p_supplier_id;
+  if not found then
+    raise exception 'This supplier no longer exists.';
+  end if;
+  if not exists (select 1 from public.medicines where id = p_medicine_id) then
+    raise exception 'This medicine is no longer in the catalogue.';
+  end if;
+  if p_unit_cost is null then
+    delete from public.supplier_prices where supplier_id = p_supplier_id and medicine_id = p_medicine_id;
+  else
+    if p_unit_cost < 0 then
+      raise exception 'Unit cost cannot be negative.';
+    end if;
+    insert into public.supplier_prices (supplier_id, medicine_id, unit_cost, min_order_qty, updated_at)
+    values (p_supplier_id, p_medicine_id, round(p_unit_cost, 2), greatest(1, coalesce(p_min_qty, 1)), now())
+    on conflict (supplier_id, medicine_id) do update
+      set unit_cost = excluded.unit_cost, min_order_qty = excluded.min_order_qty, updated_at = now();
+  end if;
+  return app_private.supplier_json(r);
+end $$;
+
+drop function if exists public.receive_purchase_order(text, text, jsonb);
+-- Records a delivery against an approved order. Each line is matched to the
+-- order: it can't bring in more than is still outstanding, and needs a batch
+-- number and expiry date. Short deliveries leave the order partly received
+-- unless p_close is true.
+create or replace function public.receive_purchase_order(p_token text, p_po_id text, p_items jsonb, p_close boolean default false)
 returns jsonb
 language plpgsql
 security definer
@@ -1288,9 +1820,16 @@ declare
   s record;
   v_po public.purchase_orders;
   v_item jsonb;
+  v_line jsonb;
   v_qty int;
+  v_outstanding int;
+  v_expiry date;
   v_ids text[] := '{}';
-  v_received jsonb := '[]'::jsonb;
+  v_got jsonb := '[]'::jsonb;
+  v_items jsonb;
+  v_complete boolean;
+  v_count int := 0;
+  b public.medicine_batches;
 begin
   select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
 
@@ -1298,42 +1837,94 @@ begin
   if not found then
     raise exception 'This purchase order no longer exists.';
   end if;
-  if v_po.status = 'Goods Received' then
+  if v_po.status in ('Received', 'Goods Received') then
     raise exception 'This order was already received on %.', coalesce(v_po.received_date::text, 'an earlier day');
+  end if;
+  if v_po.status = 'Pending' then
+    raise exception 'This order is waiting for the owner''s approval. Approve it before recording the delivery.';
+  end if;
+  if v_po.status = 'Cancelled' then
+    raise exception 'This order was cancelled.';
   end if;
 
   for v_item in select * from jsonb_array_elements(app_private.as_array(p_items)) loop
     v_qty := greatest(0, coalesce((v_item ->> 'quantity')::int, 0));
-    -- Only items that are on this order can be received against it.
-    if not exists (select 1 from jsonb_array_elements(app_private.as_array(v_po.items)) o
-                   where o ->> 'medicineId' = v_item ->> 'medicineId') then
-      continue;
+    continue when v_qty = 0;
+    v_line := null;
+    select o into v_line from jsonb_array_elements(app_private.as_array(v_po.items)) o
+    where o ->> 'medicineId' = v_item ->> 'medicineId' limit 1;
+    if v_line is null then
+      raise exception 'A delivered item is not on order %.', v_po.id;
     end if;
-    if v_qty > 0 then
-      update public.medicines set stock = stock + v_qty where id = v_item ->> 'medicineId';
-      if found then
-        v_ids := v_ids || (v_item ->> 'medicineId');
-      end if;
+    v_outstanding := (v_line ->> 'quantity')::int - coalesce((v_line ->> 'receivedQty')::int, 0)
+                     - coalesce((select sum((g ->> 'quantity')::int) from jsonb_array_elements(v_got) g
+                                 where g ->> 'medicineId' = v_item ->> 'medicineId'), 0);
+    if v_qty > v_outstanding then
+      raise exception '% units of % were delivered, but only % are still outstanding on this order.',
+        v_qty, v_line ->> 'name', v_outstanding;
     end if;
-    v_received := v_received || jsonb_build_object('medicineId', v_item ->> 'medicineId', 'receivedQty', v_qty);
+    if app_private.clean_text(v_item ->> 'batchNo', 60) is null then
+      raise exception 'Enter the batch number for %.', v_line ->> 'name';
+    end if;
+    v_expiry := nullif(v_item ->> 'expiryDate', '')::date;
+    if v_expiry is null then
+      raise exception 'Enter the expiry date for %.', v_line ->> 'name';
+    end if;
+    if v_expiry < app_private.today() then
+      raise exception '% batch % expired on %. Don''t accept expired stock.', v_line ->> 'name', v_item ->> 'batchNo', v_expiry;
+    end if;
+
+    perform 1 from public.medicines where id = v_item ->> 'medicineId' for update;
+    if not found then
+      raise exception '% is no longer in the catalogue.', v_line ->> 'name';
+    end if;
+    b := app_private.add_batch_stock(v_item ->> 'medicineId', v_item ->> 'batchNo', v_expiry, v_qty, 'PO ' || v_po.id);
+    perform app_private.log_movement(s.principal_id, s.display_name, b, v_qty, 'Goods received', 'Order ' || v_po.id);
+    perform app_private.sync_medicine_stock(v_item ->> 'medicineId');
+    v_ids := v_ids || (v_item ->> 'medicineId');
+    v_got := v_got || jsonb_build_object('medicineId', v_item ->> 'medicineId', 'name', v_line ->> 'name',
+                                         'quantity', v_qty, 'batchNo', b.batch_no, 'expiryDate', v_expiry);
+    v_count := v_count + 1;
   end loop;
 
+  if v_count = 0 and not p_close then
+    raise exception 'Enter the quantity delivered for at least one item.';
+  end if;
+
+  select coalesce(jsonb_agg(o || jsonb_build_object('receivedQty',
+           coalesce((o ->> 'receivedQty')::int, 0)
+           + coalesce((select sum((g ->> 'quantity')::int) from jsonb_array_elements(v_got) g
+                       where g ->> 'medicineId' = o ->> 'medicineId'), 0))), '[]'::jsonb)
+  into v_items
+  from jsonb_array_elements(app_private.as_array(v_po.items)) o;
+
+  v_complete := not exists (select 1 from jsonb_array_elements(v_items) o
+                            where (o ->> 'receivedQty')::int < (o ->> 'quantity')::int);
+
   update public.purchase_orders set
-    status = 'Goods Received',
-    received_date = current_date,
+    items = v_items,
+    deliveries = coalesce(deliveries, '[]'::jsonb) || case when v_count > 0 then jsonb_build_array(jsonb_build_object(
+      'date', app_private.today(), 'receivedBy', s.display_name, 'items', v_got)) else '[]'::jsonb end,
+    status = case when v_complete or p_close then 'Received' else 'Partly received' end,
+    received_date = case when v_complete or p_close then app_private.today() else received_date end,
     received_by = s.display_name,
-    items = (select coalesce(jsonb_agg(o || coalesce(
-               (select jsonb_build_object('receivedQty', (x ->> 'receivedQty')::int)
-                from jsonb_array_elements(v_received) x where x ->> 'medicineId' = o ->> 'medicineId' limit 1),
-               '{}'::jsonb)), '[]'::jsonb)
-             from jsonb_array_elements(app_private.as_array(v_po.items)) o)
+    notes = case when p_close and not v_complete
+                 then concat_ws(E'\n', nullif(notes, ''), 'Closed short by ' || s.display_name || ' on ' || app_private.today())
+                 else notes end
   where id = v_po.id
   returning * into v_po;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Goods Received',
+    'Delivery for ' || v_po.id || ' recorded: ' || coalesce((select string_agg((g ->> 'name') || ' x ' || (g ->> 'quantity') || ' (batch ' || (g ->> 'batchNo') || ')', ', ')
+                                                           from jsonb_array_elements(v_got) g), 'nothing')
+      || '. Order is now ' || lower(v_po.status) || '.', 'success');
 
   return jsonb_build_object(
     'purchaseOrder', app_private.purchase_order_json(v_po),
     'medicines', (select coalesce(jsonb_agg(app_private.medicine_json(m)), '[]'::jsonb)
-                  from public.medicines m where m.id = any (v_ids)));
+                  from public.medicines m where m.id = any (v_ids)),
+    'batches', (select coalesce(jsonb_agg(app_private.batch_json(x)), '[]'::jsonb)
+                from public.medicine_batches x where x.medicine_id = any (v_ids)));
 end $$;
 
 create or replace function public.save_customer(p_token text, p_customer jsonb)
@@ -1832,6 +2423,9 @@ declare
   v_paid numeric;
   v_change numeric := 0;
   v_invoice text;
+  v_expired int;
+  v_used jsonb;
+  v_final jsonb := '[]'::jsonb;
   t public.transactions;
 begin
   select * into s from app_private.require_staff(p_token);
@@ -1863,8 +2457,16 @@ begin
     if v_med.stock < v_line.qty then
       raise exception 'Only % left of %.', v_med.stock, v_med.name;
     end if;
-    if v_med.expiry_date is not null and v_med.expiry_date < current_date then
-      raise exception '% expired on % and can''t be sold.', v_med.name, v_med.expiry_date;
+    -- Expired batches stay on the books until written off, but can't be sold.
+    v_expired := coalesce((select sum(quantity) from public.medicine_batches
+                           where medicine_id = v_med.id and expiry_date < app_private.today()), 0);
+    if v_med.stock - v_expired < v_line.qty then
+      if v_med.stock - v_expired <= 0 then
+        raise exception '% expired on % and can''t be sold.', v_med.name,
+          (select min(expiry_date) from public.medicine_batches where medicine_id = v_med.id and quantity > 0);
+      end if;
+      raise exception 'Only % of % can be sold. The other % units are past their expiry date.',
+        v_med.stock - v_expired, v_med.name, v_expired;
     end if;
     if coalesce(v_med.is_prescription, false) or coalesce(v_med.is_controlled, false) then
       v_needs_rx := true;
@@ -1930,9 +2532,13 @@ begin
     v_paid := v_total;
   end if;
 
-  update public.medicines m set stock = m.stock - (l ->> 'qty')::int
-  from jsonb_array_elements(v_lines) l
-  where m.id = l ->> 'medicineId';
+  -- Take the stock from the batches that expire first, and record which ones.
+  for v_rx_item in select * from jsonb_array_elements(v_lines) loop
+    v_used := app_private.take_batch_stock(v_rx_item ->> 'medicineId', (v_rx_item ->> 'qty')::int, false);
+    perform app_private.sync_medicine_stock(v_rx_item ->> 'medicineId');
+    v_final := v_final || (v_rx_item || jsonb_build_object('batches', v_used));
+  end loop;
+  v_lines := v_final;
 
   v_invoice := 'INV-' || to_char(now() at time zone 'Asia/Colombo', 'YYYYMMDD') || '-'
                || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
@@ -1960,7 +2566,150 @@ begin
     'transaction', app_private.transaction_json(t),
     'medicines', (select coalesce(jsonb_agg(app_private.medicine_json(m)), '[]'::jsonb)
                   from public.medicines m where m.id = any (v_ids)),
-    'prescription', case when v_needs_rx then app_private.prescription_json(v_rx) end);
+    'prescription', case when v_needs_rx then app_private.prescription_json(v_rx) end,
+    'batches', (select coalesce(jsonb_agg(app_private.batch_json(x)), '[]'::jsonb)
+                from public.medicine_batches x where x.medicine_id = any (v_ids)));
+end $$;
+
+-- Takes back medicines from a completed sale and records the refund.
+-- Refunds are worked out from the invoice (after its discount and tax), and
+-- can't exceed what is still unreturned on each line. Items marked restock go
+-- back into the batches they were sold from.
+create or replace function public.process_return(p_token text, p_return jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  t public.transactions;
+  v_item jsonb;
+  v_line jsonb;
+  v_qty int;
+  v_sold int;
+  v_returned int;
+  v_left int;
+  v_back int;
+  v_part jsonb;
+  v_done int;
+  v_restock boolean;
+  v_refund numeric;
+  v_total_refund numeric := 0;
+  v_items jsonb := '[]'::jsonb;
+  v_batches jsonb;
+  v_ids text[] := '{}';
+  v_method text := coalesce(nullif(p_return ->> 'refundMethod', ''), 'Cash');
+  v_reason text := app_private.clean_text(p_return ->> 'reason', 300);
+  v_factor numeric;
+  b public.medicine_batches;
+  r public.sales_returns;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  if v_method not in ('Cash', 'Card', 'Digital Wallet') then
+    raise exception 'Choose how the refund is paid.';
+  end if;
+  if v_reason is null then
+    raise exception 'Enter the reason for the return.';
+  end if;
+
+  select * into t from public.transactions where id = p_return ->> 'transactionId' or invoice_no = p_return ->> 'transactionId' for update;
+  if not found then
+    raise exception 'No sale with that invoice number was found.';
+  end if;
+
+  -- Each unit's share of the bill after the invoice discount and tax.
+  v_factor := case when coalesce(t.subtotal, 0) > 0 then t.total / t.subtotal else 1 end;
+
+  for v_item in select * from jsonb_array_elements(app_private.as_array(p_return -> 'items')) loop
+    v_qty := coalesce((v_item ->> 'qty')::int, 0);
+    continue when v_qty <= 0;
+    v_line := null;
+    select l into v_line from jsonb_array_elements(app_private.as_array(t.items)) l
+    where l ->> 'medicineId' = v_item ->> 'medicineId' limit 1;
+    if v_line is null then
+      raise exception 'A returned item is not on invoice %.', t.invoice_no;
+    end if;
+    v_sold := coalesce((v_line ->> 'qty')::int, 0);
+    v_returned := coalesce((select sum((ri ->> 'qty')::int) from public.sales_returns sr,
+                            jsonb_array_elements(app_private.as_array(sr.items)) ri
+                            where sr.transaction_id = t.id and ri ->> 'medicineId' = v_item ->> 'medicineId'), 0);
+    if v_qty > v_sold - v_returned then
+      raise exception 'Only % of % can still be returned on this invoice.', v_sold - v_returned, v_line ->> 'name';
+    end if;
+    v_refund := round(coalesce((v_line ->> 'price')::numeric, 0) * v_qty * v_factor, 2);
+    v_restock := coalesce((v_item ->> 'restock')::boolean, false);
+    v_batches := '[]'::jsonb;
+
+    if v_restock then
+      perform 1 from public.medicines where id = v_item ->> 'medicineId' for update;
+      if not found then
+        raise exception '% is no longer in the catalogue, so it can''t go back into stock. Untick "Back to stock".', v_line ->> 'name';
+      end if;
+      v_left := v_qty;
+      -- Put units back into the batches this sale took them from, never more
+      -- than a batch gave (earlier returns count against it).
+      for v_part in select * from jsonb_array_elements(app_private.as_array(v_line -> 'batches')) loop
+        exit when v_left <= 0;
+        v_done := coalesce((select sum((rb ->> 'qty')::int) from public.sales_returns sr,
+                            jsonb_array_elements(app_private.as_array(sr.items)) ri,
+                            jsonb_array_elements(app_private.as_array(ri -> 'batches')) rb
+                            where sr.transaction_id = t.id and rb ->> 'batchId' = v_part ->> 'batchId'), 0);
+        v_back := least(v_left, (v_part ->> 'qty')::int - v_done);
+        continue when v_back <= 0;
+        select * into b from public.medicine_batches where id = v_part ->> 'batchId' for update;
+        if found then
+          update public.medicine_batches set quantity = quantity + v_back where id = b.id returning * into b;
+        else
+          b := app_private.add_batch_stock(v_item ->> 'medicineId', v_part ->> 'batchNo', nullif(v_part ->> 'expiryDate', '')::date, v_back, 'Customer return');
+        end if;
+        perform app_private.log_movement(s.principal_id, s.display_name, b, v_back, 'Customer return', 'Invoice ' || t.invoice_no);
+        v_batches := v_batches || jsonb_build_object('batchId', v_part ->> 'batchId', 'batchNo', b.batch_no, 'qty', v_back);
+        v_left := v_left - v_back;
+      end loop;
+      -- Sales from before batches were tracked: return into a batch named after the invoice.
+      if v_left > 0 then
+        b := app_private.add_batch_stock(v_item ->> 'medicineId', 'RET-' || t.invoice_no,
+               (select expiry_date from public.medicines where id = v_item ->> 'medicineId'), v_left, 'Customer return');
+        perform app_private.log_movement(s.principal_id, s.display_name, b, v_left, 'Customer return', 'Invoice ' || t.invoice_no);
+        v_batches := v_batches || jsonb_build_object('batchId', b.id, 'batchNo', b.batch_no, 'qty', v_left);
+      end if;
+      perform app_private.sync_medicine_stock(v_item ->> 'medicineId');
+      v_ids := v_ids || (v_item ->> 'medicineId');
+    end if;
+
+    v_items := v_items || jsonb_build_object('medicineId', v_item ->> 'medicineId', 'name', v_line ->> 'name',
+      'qty', v_qty, 'price', (v_line ->> 'price')::numeric, 'refund', v_refund, 'restock', v_restock, 'batches', v_batches);
+    v_total_refund := v_total_refund + v_refund;
+  end loop;
+
+  if jsonb_array_length(v_items) = 0 then
+    raise exception 'Choose at least one item to return.';
+  end if;
+  v_total_refund := least(v_total_refund, t.total - coalesce(t.refunded_amount, 0));
+
+  insert into public.sales_returns (id, transaction_id, invoice_no, customer_id, customer_name, items, refund_amount,
+                                    refund_method, reason, processed_by_id, processed_by)
+  values ('RET-' || to_char(now() at time zone 'Asia/Colombo', 'YYYYMMDD') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 5)),
+          t.id, t.invoice_no, t.customer_id, t.customer_name, v_items, v_total_refund, v_method, v_reason,
+          s.principal_id, s.display_name)
+  returning * into r;
+
+  update public.transactions set refunded_amount = coalesce(refunded_amount, 0) + v_total_refund where id = t.id
+  returning * into t;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Sale Return Processed',
+    r.id || ' on invoice ' || t.invoice_no || ': refunded Rs. ' || to_char(v_total_refund, 'FM999999990.00')
+      || ' by ' || v_method || '. ' || (select string_agg((i ->> 'name') || ' x ' || (i ->> 'qty')
+                                        || case when (i ->> 'restock')::boolean then ' (back to stock)' else ' (not restocked)' end, ', ')
+                                        from jsonb_array_elements(v_items) i) || '. Reason: ' || v_reason,
+    'warning');
+
+  return jsonb_build_object(
+    'return', app_private.return_json(r),
+    'transaction', app_private.transaction_json(t),
+    'medicines', (select coalesce(jsonb_agg(app_private.medicine_json(m)), '[]'::jsonb) from public.medicines m where m.id = any (v_ids)),
+    'batches', (select coalesce(jsonb_agg(app_private.batch_json(x)), '[]'::jsonb) from public.medicine_batches x where x.medicine_id = any (v_ids)));
 end $$;
 
 -- --------------------------------------------------------------------
@@ -1972,7 +2721,8 @@ declare
   t text;
   pol record;
 begin
-  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors','data_versions'] loop
+  foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns','data_versions'] loop
     execute format('alter table public.%I enable row level security', t);
     -- Remove any older "allow everything" policies.
     for pol in select policyname from pg_policies where schemaname = 'public' and tablename = t loop
@@ -1999,7 +2749,9 @@ declare
                         'get_prescription_file','add_audit_log','save_medicine','delete_medicine','save_supplier',
                         'delete_supplier','create_purchase_order','receive_purchase_order','save_customer',
                         'delete_customer','save_staff','staff_set_password','submit_prescription',
-                        'review_prescription','pos_checkout','save_doctor','delete_doctor'];
+                        'review_prescription','pos_checkout','save_doctor','delete_doctor',
+                        'save_batch','adjust_batch','delete_batch','process_return','set_purchase_order_status',
+                        'save_supplier_price'];
 begin
   for f in
     select p.oid::regprocedure as sig, p.proname
@@ -2049,5 +2801,15 @@ begin
       ('MED-105', 'MED-DZP-05', 'Diazepam 5mg (Valium)', 'Diazepam', 'Controlled Drugs', '5mg Tablets', 110.00, 4, 15, true, true, '2027-08-30', 'DZP-2026-05', 'SUP-03', 'Sun Pharmaceutical Industries');
   end if;
 end $$;
+
+-- --------------------------------------------------------------------
+-- 12. Stock held before batches existed becomes one opening batch
+-- --------------------------------------------------------------------
+
+insert into public.medicine_batches (id, medicine_id, batch_no, expiry_date, quantity, received_date, source)
+select app_private.new_id('BAT'), m.id, upper(coalesce(nullif(trim(m.batch_no), ''), 'OPENING')), m.expiry_date, m.stock,
+       coalesce(m.created_at::date, current_date), 'Opening stock'
+from public.medicines m
+where m.stock > 0 and not exists (select 1 from public.medicine_batches b where b.medicine_id = m.id);
 
 commit;

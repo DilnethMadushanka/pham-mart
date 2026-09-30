@@ -30,6 +30,7 @@ import {
 import { getSessionToken, setSessionToken } from './lib/session';
 import { notifyError, onToast } from './lib/notify';
 import { isStaffUser, assumableRoles, canAccessTab, defaultTab, can } from './lib/permissions';
+import { expiryAlerts } from './lib/expiry';
 
 export default function App() {
   // Navigation & View Mode
@@ -51,6 +52,9 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [batches, setBatches] = useState([]);
+  const [stockMovements, setStockMovements] = useState([]);
+  const [salesReturns, setSalesReturns] = useState([]);
   const [inventoryFocus, setInventoryFocus] = useState(null);
   const clearInventoryFocus = useCallback(() => setInventoryFocus(null), []);
   const [dataError, setDataError] = useState(null);
@@ -76,6 +80,9 @@ export default function App() {
     if (data.transactions) setTransactions(data.transactions);
     if (data.audit_logs) setAuditLogs(data.audit_logs);
     if (data.doctors) setDoctors(data.doctors);
+    if (data.medicine_batches) setBatches(data.medicine_batches);
+    if (data.stock_movements) setStockMovements(data.stock_movements);
+    if (data.sales_returns) setSalesReturns(data.sales_returns);
   }, []);
 
   const refresh = useCallback(async (tables = null) => {
@@ -97,6 +104,9 @@ export default function App() {
     setTransactions([]);
     setAuditLogs([]);
     setDoctors([]);
+    setBatches([]);
+    setStockMovements([]);
+    setSalesReturns([]);
   }, []);
 
   const endSession = useCallback((message) => {
@@ -156,6 +166,8 @@ export default function App() {
         if (tables.includes("staff") || tables.includes("customers")) recheckSession();
         // Doctor records show how many prescriptions link to them.
         if (tables.includes("prescriptions") && !tables.includes("doctors")) tables.push("doctors");
+        // Supplier price lists are sent with the suppliers.
+        if (tables.includes("supplier_prices") && !tables.includes("suppliers")) tables.push("suppliers");
         refresh(tables);
       }, 400);
     });
@@ -261,8 +273,7 @@ export default function App() {
 
   // Notification Counts
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
-  const ninetyDaysFromNow = new Date(Date.now() + 90 * 86400000);
-  const expiredCount = medicines.filter(m => m.expiryDate && new Date(m.expiryDate) <= ninetyDaysFromNow).length;
+  const expiredCount = expiryAlerts(batches, medicines).length;
   const pendingRxCount = prescriptions.filter(p => p.status === "Pending").length;
   const unreadCount = isStaff ? lowStockCount + expiredCount + pendingRxCount : 0;
 
@@ -331,6 +342,9 @@ export default function App() {
                 medicines={medicines}
                 transactions={transactions}
                 prescriptions={prescriptions}
+                salesReturns={salesReturns}
+                batches={batches}
+                purchaseOrders={purchaseOrders}
               />
             )}
 
@@ -344,6 +358,10 @@ export default function App() {
                 setPrescriptions={setPrescriptions}
                 transactions={transactions}
                 setTransactions={setTransactions}
+                setBatches={setBatches}
+                salesReturns={salesReturns}
+                setSalesReturns={setSalesReturns}
+                canProcessReturns={can(role, "returns_process")}
                 addAuditLog={addAuditLog}
               />
             )}
@@ -355,6 +373,12 @@ export default function App() {
                 purchaseOrders={purchaseOrders}
                 setPurchaseOrders={setPurchaseOrders}
                 suppliers={suppliers}
+                setSuppliers={setSuppliers}
+                batches={batches}
+                setBatches={setBatches}
+                stockMovements={stockMovements}
+                setStockMovements={setStockMovements}
+                canApproveOrders={can(role, "po_approve")}
                 transactions={transactions}
                 focusSection={inventoryFocus}
                 onFocusHandled={clearInventoryFocus}
@@ -415,6 +439,7 @@ export default function App() {
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
         medicines={medicines}
+        batches={batches}
         prescriptions={prescriptions}
         onNavigate={(target) => {
           const [tabId, section] = target.split(":");

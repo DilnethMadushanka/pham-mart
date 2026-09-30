@@ -28,3 +28,10 @@ insert into public.doctors (id, name, slmc_no, specialty, phone, hospital, statu
   ('DOC001', 'Dr. Perera', 'SLMC-10234', 'General Practitioner', '0712345678', 'City Medical Centre, Colombo', 'Active'),
   ('DOC002', 'Dr. Silva', 'SLMC-20871', 'Consultant Physician', '0771234567', 'Nawaloka Hospital, Colombo', 'Active')
 on conflict do nothing;
+
+-- Stock added above goes into an opening batch for each medicine.
+insert into public.medicine_batches (id, medicine_id, batch_no, expiry_date, quantity, received_date, source)
+select app_private.new_id('BAT'), m.id, upper(coalesce(nullif(trim(m.batch_no), ''), 'OPENING')), m.expiry_date, m.stock,
+       coalesce(m.created_at::date, current_date), 'Opening stock'
+from public.medicines m
+where m.stock > 0 and not exists (select 1 from public.medicine_batches b where b.medicine_id = m.id);

@@ -1,227 +1,294 @@
-import React, { useState } from 'react';
-import { 
-  TrendingUp, 
-  DollarSign, 
-  ShoppingCart, 
-  Package, 
-  FileText, 
-  AlertTriangle, 
-  Clock, 
-  CheckCircle2, 
-  ArrowUpRight,
-  Activity,
-  Award,
-  Zap,
+import React, { useMemo, useState } from 'react';
+import {
+  TrendingUp,
+  ShoppingCart,
+  FileText,
+  AlertTriangle,
+  CalendarX,
+  Truck,
+  Printer,
   BarChart3,
-  Printer
+  Wallet,
+  Undo2
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  PieChart, 
-  Pie, 
-  Cell,
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
   CartesianGrid
 } from 'recharts';
 import MetricCard from '../../components/MetricCard';
 import PageHeader from '../../components/PageHeader';
 import DailySalesReportModal from './DailySalesReportModal';
+import MonthlyRevenueReportModal from './MonthlyRevenueReportModal';
+import { dailySeries, monthlySeries, summarize, inDay, inMonth, todayKey, monthKey, dayKey, growth, money } from '../../lib/salesStats';
+import { expiryAlerts } from '../../lib/expiry';
+import { CLOSED_PO_STATUSES } from '../../lib/reorder';
 
-export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [] }) {
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+const BLUE = "#2563EB";
+const GRID = "#EEF2F7";
+const AXIS = "#94a3b8";
+const tooltipStyle = { backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 12px 28px -8px rgba(11, 37, 69, 0.18)' };
+const kFormat = (v) => (Math.abs(v) >= 1000 ? `${Math.round(v / 100) / 10}k` : `${Math.round(v)}`);
 
-  // Financial metrics
-  const totalRevenue = transactions.reduce((acc, t) => acc + (t.total || 0), 0);
-  const totalItemsSold = transactions.reduce((acc, t) => acc + (t.items ? t.items.reduce((a, i) => a + (i.qty || 0), 0) : 0), 0);
-  
+function Trend({ value, label }) {
+  if (value === null || !Number.isFinite(value)) return <span className="text-slate-500">No {label} to compare</span>;
+  const up = value >= 0;
+  return (
+    <span className={up ? "text-emerald-700" : "text-rose-700"}>
+      {up ? "+" : ""}{value.toFixed(1)}% vs {label}
+    </span>
+  );
+}
+
+// A ranked list drawn as thin single-colour bars (magnitude only, one hue).
+function BarList({ rows, valueOf, labelOf, format, empty }) {
+  const max = Math.max(...rows.map(valueOf), 0);
+  if (rows.length === 0) return <p className="text-sm text-slate-500">{empty}</p>;
+  return (
+    <ul className="space-y-3">
+      {rows.map((r, i) => (
+        <li key={i} className="space-y-1">
+          <div className="flex justify-between gap-3 text-xs">
+            <span className="text-slate-700 font-medium truncate">{labelOf(r)}</span>
+            <span className="text-slate-900 font-semibold tabular-nums whitespace-nowrap">{format(r)}</span>
+          </div>
+          <div className="h-2 rounded-full bg-slate-100">
+            <div className="h-2 rounded-full" style={{ width: `${max ? Math.max(2, (valueOf(r) / max) * 100) : 0}%`, backgroundColor: BLUE }} />
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [], salesReturns = [], batches = [], purchaseOrders = [] }) {
+  const [isDailyOpen, setIsDailyOpen] = useState(false);
+  const [isMonthlyOpen, setIsMonthlyOpen] = useState(false);
+  const [range, setRange] = useState(30);
+
+  const today = todayKey();
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = dayKey(yesterdayDate);
+  const thisMonth = monthKey(new Date());
+  const lastMonthDate = new Date();
+  lastMonthDate.setDate(1);
+  lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+  const lastMonth = monthKey(lastMonthDate);
+
+  const todayStats = useMemo(() => summarize(inDay(transactions, today), inDay(salesReturns, today), medicines), [transactions, salesReturns, medicines, today]);
+  const yesterdayStats = useMemo(() => summarize(inDay(transactions, yesterday), inDay(salesReturns, yesterday)), [transactions, salesReturns, yesterday]);
+  const monthStats = useMemo(() => summarize(inMonth(transactions, thisMonth), inMonth(salesReturns, thisMonth), medicines), [transactions, salesReturns, medicines, thisMonth]);
+  const lastMonthStats = useMemo(() => summarize(inMonth(transactions, lastMonth), inMonth(salesReturns, lastMonth)), [transactions, salesReturns, lastMonth]);
+  const daily = useMemo(() => dailySeries(transactions, salesReturns, range), [transactions, salesReturns, range]);
+  const monthly = useMemo(() => monthlySeries(transactions, salesReturns, 12), [transactions, salesReturns]);
+
   const lowStockCount = medicines.filter(m => m.stock <= m.reorderLevel).length;
+  const expiryCount = expiryAlerts(batches, medicines).length;
   const pendingRxCount = prescriptions.filter(p => p.status === "Pending").length;
+  const openPOs = purchaseOrders.filter(po => !CLOSED_PO_STATUSES.includes(po.status));
+  const pendingApproval = openPOs.filter(po => po.status === "Pending").length;
+  const stockValue = medicines.reduce((s, m) => s + (m.sellableStock ?? m.stock) * Number(m.unitPrice || 0), 0);
+  const refundRate = monthStats.gross ? (monthStats.refunds / monthStats.gross) * 100 : 0;
 
-  // Chart Mock Data for Daily Revenue
-  const salesChartData = [
-    { day: "Mon", revenue: 14200, transactions: 18 },
-    { day: "Tue", revenue: 18500, transactions: 24 },
-    { day: "Wed", revenue: 21000, transactions: 28 },
-    { day: "Thu", revenue: 19800, transactions: 22 },
-    { day: "Fri", revenue: 27400, transactions: 35 },
-    { day: "Sat", revenue: 32100, transactions: 42 },
-    { day: "Sun (Today)", revenue: totalRevenue > 0 ? totalRevenue : 24800, transactions: transactions.length || 31 }
-  ];
-
-  // Category Breakdown Pie Data
-  const categoryData = [
-    { name: "Antibiotics", value: 35, color: "#2563EB" },
-    { name: "Analgesics", value: 25, color: "#0ea5e9" },
-    { name: "Diabetes", value: 15, color: "#60A5FA" },
-    { name: "Cardiovascular", value: 15, color: "#1D4ED8" },
-    { name: "Controlled", value: 10, color: "#f43f5e" }
-  ];
+  const dayGrowth = growth(todayStats.net, yesterdayStats.net);
+  const monthGrowth = growth(monthStats.net, lastMonthStats.net);
+  const rangeTotal = daily.reduce((s, d) => s + d.net, 0);
 
   return (
     <div className="space-y-6 animate-fade-in font-sans">
-      
       <PageHeader
         kicker="Overview"
         title="Pharmacy performance"
-        description="Revenue, stock turn, billing errors and operating baselines, updated as sales come in."
+        description="Sales, revenue growth, stock and open work, from the live sales and stock records."
       >
-        <div className="text-right pr-1">
-          <div className="text-xs text-slate-500">Total revenue</div>
-          <div className="text-xl font-semibold text-[#0B2545] tabular-nums">
-            LKR {totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </div>
-        </div>
         <button
-          onClick={() => setIsReportModalOpen(true)}
+          onClick={() => setIsDailyOpen(true)}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-medium text-sm rounded-xl shadow-md shadow-[#2563EB]/20"
         >
           <Printer className="w-4 h-4" />
           <span>Daily sales report</span>
         </button>
+        <button
+          onClick={() => setIsMonthlyOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-medium text-sm rounded-xl"
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span>Monthly revenue report</span>
+        </button>
       </PageHeader>
 
-      {/* Metric Cards Grid - Expanded 4 Columns */}
+      {/* Money */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-        <MetricCard 
-          title="Daily Sales Revenue"
-          value={`Rs. ${totalRevenue.toLocaleString()}`}
-          subtitle="+18.4% compared to yesterday"
+        <MetricCard
+          title="Net sales today"
+          value={money(todayStats.net)}
+          subtitle={<Trend value={dayGrowth} label="yesterday" />}
           icon={TrendingUp}
-          trend="up"
-          trendValue="+18.4%"
-          colorScheme="sky"
         />
-
-        <MetricCard 
-          title="Total Transactions"
-          value={transactions.length.toString()}
-          subtitle="Processed at POS counter"
+        <MetricCard
+          title="Revenue this month"
+          value={money(monthStats.net)}
+          subtitle={<Trend value={monthGrowth} label="last month" />}
+          icon={Wallet}
+        />
+        <MetricCard
+          title="Sales today"
+          value={todayStats.count}
+          subtitle={`Average bill ${money(todayStats.avgTicket)} · ${todayStats.items} units`}
           icon={ShoppingCart}
-          trend="up"
-          trendValue="+12%"
-          colorScheme="sky"
         />
-
-        <MetricCard 
-          title="Low Stock Reorder Alerts"
-          value={lowStockCount.toString()}
-          subtitle="Items below reorder threshold"
-          icon={AlertTriangle}
-          badge="Action Required"
-          colorScheme="amber"
-        />
-
-        <MetricCard 
-          title="Pending Rx Clearances"
-          value={pendingRxCount.toString()}
-          subtitle="Pharmacist verification queue"
-          icon={FileText}
-          badge="Rx Queue"
-          colorScheme="rose"
+        <MetricCard
+          title="Refunds this month"
+          value={money(monthStats.refunds)}
+          subtitle={`${refundRate.toFixed(1)}% of gross sales`}
+          icon={Undo2}
+          colorScheme={refundRate > 5 ? "amber" : "sky"}
         />
       </div>
 
-      {/* Main Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        {/* Sales Revenue Trend Chart */}
-        <div className="lg:col-span-8 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5">
-          <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-            <div>
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight font-heading">Weekly revenue</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Sales across all POS counters, last 7 days</p>
-            </div>
-            <span className="status-chip status-chip-blue shrink-0">
-              <span className="relative flex w-1.5 h-1.5">
-                <span className="absolute inset-0 rounded-full bg-[#2563EB] opacity-60 animate-ping"></span>
-                <span className="relative w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
-              </span>
-              Live
-            </span>
-          </div>
+      {/* Work waiting */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+        <MetricCard title="Need reordering" value={lowStockCount} subtitle="At or below reorder level" icon={AlertTriangle} colorScheme="amber" badge={lowStockCount ? "Reorder" : undefined} />
+        <MetricCard title="Expiry warnings" value={expiryCount} subtitle="Batches expired or expiring in 90 days" icon={CalendarX} colorScheme="rose" />
+        <MetricCard title="Prescriptions to check" value={pendingRxCount} subtitle="Pharmacist verification queue" icon={FileText} colorScheme="rose" />
+        <MetricCard title="Open purchase orders" value={openPOs.length} subtitle={`${pendingApproval} waiting for your approval · stock worth ${money(stockValue)}`} icon={Truck} />
+      </div>
 
-          <div className="h-80">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Daily net sales */}
+        <section className="lg:col-span-8 bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5" aria-label="Daily net sales">
+          <div className="flex flex-wrap justify-between items-start gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">Daily net sales</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Sales less refunds, last {range} days: {money(rangeTotal)}</p>
+            </div>
+            <div className="flex gap-1.5" role="group" aria-label="Time range">
+              {[7, 30, 90].map(d => (
+                <button key={d} onClick={() => setRange(d)} aria-pressed={range === d}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-medium border ${range === d ? "bg-[#0B2545] text-white border-[#0B2545]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"}`}>
+                  {d} days
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesChartData}>
+              <AreaChart data={daily} margin={{ left: 0, right: 8, top: 8 }}>
                 <defs>
-                  <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.22}/>
-                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                  <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={BLUE} stopOpacity={0.2} />
+                    <stop offset="95%" stopColor={BLUE} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="#EEF2F7" />
-                <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} dy={8} />
-                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} width={48} tickFormatter={(v) => `${v / 1000}k`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', fontSize: '13px', boxShadow: '0 12px 28px -8px rgba(11, 37, 69, 0.18)' }}
+                <CartesianGrid vertical={false} stroke={GRID} />
+                <XAxis dataKey="label" stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} dy={8} minTickGap={24} />
+                <YAxis stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} width={44} tickFormatter={kFormat} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
                   cursor={{ stroke: '#CBD5E1', strokeDasharray: '4 4' }}
-                  formatter={(val) => [`Rs. ${val.toLocaleString()}`, 'Revenue']}
+                  formatter={(val, _name, item) => [`${money(val)} (${item.payload.count} sale${item.payload.count === 1 ? "" : "s"}${item.payload.refunds ? `, ${money(item.payload.refunds)} refunded` : ""})`, 'Net sales']}
                 />
-                <Area type="monotone" dataKey="revenue" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#skyGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+                <Area type="monotone" dataKey="net" stroke={BLUE} strokeWidth={2} fillOpacity={1} fill="url(#netGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </section>
 
-        {/* Category Breakdown Chart */}
-        <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5 flex flex-col justify-between">
-          <div>
-            <div className="border-b border-slate-100 pb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight font-heading">Sales by category</h3>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">Share of revenue by therapeutic category</p>
-            </div>
-
-            <div className="h-60 flex justify-center items-center my-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={62}
-                    outerRadius={92}
-                    paddingAngle={3}
-                    cornerRadius={4}
-                    stroke="none"
-                    dataKey="value"
-                  >
-                    {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+        {/* Sales by category */}
+        <section className="lg:col-span-4 bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5" aria-label="Sales by category this month">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">Sales by category</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Share of this month's sales</p>
           </div>
-
-          <div className="space-y-2.5 pt-3 border-t border-slate-100">
-            {categoryData.map((cat, idx) => (
-              <div key={idx} className="flex justify-between items-center text-xs">
-                <div className="flex items-center space-x-2.5">
-                  <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: cat.color }}></span>
-                  <span className="text-slate-700 font-bold">{cat.name}</span>
-                </div>
-                <span className="font-semibold text-slate-900 font-mono">{cat.value}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
+          <BarList
+            rows={monthStats.categories.slice(0, 6)}
+            valueOf={r => r.value}
+            labelOf={r => r.name}
+            format={r => `${r.share.toFixed(0)}% · ${money(r.value)}`}
+            empty="No sales this month yet."
+          />
+        </section>
       </div>
 
-      {/* Daily Sales Report Generator Modal */}
-      <DailySalesReportModal 
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
+      {/* Monthly revenue */}
+      <section className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5" aria-label="Monthly revenue">
+        <div className="flex flex-wrap justify-between items-start gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">Monthly revenue</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Net revenue for the last 12 months, with growth on the month before</p>
+          </div>
+          <button onClick={() => setIsMonthlyOpen(true)} className="text-sm font-medium text-[#2563EB] hover:underline">Full report</button>
+        </div>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={monthly} margin={{ left: 0, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} stroke={GRID} />
+              <XAxis dataKey="label" stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} dy={8} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} width={44} tickFormatter={kFormat} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                cursor={{ fill: '#F1F5F9' }}
+                labelFormatter={(_l, p) => p?.[0]?.payload?.fullLabel || ""}
+                formatter={(val, _n, item) => [
+                  `${money(val)}${item.payload.growth === null ? "" : ` (${item.payload.growth >= 0 ? "+" : ""}${item.payload.growth.toFixed(1)}%)`}`,
+                  'Net revenue'
+                ]}
+              />
+              <Bar dataKey="net" fill={BLUE} radius={[4, 4, 0, 0]} maxBarSize={36} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5" aria-label="Best sellers this month">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">Best sellers this month</h3>
+            <p className="text-xs text-slate-500 mt-0.5">By sales value</p>
+          </div>
+          <BarList
+            rows={monthStats.topItems.slice(0, 6)}
+            valueOf={r => r.total}
+            labelOf={r => r.name}
+            format={r => `${r.qty} units · ${money(r.total)}`}
+            empty="No sales this month yet."
+          />
+        </section>
+        <section className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/80 shadow-xs space-y-5" aria-label="Payments this month">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-slate-900 tracking-tight">Payments this month</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Collected by payment method, with refunds paid out</p>
+          </div>
+          <BarList
+            rows={monthStats.methods}
+            valueOf={r => r.sales}
+            labelOf={r => r.method}
+            format={r => `${r.count} sale${r.count === 1 ? "" : "s"} · ${money(r.sales)}${r.refunds ? ` · ${money(r.refunds)} refunded` : ""}`}
+            empty="No payments this month yet."
+          />
+        </section>
+      </div>
+
+      <DailySalesReportModal
+        isOpen={isDailyOpen}
+        onClose={() => setIsDailyOpen(false)}
         transactions={transactions}
+        salesReturns={salesReturns}
         medicines={medicines}
       />
-
+      <MonthlyRevenueReportModal
+        isOpen={isMonthlyOpen}
+        onClose={() => setIsMonthlyOpen(false)}
+        transactions={transactions}
+        salesReturns={salesReturns}
+      />
     </div>
   );
 }

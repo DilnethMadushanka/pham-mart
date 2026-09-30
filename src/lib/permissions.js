@@ -13,8 +13,8 @@ const ROLE_TABS = {
 };
 
 const ROLE_ACTIONS = {
-  "Owner/Admin": ["inventory_edit", "prescription_approve", "customer_edit", "customer_delete", "staff_manage", "reports_view"],
-  "Pharmacist": ["inventory_edit", "prescription_approve", "customer_edit"],
+  "Owner/Admin": ["inventory_edit", "prescription_approve", "customer_edit", "customer_delete", "staff_manage", "reports_view", "po_approve", "returns_process"],
+  "Pharmacist": ["inventory_edit", "prescription_approve", "customer_edit", "returns_process"],
   "Cashier": ["customer_edit"]
 };
 

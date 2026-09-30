@@ -33,13 +33,24 @@ function recentSales(transactions = [], now = Date.now()) {
   return sold;
 }
 
+export const CLOSED_PO_STATUSES = ["Received", "Goods Received", "Cancelled"];
+
+// Supplier's listed price for a medicine, else 70% of the selling price.
+export function supplierCost(supplier, med) {
+  const listed = (supplier?.prices || []).find(p => p.medicineId === med.id);
+  if (listed) return Number(listed.unitCost);
+  return Math.round(Number(med.unitPrice ?? 0) * 0.7 * 100) / 100;
+}
+
 function openOrdersByMedicine(purchaseOrders = []) {
   const open = {};
   purchaseOrders
-    .filter(po => po.status !== "Goods Received" && po.status !== "Cancelled")
+    .filter(po => !CLOSED_PO_STATUSES.includes(po.status))
     .forEach(po => (po.items || []).forEach(item => {
       if (!item.medicineId) return;
-      (open[item.medicineId] ||= []).push({ poNumber: po.poNumber || po.id, quantity: Number(item.quantity) || 0, expectedDelivery: po.expectedDelivery });
+      const outstanding = (Number(item.quantity) || 0) - (Number(item.receivedQty) || 0);
+      if (outstanding <= 0) return;
+      (open[item.medicineId] ||= []).push({ poNumber: po.poNumber || po.id, quantity: outstanding, status: po.status, expectedDelivery: po.expectedDelivery });
     }));
   return open;
 }
@@ -75,7 +86,7 @@ export function buildReorderSuggestions({ medicines = [], transactions = [], pur
         reason = `About ${daysLeft} day${daysLeft === 1 ? "" : "s"} of stock left, but delivery takes ${leadDays} day${leadDays === 1 ? "" : "s"}.`;
       }
 
-      const unitCost = Math.round(Number(med.unitPrice ?? 0) * 0.7 * 100) / 100;
+      const unitCost = supplierCost(supplier, med);
       return {
         medicine: med,
         supplier,

@@ -9,7 +9,7 @@ export default function ReceiptModal({ txn, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
       <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-blue-100 overflow-hidden">
         
         {/* Modal Top Actions */}
@@ -70,9 +70,16 @@ export default function ReceiptModal({ txn, onClose }) {
               <span>Amount</span>
             </div>
             {txn.items.map((item, idx) => (
-              <div key={idx} className="flex justify-between text-[11px]">
-                <span>{item.name} × {item.qty}</span>
-                <span>Rs. {item.total.toFixed(2)}</span>
+              <div key={idx} className="text-[11px]">
+                <div className="flex justify-between gap-2">
+                  <span>{item.name} × {item.qty} @ Rs. {Number(item.price || 0).toFixed(2)}</span>
+                  <span>Rs. {Number(item.total || 0).toFixed(2)}</span>
+                </div>
+                {(item.batches || []).length > 0 && (
+                  <div className="text-[10px] text-slate-500">
+                    Batch {item.batches.map(b => `${b.batchNo}${b.expiryDate ? ` (exp ${b.expiryDate})` : ""}`).join(", ")}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -99,6 +106,13 @@ export default function ReceiptModal({ txn, onClose }) {
               <span>TOTAL PAID ({txn.paymentMethod}):</span>
               <span>Rs. {txn.total.toFixed(2)}</span>
             </div>
+
+            {txn.refundedAmount > 0 && (
+              <div className="flex justify-between font-semibold text-rose-700">
+                <span>Refunded ({txn.status}):</span>
+                <span>- Rs. {Number(txn.refundedAmount).toFixed(2)}</span>
+              </div>
+            )}
 
             {txn.paymentMethod === "Cash" && (
               <>

@@ -122,8 +122,24 @@ export const saveSupplier = (supplier) => call('save_supplier', { p_supplier: su
 export const deleteSupplier = (id) => call('delete_supplier', { p_id: id });
 
 export const createPurchaseOrder = (order) => call('create_purchase_order', { p_order: order });
-export const receivePurchaseOrder = (poId, items) =>
-  call('receive_purchase_order', { p_po_id: poId, p_items: items });
+export const setPurchaseOrderStatus = (poId, status, note = null) =>
+  call('set_purchase_order_status', { p_po_id: poId, p_status: status, p_note: note });
+export const receivePurchaseOrder = (poId, items, close = false) =>
+  call('receive_purchase_order', { p_po_id: poId, p_items: items, p_close: close });
+export const saveSupplierPrice = (supplierId, medicineId, unitCost, minQty = 1) =>
+  call('save_supplier_price', { p_supplier_id: supplierId, p_medicine_id: medicineId, p_unit_cost: unitCost, p_min_qty: minQty });
+
+// Stock batches: receive stock, correct a batch, count or write off stock.
+export const saveBatch = (batch) => call('save_batch', { p_batch: batch });
+export const adjustBatch = (batchId, quantity, reason, note = null) =>
+  call('adjust_batch', { p_batch_id: batchId, p_quantity: quantity, p_reason: reason, p_note: note });
+export const deleteBatch = (batchId) => call('delete_batch', { p_batch_id: batchId });
+
+export async function processReturn(ret) {
+  const { data, error } = await call('process_return', { p_return: ret });
+  if (error) return { data: null, error };
+  return { data: { ...data, transaction: normalizeTransaction(data.transaction) }, error: null };
+}
 
 export const saveCustomer = (customer) => call('save_customer', { p_customer: customer });
 export const deleteCustomer = (id) => call('delete_customer', { p_id: id });
@@ -159,6 +175,7 @@ export async function posCheckout(sale) {
     data: {
       transaction: normalizeTransaction(data.transaction),
       medicines: data.medicines || [],
+      batches: data.batches || [],
       prescription: data.prescription ? normalizePrescription(data.prescription) : null
     },
     error: null

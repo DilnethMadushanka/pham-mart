@@ -78,12 +78,12 @@ export default function ReorderSuggestions({ medicines, transactions, purchaseOr
     }
     setPurchaseOrders(prev => [data, ...prev]);
     addAuditLog(
-      "Reorder Purchase Order Issued",
-      `Issued ${data.poNumber} to ${supplier.name} from reorder suggestions: ` +
+      "Reorder Purchase Order Created",
+      `Created ${data.poNumber} for ${supplier.name} from reorder suggestions: ` +
         chosen.map(s => `${s.medicine.name} x ${picks[s.medicine.id].qty}`).join(", "),
       "info"
     );
-    notify("Purchase order issued", `${data.poNumber} was sent to ${supplier.name}. Expected by ${data.expectedDelivery}.`);
+    notify("Purchase order created", `${data.poNumber} for ${supplier.name} is waiting for the owner's approval.`);
   };
 
   if (suggestions.length === 0) {
@@ -102,7 +102,7 @@ export default function ReorderSuggestions({ medicines, transactions, purchaseOr
         <MetricCard title="Need reordering" value={suggestions.length} subtitle="At or below reorder level" icon={TrendingDown} colorScheme="amber" />
         <MetricCard title="Out of stock" value={outCount} subtitle="Can't be sold right now" icon={PackageX} colorScheme="rose" />
         <MetricCard title="Run out before delivery" value={criticalCount} subtitle="Based on last 30 days of sales" icon={AlertTriangle} colorScheme="rose" />
-        <MetricCard title="Already on order" value={onOrderCount} subtitle="Open purchase order exists" icon={Truck} />
+        <MetricCard title="Already on order" value={onOrderCount} subtitle="Pending or approved order exists" icon={Truck} />
       </div>
 
       <p className="text-xs text-slate-500 leading-relaxed">
