@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
 import { 
   Upload, 
   User, 
@@ -168,6 +170,7 @@ export default function CustomerRxUpload({
       notify("Details needed", "Please enter your full name and a mobile number.", "error");
       return;
     }
+    if (!checkPhone(phone, notify, { required: true })) return;
 
     const usesTyped = orderMethod === "typed" || orderMethod === "both";
     const usesPhoto = orderMethod === "photo" || orderMethod === "both";
@@ -571,13 +574,14 @@ export default function CustomerRxUpload({
             <div className="relative">
               <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
               <input 
-                type="text"
+                type="tel" inputMode="tel"
                 required
                 placeholder="+94 77 123 4567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
+                className="peer w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden text-xs"
               />
+              <PhoneHint value={phone} />
             </div>
           </div>
         </div>

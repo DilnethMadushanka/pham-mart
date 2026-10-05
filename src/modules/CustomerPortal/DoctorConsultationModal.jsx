@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { X, Stethoscope, Phone, Calendar, Clock, CheckCircle2, User, MessageSquare } from 'lucide-react';
 import { notify } from '../../lib/notify';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
 
 export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }) {
   const [patientName, setPatientName] = useState("");
@@ -17,6 +19,7 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
       notify("Details needed", "Please enter the patient's name and a contact number.", "error");
       return;
     }
+    if (!checkPhone(phone, notify, { required: true })) return;
 
     notify(
       "Consultation requested",
@@ -102,13 +105,14 @@ export default function DoctorConsultationModal({ isOpen, onClose, addAuditLog }
           <div>
             <label className="block font-bold text-slate-700 mb-1">Phone Number for Callback *</label>
             <input 
-              type="text"
+              type="tel" inputMode="tel"
               required
               placeholder="+94 77 123 4567"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+              className="peer w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
             />
+            <PhoneHint value={phone} />
           </div>
 
           <div>

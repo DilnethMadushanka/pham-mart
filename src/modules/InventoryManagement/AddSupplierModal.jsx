@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Building, User, Mail, Phone, MapPin, Clock, Plus, Save } from 'lucide-react';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
+import { notify } from '../../lib/notify';
 
 export default function AddSupplierModal({ 
   isOpen, 
@@ -51,6 +54,7 @@ export default function AddSupplierModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
+    if (!checkPhone(formData.phone, notify)) return;
 
     onSave({
       ...(supplierToEdit ? { id: supplierToEdit.id } : {}),
@@ -134,13 +138,15 @@ export default function AddSupplierModal({
                 Phone Number
               </label>
               <input 
-                type="text"
+                type="tel"
+                inputMode="tel"
                 name="phone"
                 placeholder="e.g. +94 11 243 1845"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+                className="peer w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
               />
+              <PhoneHint value={formData.phone} />
             </div>
           </div>
 
