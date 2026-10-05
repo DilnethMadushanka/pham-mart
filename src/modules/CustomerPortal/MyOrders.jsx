@@ -151,6 +151,12 @@ export default function MyOrders({ prescriptions, medicines = [], currentUser, o
                     </button>
                   </div>
                 )}
+
+                {canPay && total == null && (
+                  <p className="pt-3 border-t border-slate-100 text-xs text-slate-500">
+                    Online payment isn't available for this order because some items aren't in our price list. Please pay when you collect, or call the pharmacy.
+                  </p>
+                )}
               </div>
             );
           })
