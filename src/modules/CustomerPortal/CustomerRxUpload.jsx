@@ -61,8 +61,7 @@ export default function CustomerRxUpload({
   medicines = [], 
   currentUser, 
   setPrescriptions, 
-  onSuccess,
-  onRequestSignIn
+  onSuccess
 }) {
   const [patientName, setPatientName] = useState(currentUser?.name || "");
   const [phone, setPhone] = useState(currentUser?.phone || "");
@@ -286,18 +285,6 @@ export default function CustomerRxUpload({
           )}
         </div>
 
-        {!currentUser && (
-          <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-3">
-            <span>Keep your reference number. The pharmacist will call you on {phone}. Sign in before your next order to track it online.</span>
-            <button
-              type="button"
-              onClick={onRequestSignIn}
-              className="px-3.5 py-2 bg-white border border-amber-300 rounded-xl font-semibold hover:bg-amber-100"
-            >
-              Sign in
-            </button>
-          </div>
-        )}
 
         <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200 text-xs text-blue-900 flex items-start space-x-3">
           <ShieldCheck className="w-5 h-5 text-blue-700 shrink-0 mt-0.5" />
