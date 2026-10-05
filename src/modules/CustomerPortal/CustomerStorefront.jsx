@@ -4,7 +4,8 @@ import { openStatus, HOURS } from '../../lib/hours';
 import {
   Pill,
   Upload,
-  Clock
+  Clock,
+  LogIn
 } from 'lucide-react';
 import HeroBanner from './HeroBanner';
 import HowItWorksSection from './HowItWorksSection';
@@ -116,15 +117,28 @@ export default function CustomerStorefront({
       </nav>
 
       {/* DYNAMIC PORTAL VIEWS */}
-      {activePortalTab === "upload_rx" && (
+      {activePortalTab === "upload_rx" && (currentUser ? (
         <CustomerRxUpload 
           medicines={medicines}
           currentUser={currentUser}
           setPrescriptions={setPrescriptions}
-          onSuccess={() => setActivePortalTab(currentUser ? "my_orders" : "store")}
-          onRequestSignIn={onRequestSignIn}
+          onSuccess={() => setActivePortalTab("my_orders")}
         />
-      )}
+      ) : (
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-xs text-center space-y-3 animate-fade-in">
+          <h2 className="text-xl font-semibold text-slate-900">Sign in to upload a prescription</h2>
+          <p className="text-sm text-slate-500 max-w-md mx-auto">
+            We link every prescription to your account, so you can track the pharmacist's review and pay online from My orders.
+          </p>
+          <button
+            onClick={onRequestSignIn}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20"
+          >
+            <LogIn className="w-4 h-4" />
+            Sign in
+          </button>
+        </div>
+      ))}
 
       {activePortalTab === "my_orders" && (
         <MyOrders 

@@ -2129,10 +2129,14 @@ declare
   v_doctor public.doctors;
   v_today date := (now() at time zone 'Asia/Colombo')::date;
   v_rx_date date;
-  v_phone_key text;
   r public.prescriptions;
 begin
   select * into p from app_private.session_principal(p_token);
+  -- Uploads need an account, so every prescription belongs to a customer who
+  -- can track it and pay for it online from My orders.
+  if p.kind is null then
+    raise exception 'Please sign in to upload a prescription.';
+  end if;
 
   -- A doctor's prescription is valid for 7 days from the date written on it.
   begin
@@ -2172,12 +2176,9 @@ begin
     end if;
     v_patient_id := v_customer.id;
     v_patient_name := v_customer.name;
-  elsif p.kind = 'customer' then
+  else
     v_patient_id := p.principal_id;
     v_patient_name := coalesce(app_private.clean_text(p_rx ->> 'customerName', 120), p.display_name);
-  else
-    v_patient_id := null;
-    v_patient_name := app_private.clean_text(p_rx ->> 'customerName', 120);
   end if;
 
   if v_patient_name is null then
@@ -2191,29 +2192,6 @@ begin
     raise exception 'Enter a valid Sri Lankan phone number, for example 077 123 4567 or +94 77 123 4567.';
   end if;
 
-  -- Someone uploading without an account becomes a customer, so the counter can
-  -- find them at the POS and dispense against this prescription. The same name
-  -- and phone number reuse an earlier upload's record instead of making a
-  -- duplicate. A guest is never attached to a registered account: anyone can
-  -- type a name and number, and the account holder would see it in My orders.
-  if p.kind is null then
-    v_phone_key := right(regexp_replace(p_rx ->> 'contactPhone', '\D', '', 'g'), 9);
-    select * into v_customer from public.customers c
-    where c.auth_provider = 'prescription'
-      and lower(btrim(c.name)) = lower(v_patient_name)
-      and length(v_phone_key) >= 7
-      and right(regexp_replace(coalesce(c.phone, ''), '\D', '', 'g'), 9) = v_phone_key
-    order by c.created_at
-    limit 1;
-    if not found then
-      insert into public.customers (id, name, phone, address, allergies, auth_provider)
-      values (app_private.new_id('CUST'), v_patient_name,
-              app_private.clean_text(p_rx ->> 'contactPhone', 40),
-              app_private.clean_text(p_rx ->> 'deliveryAddress', 300), 'None', 'prescription')
-      returning * into v_customer;
-    end if;
-    v_patient_id := v_customer.id;
-  end if;
   if p_file is not null then
     if length(p_file) > 8000000 then
       raise exception 'The attached file is too large. Please upload a photo or PDF under 5 MB.';
