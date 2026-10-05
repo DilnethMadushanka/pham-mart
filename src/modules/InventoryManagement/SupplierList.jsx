@@ -11,7 +11,6 @@ import {
   Clock, 
   Edit3, 
   Trash2, 
-  Package, 
   Truck,
   ShieldCheck,
   Tags
@@ -156,13 +155,6 @@ export default function SupplierList({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredSuppliers.map((supplier) => {
-            const suppliedMedsCount = medicines.filter(m => 
-              m.supplierId === supplier.id || 
-              m.supplier_id === supplier.id || 
-              (m.supplierName && m.supplierName.toLowerCase() === supplier.name.toLowerCase()) || 
-              (m.supplier_name && m.supplier_name.toLowerCase() === supplier.name.toLowerCase())
-            ).length;
-
             const supplierPOsCount = purchaseOrders.filter(po => 
               po.supplierId === supplier.id || 
               po.supplier_id === supplier.id || 
@@ -262,10 +254,6 @@ export default function SupplierList({
                 {/* Card Bottom Metrics */}
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1.5 text-slate-700 font-bold">
-                      <Package className="w-4 h-4 text-blue-500" />
-                      <span>{suppliedMedsCount} Medicines</span>
-                    </div>
                     <div className="flex items-center space-x-1.5 text-slate-700 font-bold">
                       <Truck className="w-4 h-4 text-blue-500" />
                       <span>{supplierPOsCount} Orders</span>
