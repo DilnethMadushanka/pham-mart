@@ -587,6 +587,12 @@ export default function PrescriptionVerification({
                     />
                   </div>
 
+                  {(approvalItems.length === 0 || approvalItems.some(m => !m.medicineId)) && (
+                    <p className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900">
+                      The customer can only pay online when every item is a catalogue medicine. Remove items marked "Not in catalogue" and add the matching medicine instead.
+                    </p>
+                  )}
+
                   <div className="flex space-x-3">
                     <button
                       onClick={() => handleApprove(selectedRx)}
