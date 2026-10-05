@@ -555,6 +555,9 @@ export default function POSTerminal({
           {linkedRx && cart.some(needsPrescription) && (
             <div className="mb-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 font-medium">
               Dispensing against prescription <span className="font-mono font-semibold">{linkedRx.rxNumber}</span> for {activeCustomer.name}. It will be marked as used.
+              {linkedRx.paidAt && (
+                <span className="block mt-1">Already paid online Rs. {Number(linkedRx.paidAmount || 0).toFixed(2)} (ref {linkedRx.paymentRef}). Record it with Digital Wallet; don't take payment again.</span>
+              )}
             </div>
           )}
 

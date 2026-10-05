@@ -256,6 +256,11 @@ export default function PrescriptionVerification({
                       }`}>
                         {rx.hasAttachment ? "Photo slip" : "Typed order"}
                       </span>
+                      {rx.paidAt && (
+                        <span className="status-chip status-chip-green" title={`Paid online, reference ${rx.paymentRef}`}>
+                          Paid online Rs. {Number(rx.paidAmount || 0).toFixed(2)}
+                        </span>
+                      )}
                       {rx.isControlledDrug && (
                         <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-rose-100 text-rose-800 border border-rose-300 flex items-center">
                           <ShieldAlert className="w-3 h-3 mr-1" /> Controlled Drug

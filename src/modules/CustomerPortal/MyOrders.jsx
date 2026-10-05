@@ -1,7 +1,37 @@
-import React from 'react';
-import { LogIn } from 'lucide-react';
+import React, { useState } from 'react';
+import { LogIn, CreditCard, CheckCircle2, Loader2 } from 'lucide-react';
+import { startOnlinePayment } from '../../services/payments';
+import { notify } from '../../lib/notify';
 
-export default function MyOrders({ prescriptions, currentUser, onRequestSignIn }) {
+const money = (n) => `Rs. ${Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// What an approved order costs at today's prices, or null when an item isn't a
+// catalogue medicine yet. The server works the amount out again before charging.
+function orderTotal(rx, medicines) {
+  if (!rx.medicines.length) return null;
+  let total = 0;
+  for (const item of rx.medicines) {
+    const med = medicines.find(m => m.id === item.medicineId);
+    if (!med) return null;
+    total += Number(med.unitPrice ?? med.price ?? 0) * Math.max(1, Number(item.quantity) || 1);
+  }
+  return total;
+}
+
+export default function MyOrders({ prescriptions, medicines = [], currentUser, onRequestSignIn }) {
+  const [payingId, setPayingId] = useState(null);
+
+  const payOnline = async (rx) => {
+    setPayingId(rx.id);
+    const { data, error } = await startOnlinePayment(rx.id);
+    if (error) {
+      setPayingId(null);
+      notify("Couldn't start the payment", error.message, "error");
+      return;
+    }
+    window.location.assign(data.url);
+  };
+
   if (!currentUser) {
     return (
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-2xl border border-slate-200 shadow-xs text-center space-y-3 animate-fade-in">
@@ -47,6 +77,9 @@ export default function MyOrders({ prescriptions, currentUser, onRequestSignIn }
             const isPending = rx.status === "Pending";
             const isApproved = rx.status === "Approved";
             const remarks = rx.status === "Rejected" ? rx.rejectionReason : rx.pharmacistNotes;
+            const isPaid = Boolean(rx.paidAt);
+            const canPay = isApproved && !rx.dispensedAt && !isPaid;
+            const total = canPay ? orderTotal(rx, medicines) : null;
 
             return (
               <div key={rx.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
@@ -92,6 +125,30 @@ export default function MyOrders({ prescriptions, currentUser, onRequestSignIn }
                 {remarks && (
                   <div className="text-xs text-slate-600 italic">
                     Pharmacist remarks: "{remarks}"
+                  </div>
+                )}
+
+                {isPaid && (
+                  <div className="flex items-center gap-2 text-sm font-medium text-[#047857] bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl px-3 py-2.5">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    Paid online {money(rx.paidAmount)}. Show reference {rx.paymentRef} when you collect.
+                  </div>
+                )}
+
+                {canPay && total != null && (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                    <div>
+                      <div className="text-xs text-slate-500">Medicines total</div>
+                      <div className="text-lg font-semibold text-[#0B2545] tabular-nums">{money(total)}</div>
+                    </div>
+                    <button
+                      onClick={() => payOnline(rx)}
+                      disabled={payingId !== null}
+                      className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-60 text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20 active:scale-[0.98] transition"
+                    >
+                      {payingId === rx.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                      {payingId === rx.id ? "Opening secure payment" : "Pay online"}
+                    </button>
                   </div>
                 )}
               </div>

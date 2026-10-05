@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Phone as PhoneIcon } from 'lucide-react';
 import { openStatus, HOURS } from '../../lib/hours';
 import {
@@ -14,6 +14,8 @@ import PatientTestimonialsSection from './PatientTestimonialsSection';
 import LocationContactModal from './LocationContactModal';
 import CustomerRxUpload from './CustomerRxUpload';
 import MyOrders from './MyOrders';
+import { verifyOnlinePayment } from '../../services/payments';
+import { notify } from '../../lib/notify';
 import StockChecker from './StockChecker';
 import ShopByNeed from './ShopByNeed';
 import AskPharmacistBanner from './AskPharmacistBanner';
@@ -32,6 +34,23 @@ export default function CustomerStorefront({
   const [isLocationOpen, setIsLocationOpen] = useState(false);
   const [isGoogleFeedbackOpen, setIsGoogleFeedbackOpen] = useState(false);
   const footerStatus = openStatus();
+
+  // Back from Genie's card page: confirm the result, then show the order.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentId = params.get("payment");
+    if (!paymentId) return;
+    params.delete("payment");
+    const rest = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : "") + window.location.hash);
+    setActivePortalTab("my_orders");
+    verifyOnlinePayment(paymentId).then(({ data, error }) => {
+      if (error) notify("Couldn't confirm the payment yet", `${error.message} If your card was charged, the order will update shortly.`, "error");
+      else if (data.status === "Paid") notify("Payment received", "Thank you. Your order is paid and the pharmacy has been told.", "success");
+      else if (data.status === "Failed") notify("Payment not completed", "Your card was not charged. You can try again from My orders.", "error");
+      else notify("Payment processing", "Genie is still confirming the payment. This page updates on its own when it's done.", "info");
+    });
+  }, []);
 
   const openPortalTab = (tab) => {
     setActivePortalTab(tab);
@@ -110,6 +129,7 @@ export default function CustomerStorefront({
       {activePortalTab === "my_orders" && (
         <MyOrders 
           prescriptions={prescriptions}
+          medicines={medicines}
           currentUser={currentUser}
           onRequestSignIn={onRequestSignIn}
         />
