@@ -398,7 +398,7 @@ export default function App() {
             onLogout={handleLogout}
           />
 
-          <main id="main" key={tab} className="flex-1 w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-10 animate-page-in">
+          <main id="main" key={tab} className="console-main flex-1 w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-10 animate-page-in">
             {!isLoaded ? <ConsoleSkeleton /> : <>
             {tab === "analytics" && (
               <AnalyticsDashboard

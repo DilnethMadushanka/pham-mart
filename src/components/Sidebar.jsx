@@ -53,7 +53,7 @@ export default function Sidebar({
     <>
     <aside
       aria-label="Console navigation"
-      className={`hidden md:flex flex-col shrink-0 sticky top-0 h-[100dvh] bg-[#0B2545] text-white transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${collapsed ? "w-[76px]" : "w-60 lg:w-64"}`}
+      className={`hidden md:flex flex-col shrink-0 sticky top-0 h-[100dvh] bg-[#0B2545] bg-[radial-gradient(120%_60%_at_0%_100%,rgb(37_99_235/0.28),transparent_60%)] text-white transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${collapsed ? "w-[76px]" : "w-60 lg:w-64"}`}
     >
       <div className={`h-16 flex items-center gap-2.5 border-b border-white/[0.06] ${collapsed ? "justify-center px-0" : "px-5"}`}>
         <BrandMark />
@@ -83,16 +83,13 @@ export default function Sidebar({
                     title={collapsed ? item.label : item.sublabel}
                     aria-current={isActive ? "page" : undefined}
                     className={`relative w-full flex items-center rounded-xl text-sm group ${collapsed ? "justify-center h-11" : "justify-between px-3 py-2.5"} ${isActive
-                      ? "bg-white/[0.09] text-white"
-                      : "text-slate-400 hover:text-white hover:bg-white/[0.04]"
+                      ? "bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/30"
+                      : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                       }`}
                   >
-                    {isActive && (
-                      <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-[#2563EB]" />
-                    )}
                     <span className={`flex items-center gap-3 min-w-0`}>
                       <Icon
-                        className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-blue-300" : "text-slate-500 group-hover:text-slate-300"}`}
+                        className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-white" : "text-[#93C5FD]/70 group-hover:text-[#93C5FD]"}`}
                         strokeWidth={1.75}
                       />
                       <span className={collapsed ? "sr-only" : `truncate ${isActive ? "font-medium" : ""}`}>{item.label}</span>
@@ -100,7 +97,7 @@ export default function Sidebar({
                     {badge && (collapsed ? (
                       <span className="absolute top-1.5 right-2 min-w-4 h-4 px-1 rounded-full bg-[#2563EB] text-white text-[10px] font-semibold font-mono flex items-center justify-center">{badge}</span>
                     ) : (
-                      <span className={`text-[11px] font-semibold font-mono px-2 py-0.5 rounded-md shrink-0 ${item.id === "inventory" ? "bg-amber-400/15 text-amber-300" : "bg-blue-400/15 text-blue-200"}`}>
+                      <span className={`text-[11px] font-semibold font-mono px-2 py-0.5 rounded-md shrink-0 ${item.id === "inventory" ? "bg-amber-400 text-[#0B2545]" : isActive ? "bg-white text-[#1D4ED8]" : "bg-[#2563EB] text-white"}`}>
                         {badge}
                       </span>
                     ))}
@@ -152,15 +149,14 @@ export default function Sidebar({
               onClick={() => setActiveTab(item.id)}
               aria-current={isActive ? "page" : undefined}
               aria-label={item.label}
-              className={`relative flex-1 min-w-0 flex flex-col items-center gap-1 pt-2.5 pb-2 text-[11px] ${
+              className={`relative flex-1 min-w-0 flex flex-col items-center gap-1 pt-2 pb-2 text-[11px] ${
                 isActive ? "text-white font-medium" : "text-slate-400"
               }`}
             >
-              {isActive && <span aria-hidden className="absolute top-0 h-[3px] w-8 rounded-b-full bg-[#2563EB]" />}
-              <span className="relative">
-                <Icon className={`w-5 h-5 ${isActive ? "text-blue-300" : ""}`} strokeWidth={1.75} />
+              <span className={`relative px-3.5 py-1 rounded-full transition-colors ${isActive ? "bg-[#2563EB] shadow-md shadow-[#2563EB]/40" : ""}`}>
+                <Icon className={`w-5 h-5 ${isActive ? "text-white" : ""}`} strokeWidth={1.75} />
                 {badge && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-4 h-4 px-1 rounded-full bg-[#2563EB] text-white text-[10px] font-semibold font-mono flex items-center justify-center">
+                  <span className="absolute -top-1.5 right-0.5 min-w-4 h-4 px-1 rounded-full bg-amber-400 text-[#0B2545] ring-2 ring-[#0B2545] text-[10px] font-semibold font-mono flex items-center justify-center">
                     {badge}
                   </span>
                 )}
