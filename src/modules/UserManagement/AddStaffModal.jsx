@@ -52,7 +52,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
       notify("Password too short", "Passwords must be at least 8 characters.", "error");
       return;
     }
-    if (!checkPhone(formData.phone, notify)) return;
+    if (!checkPhone(formData.phone, notify, { required: true })) return;
 
     // Editing without typing a new password keeps the existing one.
     const submission = { ...formData, password: formData.password || null };
@@ -182,7 +182,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
             </div>
 
             <div>
-              <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+              <label className="block font-bold text-slate-700 mb-1">Phone Number *</label>
               <input 
                 type="tel" inputMode="tel"
                 placeholder="+94 77 000 0000"

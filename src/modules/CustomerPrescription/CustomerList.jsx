@@ -120,7 +120,7 @@ export default function CustomerList({
       notify("Details needed", "Please fill in the customer's name and NIC.", "error");
       return;
     }
-    if (!checkPhone(newCust.phone, notify)) return;
+    if (!checkPhone(newCust.phone, notify, { required: true })) return;
 
     const { data, error } = await saveCustomer(editingCustomer ? { ...newCust, id: editingCustomer.id } : newCust);
     if (error) {
@@ -313,7 +313,7 @@ export default function CustomerList({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number <span className="text-rose-500">*</span></label>
                   <input type="tel" inputMode="tel" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="peer w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden" />
                   <PhoneHint value={newCust.phone} />
                 </div>

@@ -117,8 +117,8 @@ export default function AuthModal({
       setLoginError("Passwords must be at least 8 characters.");
       return;
     }
-    if (phoneError(regPhone)) {
-      setLoginError(phoneError(regPhone));
+    if (phoneError(regPhone, { required: true })) {
+      setLoginError(phoneError(regPhone, { required: true }));
       return;
     }
     setIsBusy(true);
@@ -300,7 +300,7 @@ export default function AuthModal({
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Mobile Phone</label>
+                      <label className="block font-bold text-slate-700 mb-1">Mobile Phone *</label>
                       <div className="relative">
                         <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                         <input 
