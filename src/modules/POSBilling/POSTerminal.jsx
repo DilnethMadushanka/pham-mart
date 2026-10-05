@@ -589,26 +589,26 @@ export default function POSTerminal({
             </div>
 
             {/* Calculations Breakdown */}
-            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 text-xs">
-              <div className="flex justify-between text-slate-600">
+            <div className="grain relative overflow-hidden bg-[#0B2545] bg-[radial-gradient(120%_120%_at_100%_0%,rgb(37_99_235/0.45),transparent_60%)] p-4 rounded-2xl space-y-1.5 text-xs text-[#BFDBFE] shadow-[inset_0_1px_0_rgb(255_255_255/0.08),0_14px_30px_-18px_rgb(11_37_69/0.8)]">
+              <div className="flex justify-between">
                 <span>Subtotal:</span>
                 <span>Rs. {subtotal.toFixed(2)}</span>
               </div>
               {discountAmt > 0 && (
-                <div className="flex justify-between text-blue-700 font-semibold">
+                <div className="flex justify-between text-[#93C5FD] font-semibold">
                   <span>Discount ({discountPct}%):</span>
                   <span>- Rs. {discountAmt.toFixed(2)}</span>
                 </div>
               )}
               {taxAmt > 0 && (
-                <div className="flex justify-between text-slate-600">
+                <div className="flex justify-between">
                   <span>Tax ({taxPct}%):</span>
                   <span>+ Rs. {taxAmt.toFixed(2)}</span>
                 </div>
               )}
-              <div className="flex justify-between text-base font-semibold text-slate-900 pt-1 border-t border-slate-200">
-                <span>Total</span>
-                <span className="text-blue-700">Rs. {grandTotal.toFixed(2)}</span>
+              <div className="flex items-end justify-between font-semibold text-white pt-2 mt-1 border-t border-white/10">
+                <span className="text-sm">Total</span>
+                <span className="text-2xl tracking-[-0.03em] tabular-nums">Rs. {grandTotal.toFixed(2)}</span>
               </div>
             </div>
 

@@ -59,7 +59,7 @@ function BarList({ rows, valueOf, labelOf, format, empty }) {
             <span className="text-slate-900 font-semibold tabular-nums whitespace-nowrap">{format(r)}</span>
           </div>
           <div className="h-2 rounded-full bg-slate-100">
-            <div className="h-2 rounded-full" style={{ width: `${max ? Math.max(2, (valueOf(r) / max) * 100) : 0}%`, backgroundColor: BLUE }} />
+            <div className="h-2 rounded-full bg-gradient-to-r from-[#1D4ED8] to-[#2563EB] shadow-[0_2px_6px_-1px_rgb(37_99_235/0.5)] origin-left transition-[width] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" style={{ width: `${max ? Math.max(2, (valueOf(r) / max) * 100) : 0}%` }} />
           </div>
         </li>
       ))}
@@ -198,7 +198,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
               <AreaChart data={daily} margin={{ left: 0, right: 8, top: 8 }}>
                 <defs>
                   <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={BLUE} stopOpacity={0.2} />
+                    <stop offset="5%" stopColor={BLUE} stopOpacity={0.28} />
                     <stop offset="95%" stopColor={BLUE} stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -210,7 +210,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                   cursor={{ stroke: '#CBD5E1', strokeDasharray: '4 4' }}
                   formatter={(val, _name, item) => [`${money(val)} (${item.payload.count} sale${item.payload.count === 1 ? "" : "s"}${item.payload.refunds ? `, ${money(item.payload.refunds)} refunded` : ""})`, 'Net sales']}
                 />
-                <Area type="monotone" dataKey="net" stroke={BLUE} strokeWidth={2} fillOpacity={1} fill="url(#netGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
+                <Area type="monotone" dataKey="net" stroke={BLUE} strokeWidth={2.25} fillOpacity={1} fill="url(#netGrad)" activeDot={{ r: 5, strokeWidth: 2, stroke: "#fff" }} />
               </AreaChart>
             </ResponsiveContainer>
             )}
@@ -246,6 +246,12 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
           {monthlyEmpty ? <EmptyChart title="No revenue in the last 12 months" detail="Each month's net revenue and growth appear once sales are recorded." /> : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={monthly} margin={{ left: 0, right: 8, top: 8 }}>
+              <defs>
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2563EB" />
+                  <stop offset="100%" stopColor="#1D4ED8" stopOpacity={0.85} />
+                </linearGradient>
+              </defs>
               <CartesianGrid vertical={false} stroke={GRID} />
               <XAxis dataKey="label" stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} dy={8} />
               <YAxis stroke={AXIS} fontSize={11} tickLine={false} axisLine={false} width={44} tickFormatter={kFormat} />
@@ -258,7 +264,7 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
                   'Net revenue'
                 ]}
               />
-              <Bar dataKey="net" fill={BLUE} radius={[4, 4, 0, 0]} maxBarSize={36} />
+              <Bar dataKey="net" fill="url(#barGrad)" radius={[6, 6, 2, 2]} maxBarSize={36} />
             </BarChart>
           </ResponsiveContainer>
           )}

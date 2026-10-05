@@ -56,7 +56,7 @@ export default function HowItWorksSection({ onUploadRx, onShop }) {
       </ol>
 
       {/* Closing call to action: the page's one navy block */}
-      <div className="relative overflow-hidden rounded-[28px] bg-[#0B2545] text-white">
+      <div className="grain relative overflow-hidden rounded-[28px] bg-[#0B2545] text-white">
         <img src="/images/hero_pharmacist.png" alt="" aria-hidden loading="lazy"
           className="absolute inset-y-0 right-0 w-full md:w-3/5 h-full object-cover opacity-30 md:opacity-60 [mask-image:linear-gradient(90deg,transparent,#000_45%)]" />
         <div aria-hidden className="absolute -left-24 -bottom-24 w-80 h-80 rounded-full bg-[#2563EB]/35 blur-3xl" />

@@ -13,6 +13,9 @@ const GENIE_BASE = (process.env.GENIE_API_BASE_URL || "https://api.geniebiz.lk/p
 const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
 
+// Env values pasted into Vercel sometimes carry quotes, spaces or a newline.
+const clean = (v) => String(v || "").trim().replace(/^["']|["']$/g, "").trim();
+
 export class PaymentError extends Error {
   constructor(message, status = 400) {
     super(message);
@@ -32,14 +35,19 @@ export function missingConfig() {
 // Call a database function. `asServer` uses the service key, needed for the
 // payment functions the public cannot reach.
 export async function rpc(name, args, { asServer = false } = {}) {
-  const key = asServer ? process.env.SUPABASE_SERVICE_ROLE_KEY : ANON_KEY;
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: key, Authorization: `Bearer ${key}` },
-    body: JSON.stringify(args)
-  });
+  const key = clean(asServer ? process.env.SUPABASE_SERVICE_ROLE_KEY : ANON_KEY);
+  // Legacy Supabase keys are JWTs and also go in Authorization. The newer
+  // sb_publishable_/sb_secret_ keys must only be sent as `apikey`.
+  const headers = { "Content-Type": "application/json", apikey: key };
+  if (key.startsWith("eyJ")) headers.Authorization = `Bearer ${key}`;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, { method: "POST", headers, body: JSON.stringify(args) });
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = { message: text }; }
+  if (res.status === 401 || /invalid api key/i.test(data?.message || "")) {
+    console.error("Supabase rejected the key", asServer ? "SUPABASE_SERVICE_ROLE_KEY" : "VITE_SUPABASE_ANON_KEY", text.slice(0, 300));
+    throw new PaymentError(`Payment setup problem: Supabase rejected ${asServer ? "SUPABASE_SERVICE_ROLE_KEY" : "VITE_SUPABASE_ANON_KEY"} in Vercel. Copy the key again from Supabase > Project Settings > API Keys and redeploy.`, 503);
+  }
   if (!res.ok) throw new PaymentError(data?.message || `Database error (${res.status})`, res.status >= 500 ? 502 : 400);
   return data;
 }
@@ -47,14 +55,14 @@ export async function rpc(name, args, { asServer = false } = {}) {
 // Genie's request signature: sha1 of "amount=<cents>&currency=<code>&apiKey=<key>".
 export function genieSignature(amountCents, currency) {
   return createHash("sha1")
-    .update(`amount=${amountCents}&currency=${currency}&apiKey=${process.env.GENIE_API_KEY}`)
+    .update(`amount=${amountCents}&currency=${currency}&apiKey=${clean(process.env.GENIE_API_KEY)}`)
     .digest("hex");
 }
 
 export async function genie(path, { method = "GET", body } = {}) {
   const res = await fetch(GENIE_BASE + path, {
     method,
-    headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: process.env.GENIE_API_KEY },
+    headers: { "Content-Type": "application/json", Accept: "application/json", Authorization: clean(process.env.GENIE_API_KEY) },
     body: body ? JSON.stringify(body) : undefined
   });
   const text = await res.text();
