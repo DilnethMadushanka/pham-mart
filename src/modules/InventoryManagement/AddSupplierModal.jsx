@@ -54,7 +54,7 @@ export default function AddSupplierModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    if (!checkPhone(formData.phone, notify)) return;
+    if (!checkPhone(formData.phone, notify, { required: true })) return;
 
     onSave({
       ...(supplierToEdit ? { id: supplierToEdit.id } : {}),
@@ -135,7 +135,7 @@ export default function AddSupplierModal({
             <div>
               <label className="block font-bold text-slate-700 mb-1 flex items-center">
                 <Phone className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                Phone Number
+                Phone Number <span className="text-rose-500 ml-0.5">*</span>
               </label>
               <input 
                 type="tel"

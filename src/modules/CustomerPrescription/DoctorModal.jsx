@@ -45,7 +45,7 @@ export default function DoctorModal({ isOpen, onClose, onSave, doctorToEdit = nu
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSaving) return;
-    if (!checkPhone(form.phone, notify)) return;
+    if (!checkPhone(form.phone, notify, { required: true })) return;
     setIsSaving(true);
     const saved = await onSave({
       ...(doctorToEdit ? { id: doctorToEdit.id } : {}),
@@ -95,7 +95,7 @@ export default function DoctorModal({ isOpen, onClose, onSave, doctorToEdit = nu
           <Field label="Hospital or clinic">
             <input value={form.hospital} onChange={set("hospital")} placeholder="e.g. City Medical Centre" className={inputClass} />
           </Field>
-          <Field label="Phone">
+          <Field label="Phone" required>
             <input type="tel" inputMode="tel" value={form.phone} onChange={set("phone")} placeholder="e.g. 0712345678" className={inputClass} />
             <PhoneHint value={form.phone} />
           </Field>

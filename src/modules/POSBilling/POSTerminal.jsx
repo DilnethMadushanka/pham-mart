@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import ReceiptModal from './ReceiptModal';
+import CustomerPicker from './CustomerPicker';
 import ReturnsModal from './ReturnsModal';
 import { saveCustomer, posCheckout } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
@@ -134,7 +135,7 @@ export default function POSTerminal({
       notify("Details needed", "Please fill in the customer's name and NIC.", "error");
       return;
     }
-    if (!checkPhone(newCust.phone, notify)) return;
+    if (!checkPhone(newCust.phone, notify, { required: true })) return;
     const { data, error } = await saveCustomer(newCust);
     if (error) {
       notifyError(error, "Customer not saved");
@@ -359,16 +360,7 @@ export default function POSTerminal({
           <div className="flex items-center space-x-2.5 bg-white px-3 py-1.5 rounded-xl border border-slate-200 w-full sm:w-auto min-w-0">
             <UserCheck className="w-4.5 h-4.5 text-blue-600 shrink-0" />
             <span className="font-medium text-slate-600 text-sm shrink-0">Customer</span>
-            <select
-              value={selectedCustomerId}
-              onChange={(e) => handleCustomerChange(e.target.value)}
-              className="font-medium text-slate-900 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-sm outline-hidden focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 transition-all cursor-pointer flex-1 min-w-0 sm:flex-none sm:min-w-[220px]"
-            >
-              <option value="">Walk-in Customer (General)</option>
-              {customers.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <CustomerPicker customers={customers} value={selectedCustomerId} onChange={handleCustomerChange} />
           </div>
 
           {/* Allergy Warning Badge */}
@@ -735,7 +727,7 @@ export default function POSTerminal({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
+                  <label className="block font-bold text-slate-700 mb-1">Phone Number <span className="text-rose-500">*</span></label>
                   <input type="tel" inputMode="tel" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="peer w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden" />
                   <PhoneHint value={newCust.phone} />
                 </div>
