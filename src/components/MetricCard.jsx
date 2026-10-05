@@ -1,11 +1,13 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
+// Each figure gets a solid icon tile and a thin top rule in its status colour:
+// blue for routine figures, green for good news, amber to watch, red to act on.
 const TONES = {
-  sky: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
-  emerald: { icon: "text-[#2563EB] bg-[#EFF6FF]", badge: "status-chip-blue" },
-  amber: { icon: "text-[#B45309] bg-[#FFFBEB]", badge: "status-chip-amber" },
-  rose: { icon: "text-[#B91C1C] bg-[#FEF2F2]", badge: "status-chip-red" }
+  sky: { icon: "text-white bg-[#2563EB] shadow-[#2563EB]/30", bar: "bg-[#2563EB]", wash: "from-[#EFF6FF]", badge: "status-chip-blue" },
+  emerald: { icon: "text-white bg-[#059669] shadow-[#059669]/30", bar: "bg-[#10B981]", wash: "from-[#ECFDF5]", badge: "status-chip-green" },
+  amber: { icon: "text-white bg-[#D97706] shadow-[#D97706]/30", bar: "bg-[#F59E0B]", wash: "from-[#FFFBEB]", badge: "status-chip-amber" },
+  rose: { icon: "text-white bg-[#DC2626] shadow-[#DC2626]/30", bar: "bg-[#EF4444]", wash: "from-[#FEF2F2]", badge: "status-chip-red" }
 };
 
 export default function MetricCard({
@@ -20,21 +22,22 @@ export default function MetricCard({
   onClick
 }) {
   const Wrapper = onClick ? "button" : "div";
-  const tone = TONES[colorScheme] || { icon: "text-[#64748B] bg-slate-100", badge: "status-chip-gray" };
+  const tone = TONES[colorScheme] || { icon: "text-white bg-[#64748B] shadow-slate-400/30", bar: "bg-slate-300", wash: "from-slate-50", badge: "status-chip-gray" };
 
   return (
     <Wrapper
       {...(onClick ? { type: "button", onClick } : {})}
-      className={`group bg-white p-4 sm:p-5 transition-colors duration-200 flex flex-col h-full min-h-[120px] sm:min-h-[136px] text-left w-full ${onClick ? "hover:bg-slate-50/80 focus-visible:relative focus-visible:z-10" : ""}`}
+      className={`group relative bg-white bg-gradient-to-b ${tone.wash} to-white to-60% p-4 sm:p-5 transition-colors duration-200 flex flex-col h-full min-h-[120px] sm:min-h-[136px] text-left w-full ${onClick ? "hover:to-[#FBFCFE] focus-visible:z-10" : ""}`}
     >
+      <span aria-hidden className={`absolute inset-x-0 top-0 h-[3px] ${tone.bar}`} />
 
       <span className="flex items-center justify-between gap-2">
-        <span className="text-[13px] font-medium text-slate-500 leading-snug">
+        <span className="text-[13px] font-medium text-slate-600 leading-snug">
           {title}
         </span>
         {Icon && (
-          <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${tone.icon}`}>
-            <Icon className="w-3.5 h-3.5" strokeWidth={2} />
+          <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md ${tone.icon}`}>
+            <Icon className="w-4 h-4" strokeWidth={2} />
           </span>
         )}
       </span>

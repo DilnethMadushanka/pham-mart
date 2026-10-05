@@ -158,6 +158,32 @@
   .status-chip-blue { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
 
   /* Shared page header used by the console modules */
+  .console-banner {
+    background-image:
+      radial-gradient(120% 140% at 100% 0%, rgb(37 99 235 / 0.55) 0%, rgb(37 99 235 / 0) 55%),
+      radial-gradient(rgb(255 255 255 / 0.07) 1px, transparent 1px);
+    background-size: auto, 18px 18px;
+  }
+  /* The pharmacy cross, drawn large and faint behind the banner's right edge. */
+  .console-banner-cross {
+    position: absolute; right: -2.25rem; top: -2.5rem; width: 11rem; height: 11rem;
+    transform: rotate(12deg); pointer-events: none; opacity: 0.07;
+  }
+  .console-banner-cross::before, .console-banner-cross::after {
+    content: ""; position: absolute; inset: 0; margin: auto; background: #fff; border-radius: 1rem;
+  }
+  .console-banner-cross::before { width: 34%; height: 100%; }
+  .console-banner-cross::after { width: 100%; height: 34%; }
+  @media (max-width: 1023px) { .console-banner-cross { right: -2rem; top: -2rem; width: 7.5rem; height: 7.5rem; } }
+  /* Console panels: a short blue-to-navy rule leads each panel title. */
+  .console-main section.rounded-3xl h3:first-of-type { display: flex; align-items: center; gap: 0.625rem; }
+  .console-main section.rounded-3xl h3:first-of-type::before {
+    content: ""; flex: none; width: 4px; height: 1.05em; border-radius: 9999px;
+    background: linear-gradient(180deg, #2563EB, #0B2545);
+  }
+  /* Section tabs inside a console page: the open tab reads in brand blue. */
+  .console-main nav[aria-label$=" sections"] button[aria-current="page"] { color: #1D4ED8; border-bottom-color: #2563EB; }
+  .console-main nav[aria-label$=" sections"] button[aria-current="page"] > svg { color: #2563EB; }
   .page-kicker {
     font-size: 12px;
     font-weight: 500;
@@ -263,10 +289,11 @@
     letter-spacing: 0;
     text-transform: none;
     font-size: 12px;
-    color: #64748B;
+    color: #475569;
   }
+  table thead { background-color: #F5F8FF; }
   table tbody tr:hover {
-    background-color: #F8FAFC;
+    background-color: #F7FAFF;
   }
 
   /* Metric strip: related figures share one surface split by hairlines, not a row of floating cards */
@@ -289,9 +316,6 @@
   .metric-grid > *:hover {
     transform: none;
     background-color: #FBFCFE;
-  }
-  table thead {
-    background-color: #F8FAFC;
   }
   table tbody tr {
     transition: background-color 150ms ease;
