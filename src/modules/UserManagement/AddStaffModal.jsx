@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, ShieldCheck, Mail, Phone, Lock } from 'lucide-react';
 import { notify } from '../../lib/notify';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
 
 export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) {
   const [formData, setFormData] = useState({
@@ -50,6 +52,7 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
       notify("Password too short", "Passwords must be at least 8 characters.", "error");
       return;
     }
+    if (!checkPhone(formData.phone, notify)) return;
 
     // Editing without typing a new password keeps the existing one.
     const submission = { ...formData, password: formData.password || null };
@@ -181,12 +184,13 @@ export default function AddStaffModal({ isOpen, onClose, onSave, staffToEdit }) 
             <div>
               <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
               <input 
-                type="text"
+                type="tel" inputMode="tel"
                 placeholder="+94 77 000 0000"
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
+                className="peer w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
+              <PhoneHint value={formData.phone} />
             </div>
           </div>
 

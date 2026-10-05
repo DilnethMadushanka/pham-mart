@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { X, Stethoscope } from 'lucide-react';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
+import { notify } from '../../lib/notify';
 
 const EMPTY = { name: "", slmcNo: "", specialty: "", hospital: "", phone: "", email: "", notes: "", status: "Active" };
 
@@ -42,6 +45,7 @@ export default function DoctorModal({ isOpen, onClose, onSave, doctorToEdit = nu
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSaving) return;
+    if (!checkPhone(form.phone, notify)) return;
     setIsSaving(true);
     const saved = await onSave({
       ...(doctorToEdit ? { id: doctorToEdit.id } : {}),
@@ -92,7 +96,8 @@ export default function DoctorModal({ isOpen, onClose, onSave, doctorToEdit = nu
             <input value={form.hospital} onChange={set("hospital")} placeholder="e.g. City Medical Centre" className={inputClass} />
           </Field>
           <Field label="Phone">
-            <input type="tel" value={form.phone} onChange={set("phone")} placeholder="e.g. 0712345678" className={inputClass} />
+            <input type="tel" inputMode="tel" value={form.phone} onChange={set("phone")} placeholder="e.g. 0712345678" className={inputClass} />
+            <PhoneHint value={form.phone} />
           </Field>
           <Field label="Email">
             <input type="email" value={form.email} onChange={set("email")} placeholder="Optional" className={inputClass} />

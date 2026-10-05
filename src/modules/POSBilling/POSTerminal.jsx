@@ -26,6 +26,8 @@ import ReceiptModal from './ReceiptModal';
 import ReturnsModal from './ReturnsModal';
 import { saveCustomer, posCheckout } from '../../services/supabaseService';
 import { notify, notifyError } from '../../lib/notify';
+import PhoneHint from '../../components/PhoneHint';
+import { checkPhone } from '../../lib/phone';
 import { newlyLowStock } from '../../lib/reorder';
 import PageHeader from '../../components/PageHeader';
 
@@ -132,6 +134,7 @@ export default function POSTerminal({
       notify("Details needed", "Please fill in the customer's name and NIC.", "error");
       return;
     }
+    if (!checkPhone(newCust.phone, notify)) return;
     const { data, error } = await saveCustomer(newCust);
     if (error) {
       notifyError(error, "Customer not saved");
@@ -733,7 +736,8 @@ export default function POSTerminal({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Phone Number</label>
-                  <input type="text" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden" />
+                  <input type="tel" inputMode="tel" placeholder="+94 77 123 4567" value={newCust.phone} onChange={e=>setNewCust({...newCust, phone:e.target.value})} className="peer w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden" />
+                  <PhoneHint value={newCust.phone} />
                 </div>
                 <div>
                   <label className="block font-bold text-slate-700 mb-1">Email Address</label>

@@ -2106,6 +2106,7 @@ declare
   v_doctor public.doctors;
   v_today date := (now() at time zone 'Asia/Colombo')::date;
   v_rx_date date;
+  v_phone_key text;
   r public.prescriptions;
 begin
   select * into p from app_private.session_principal(p_token);
@@ -2161,6 +2162,34 @@ begin
   end if;
   if p.kind is distinct from 'staff' and app_private.clean_text(p_rx ->> 'contactPhone', 40) is null then
     raise exception 'Enter a contact phone number so the pharmacist can reach you.';
+  end if;
+  if p.kind is distinct from 'staff'
+     and regexp_replace(p_rx ->> 'contactPhone', '[\s().-]', '', 'g') !~ '^(\+94|0094|94|0)[1-9][0-9]{8}$' then
+    raise exception 'Enter a valid Sri Lankan phone number, for example 077 123 4567 or +94 77 123 4567.';
+  end if;
+
+  -- Someone uploading without an account becomes a customer, so the counter can
+  -- find them at the POS and dispense against this prescription. The same name
+  -- and phone number reuse an earlier upload's record instead of making a
+  -- duplicate. A guest is never attached to a registered account: anyone can
+  -- type a name and number, and the account holder would see it in My orders.
+  if p.kind is null then
+    v_phone_key := right(regexp_replace(p_rx ->> 'contactPhone', '\D', '', 'g'), 9);
+    select * into v_customer from public.customers c
+    where c.auth_provider = 'prescription'
+      and lower(btrim(c.name)) = lower(v_patient_name)
+      and length(v_phone_key) >= 7
+      and right(regexp_replace(coalesce(c.phone, ''), '\D', '', 'g'), 9) = v_phone_key
+    order by c.created_at
+    limit 1;
+    if not found then
+      insert into public.customers (id, name, phone, address, allergies, auth_provider)
+      values (app_private.new_id('CUST'), v_patient_name,
+              app_private.clean_text(p_rx ->> 'contactPhone', 40),
+              app_private.clean_text(p_rx ->> 'deliveryAddress', 300), 'None', 'prescription')
+      returning * into v_customer;
+    end if;
+    v_patient_id := v_customer.id;
   end if;
   if p_file is not null then
     if length(p_file) > 8000000 then
@@ -2226,6 +2255,34 @@ begin
     'Prescription Submitted', 'Prescription ' || r.rx_number || ' submitted for ' || v_patient_name, 'info');
 
   return app_private.prescription_json(r);
+end $$;
+
+-- Prescriptions uploaded without an account before guests were registered as
+-- customers: give each patient a customer record so the POS can find them.
+do $$
+declare
+  rx record;
+  v_key text;
+  v_cust_id text;
+begin
+  for rx in select id, patient_name, contact_phone, delivery_address from public.prescriptions
+            where patient_id is null and nullif(btrim(patient_name), '') is not null
+            order by created_at loop
+    v_key := right(regexp_replace(coalesce(rx.contact_phone, ''), '\D', '', 'g'), 9);
+    select c.id into v_cust_id from public.customers c
+    where c.auth_provider = 'prescription'
+      and lower(btrim(c.name)) = lower(btrim(rx.patient_name))
+      and length(v_key) >= 7
+      and right(regexp_replace(coalesce(c.phone, ''), '\D', '', 'g'), 9) = v_key
+    order by c.created_at
+    limit 1;
+    if v_cust_id is null then
+      insert into public.customers (id, name, phone, address, allergies, auth_provider)
+      values (app_private.new_id('CUST'), btrim(rx.patient_name), rx.contact_phone, rx.delivery_address, 'None', 'prescription')
+      returning id into v_cust_id;
+    end if;
+    update public.prescriptions set patient_id = v_cust_id where id = rx.id;
+  end loop;
 end $$;
 
 -- Doctor database: the owner adds and edits doctors; every staff member can read it.

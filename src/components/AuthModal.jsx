@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Mail, Lock, User, Phone, MapPin, AlertCircle, UserPlus, LogIn, Pill, RefreshCw } from 'lucide-react';
 import { login, registerCustomer, googleLogin } from '../services/supabaseService';
+import PhoneHint from './PhoneHint';
+import { phoneError } from '../lib/phone';
 
 const GOOGLE_CLIENT_ID = import.meta.env?.VITE_GOOGLE_CLIENT_ID || "458326249784-qekor0do0peojbsrpc2rh47m4h5366fi.apps.googleusercontent.com";
 
@@ -113,6 +115,10 @@ export default function AuthModal({
     }
     if (regPassword.length < 8) {
       setLoginError("Passwords must be at least 8 characters.");
+      return;
+    }
+    if (phoneError(regPhone)) {
+      setLoginError(phoneError(regPhone));
       return;
     }
     setIsBusy(true);
@@ -298,12 +304,13 @@ export default function AuthModal({
                       <div className="relative">
                         <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                         <input 
-                          type="text"
+                          type="tel" inputMode="tel"
                           placeholder="+94 77 123 4567"
                           value={regPhone}
                           onChange={(e) => setRegPhone(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
+                          className="peer w-full pl-9 pr-3 py-2.5 sm:py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium min-h-[44px]"
                         />
+                        <PhoneHint value={regPhone} />
                       </div>
                     </div>
                   </div>
