@@ -1,4 +1,4 @@
-import { PaymentError, genie, missingConfig, readBody, rpc, send, siteUrl } from "../_payments.js";
+import { PaymentError, genie, genieSignature, missingConfig, readBody, rpc, send, siteUrl } from "../_payments.js";
 
 // POST { token, rxId } -> { url }: starts a Genie hosted checkout for an
 // approved prescription order. The amount is worked out by the database.
@@ -14,15 +14,21 @@ export default async function handler(req, res) {
     if (!token || !rxId) throw new PaymentError("Sign in and choose an order to pay for.");
     const start = await rpc("payment_start", { p_token: token, p_rx_id: rxId });
     const site = siteUrl(req);
+    const amount = Math.round(Number(start.amount) * 100);
     const txn = await genie("transactions", {
       method: "POST",
       body: {
-        amount: Math.round(Number(start.amount) * 100),
+        amount,
         currency: start.currency,
         localId: start.paymentId,
         redirectUrl: `${site}/?payment=${encodeURIComponent(start.paymentId)}`,
         webhook: `${site}/api/payments/webhook`,
-        validForHours: 2
+        expires: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+        // Genie requires the request to be signed, as its official PHP client does.
+        apiVersion: "2.0",
+        appVersion: "pharmart-web",
+        signMethod: "sha1",
+        signature: genieSignature(amount, start.currency)
       }
     });
     const t = txn?.data && typeof txn.data === "object" ? txn.data : txn;

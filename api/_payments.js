@@ -7,6 +7,8 @@
 //   SUPABASE_SERVICE_ROLE_KEY Supabase > Project Settings > API > service_role
 //   SITE_URL                  optional; defaults to the address the request came to
 
+import { createHash } from "node:crypto";
+
 const GENIE_BASE = (process.env.GENIE_API_BASE_URL || "https://api.geniebiz.lk/public/").replace(/\/?$/, "/");
 const SUPABASE_URL = (process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "").replace(/\/$/, "");
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
@@ -42,6 +44,13 @@ export async function rpc(name, args, { asServer = false } = {}) {
   return data;
 }
 
+// Genie's request signature: sha1 of "amount=<cents>&currency=<code>&apiKey=<key>".
+export function genieSignature(amountCents, currency) {
+  return createHash("sha1")
+    .update(`amount=${amountCents}&currency=${currency}&apiKey=${process.env.GENIE_API_KEY}`)
+    .digest("hex");
+}
+
 export async function genie(path, { method = "GET", body } = {}) {
   const res = await fetch(GENIE_BASE + path, {
     method,
@@ -53,7 +62,9 @@ export async function genie(path, { method = "GET", body } = {}) {
   try { data = text ? JSON.parse(text) : null; } catch { data = { raw: text }; }
   if (!res.ok) {
     console.error("Genie error", res.status, text.slice(0, 500));
-    throw new PaymentError("The card payment service didn't accept the request. Please try again shortly.", 502);
+    // Genie's own reason helps the owner fix setup problems (wrong key, wrong domain).
+    const reason = String(data?.message || data?.error || data?.raw || "").replace(/\s+/g, " ").slice(0, 160);
+    throw new PaymentError(`The card payment service didn't accept the request (Genie ${res.status}${reason ? `: ${reason}` : ""}). Please try again shortly.`, 502);
   }
   return data;
 }
