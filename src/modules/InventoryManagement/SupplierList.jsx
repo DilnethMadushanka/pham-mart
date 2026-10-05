@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import AddSupplierModal from './AddSupplierModal';
 import SupplierPriceModal from './SupplierPriceModal';
+import SupplierOrdersModal from './SupplierOrdersModal';
 import { confirmDialog } from '../../lib/notify';
 
 export default function SupplierList({ 
@@ -32,6 +33,15 @@ export default function SupplierList({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [pricingId, setPricingId] = useState(null);
+  const [trackingId, setTrackingId] = useState(null);
+  const ordersFor = (supplier) => purchaseOrders
+    .filter(po =>
+      po.supplierId === supplier.id ||
+      po.supplier_id === supplier.id ||
+      (po.supplierName && po.supplierName.toLowerCase() === supplier.name.toLowerCase()) ||
+      (po.supplier_name && po.supplier_name.toLowerCase() === supplier.name.toLowerCase()))
+    .sort((a, b) => String(b.orderDate || "").localeCompare(String(a.orderDate || "")));
+  const tracking = suppliers.find(s => s.id === trackingId);
   const pricing = suppliers.find(s => s.id === pricingId);
 
   const filteredSuppliers = suppliers.filter(s => {
@@ -155,12 +165,7 @@ export default function SupplierList({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredSuppliers.map((supplier) => {
-            const supplierPOsCount = purchaseOrders.filter(po => 
-              po.supplierId === supplier.id || 
-              po.supplier_id === supplier.id || 
-              (po.supplierName && po.supplierName.toLowerCase() === supplier.name.toLowerCase()) || 
-              (po.supplier_name && po.supplier_name.toLowerCase() === supplier.name.toLowerCase())
-            ).length;
+            const supplierPOsCount = ordersFor(supplier).length;
 
             return (
               <div 
@@ -254,10 +259,14 @@ export default function SupplierList({
                 {/* Card Bottom Metrics */}
                 <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1.5 text-slate-700 font-bold">
+                    <button
+                      onClick={() => setTrackingId(supplier.id)}
+                      aria-label={`Track ${supplierPOsCount} order${supplierPOsCount === 1 ? "" : "s"} from ${supplier.name}`}
+                      className="flex items-center gap-1.5 px-3 py-1.5 -ml-3 rounded-xl text-slate-700 font-bold hover:bg-[#EFF6FF] hover:text-[#1D4ED8]"
+                    >
                       <Truck className="w-4 h-4 text-blue-500" />
-                      <span>{supplierPOsCount} Orders</span>
-                    </div>
+                      <span>{supplierPOsCount} {supplierPOsCount === 1 ? "Order" : "Orders"}</span>
+                    </button>
                   </div>
                   <button
                     onClick={() => setPricingId(supplier.id)}
@@ -280,6 +289,10 @@ export default function SupplierList({
           onClose={() => setPricingId(null)}
           onSaved={(updated) => setSuppliers?.(prev => prev.map(s => (s.id === updated.id ? updated : s)))}
         />
+      )}
+
+      {tracking && (
+        <SupplierOrdersModal supplier={tracking} orders={ordersFor(tracking)} onClose={() => setTrackingId(null)} />
       )}
 
       {/* Add / Edit Supplier Modal */}
