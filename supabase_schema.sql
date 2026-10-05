@@ -244,6 +244,9 @@ alter table public.prescriptions add column if not exists dispensed_txn text;
 alter table public.prescriptions add column if not exists doctor_id text;
 -- Date the doctor wrote the prescription. It is valid for 7 days from that date.
 alter table public.prescriptions add column if not exists prescription_date date;
+alter table public.prescriptions add column if not exists paid_amount numeric(10,2);
+alter table public.prescriptions add column if not exists paid_at timestamptz;
+alter table public.prescriptions add column if not exists payment_ref text;
 
 alter table public.transactions add column if not exists paid_amount numeric(10,2) default 0;
 alter table public.transactions add column if not exists change_amount numeric(10,2) default 0;
@@ -312,6 +315,23 @@ create table if not exists app_private.prescription_files (
   data_url text not null,
   created_at timestamptz not null default now()
 );
+
+-- Online card payments through Genie Business. Only the payment functions read
+-- or write this table; the Genie API key never reaches the database.
+create table if not exists app_private.online_payments (
+  id text primary key,
+  rx_id text not null,
+  customer_id text not null,
+  amount numeric(10,2) not null,
+  currency text not null default 'LKR',
+  status text not null default 'Created',
+  genie_id text,
+  checkout_url text,
+  genie_state text,
+  created_at timestamptz not null default now(),
+  paid_at timestamptz
+);
+create index if not exists online_payments_rx_idx on app_private.online_payments (rx_id);
 
 create table if not exists app_private.settings (
   key text primary key,
@@ -890,7 +910,10 @@ as $$
     'pharmacistNotes', r.pharmacist_notes,
     'rejectionReason', r.rejection_reason,
     'dispensedAt', r.dispensed_at,
-    'dispensedInvoice', r.dispensed_txn
+    'dispensedInvoice', r.dispensed_txn,
+    'paidAmount', r.paid_amount,
+    'paidAt', r.paid_at,
+    'paymentRef', r.payment_ref
   )
 $$;
 
@@ -2798,6 +2821,183 @@ begin
 end $$;
 
 -- --------------------------------------------------------------------
+-- 9b. Online payments (Genie Business hosted checkout)
+-- The customer starts a payment here with their session. The website's
+-- server functions (api/payments/*) hold the Genie key, create the Genie
+-- checkout, and confirm the result with Genie before calling payment_settle.
+-- --------------------------------------------------------------------
+
+-- What the customer owes for an approved prescription: every item must be a
+-- catalogue medicine so it can be priced; the price is today's shelf price.
+create or replace function app_private.prescription_amount(r public.prescriptions)
+returns numeric
+language plpgsql
+stable
+set search_path = public, app_private
+as $$
+declare
+  v_item jsonb;
+  v_med public.medicines;
+  v_total numeric := 0;
+begin
+  if jsonb_array_length(app_private.as_array(r.medications)) = 0 then
+    return null;
+  end if;
+  for v_item in select * from jsonb_array_elements(app_private.as_array(r.medications)) loop
+    select * into v_med from public.medicines where id = v_item ->> 'medicineId';
+    if not found or v_med.price is null then
+      return null;
+    end if;
+    v_total := v_total + v_med.price * greatest(1, coalesce((v_item ->> 'quantity')::int, 1));
+  end loop;
+  return round(v_total, 2);
+end $$;
+
+create or replace function public.payment_start(p_token text, p_rx_id text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  p record;
+  r public.prescriptions;
+  v_amount numeric;
+  v_id text;
+begin
+  select * into p from app_private.session_principal(p_token);
+  if p.kind is distinct from 'customer' then
+    raise exception 'Sign in to your account to pay online.';
+  end if;
+  select * into r from public.prescriptions where id = p_rx_id for update;
+  if not found or r.patient_id is distinct from p.principal_id then
+    raise exception 'That order was not found on your account.';
+  end if;
+  if r.paid_at is not null then
+    raise exception 'This order is already paid.';
+  end if;
+  if coalesce(r.status, 'Pending') <> 'Approved' then
+    raise exception 'You can pay once the pharmacist has approved this order.';
+  end if;
+  if r.dispensed_at is not null then
+    raise exception 'This order was already collected and paid at the counter.';
+  end if;
+  if r.expiry_date is not null and r.expiry_date < app_private.today() then
+    raise exception 'This prescription has expired. Please get a new one from your doctor.';
+  end if;
+  v_amount := app_private.prescription_amount(r);
+  if v_amount is null or v_amount <= 0 then
+    raise exception 'The pharmacist needs to price this order before it can be paid online. Please call the pharmacy.';
+  end if;
+
+  v_id := app_private.new_id('PAY');
+  insert into app_private.online_payments (id, rx_id, customer_id, amount)
+  values (v_id, r.id, p.principal_id, v_amount);
+
+  return jsonb_build_object('paymentId', v_id, 'amount', v_amount, 'currency', 'LKR',
+                            'rxNumber', coalesce(r.rx_number, r.id), 'customerName', p.display_name);
+end $$;
+
+-- Server only: remember which Genie transaction belongs to a payment.
+create or replace function public.payment_attach(p_payment_id text, p_genie_id text, p_checkout_url text)
+returns void
+language sql
+security definer
+set search_path = public, app_private
+as $$
+  update app_private.online_payments
+  set genie_id = p_genie_id, checkout_url = p_checkout_url, status = 'Pending'
+  where id = p_payment_id and status in ('Created', 'Pending');
+$$;
+
+-- Server only: the payment and its Genie transaction id, for confirming a result.
+-- Accepts our payment id or Genie's transaction id.
+create or replace function public.payment_lookup(p_payment_id text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public, app_private
+as $$
+  select jsonb_build_object('paymentId', op.id, 'genieId', op.genie_id, 'status', op.status,
+                            'amount', op.amount, 'currency', op.currency, 'rxId', op.rx_id)
+  from app_private.online_payments op where op.id = p_payment_id or op.genie_id = p_payment_id
+  order by (op.id = p_payment_id) desc
+  limit 1;
+$$;
+
+-- Server only: record what Genie reported for a transaction, after the server
+-- fetched it from Genie itself. Marks the order paid only when the transaction,
+-- amount and currency all match what this payment asked for.
+create or replace function public.payment_settle(p_payment_id text, p_genie_id text, p_state text,
+                                                 p_amount_cents bigint, p_currency text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  op app_private.online_payments;
+  r public.prescriptions;
+  v_state text := upper(coalesce(p_state, ''));
+begin
+  select * into op from app_private.online_payments where id = p_payment_id for update;
+  if not found then
+    raise exception 'Unknown payment %.', p_payment_id;
+  end if;
+  if op.genie_id is not null and op.genie_id is distinct from p_genie_id then
+    raise exception 'Payment % belongs to a different Genie transaction.', p_payment_id;
+  end if;
+  if op.status = 'Paid' then
+    return jsonb_build_object('status', 'Paid', 'rxId', op.rx_id);
+  end if;
+
+  if v_state in ('CONFIRMED', 'AUTHORIZED', 'SUCCESS', 'PAID') then
+    if p_amount_cents is distinct from round(op.amount * 100)::bigint or upper(coalesce(p_currency, '')) <> op.currency then
+      update app_private.online_payments set genie_state = v_state, status = 'Mismatch' where id = op.id;
+      perform app_private.write_audit(op.customer_id, 'Genie', 'System', 'Online Payment Mismatch',
+        'Payment ' || op.id || ' reported ' || coalesce(p_amount_cents::text, '?') || ' ' || coalesce(p_currency, '?')
+        || ' cents but expected ' || round(op.amount * 100)::text || ' ' || op.currency, 'danger');
+      return jsonb_build_object('status', 'Mismatch', 'rxId', op.rx_id);
+    end if;
+    update app_private.online_payments
+    set status = 'Paid', genie_state = v_state, genie_id = coalesce(genie_id, p_genie_id), paid_at = now()
+    where id = op.id;
+    update public.prescriptions
+    set paid_amount = op.amount, paid_at = now(), payment_ref = op.id
+    where id = op.rx_id and paid_at is null
+    returning * into r;
+    perform app_private.write_audit(op.customer_id, coalesce(r.patient_name, 'Customer'), 'Customer', 'Online Payment Received',
+      'Rs. ' || to_char(op.amount, 'FM999999990.00') || ' paid online for ' || coalesce(r.rx_number, op.rx_id) || ' (' || op.id || ')', 'success');
+    return jsonb_build_object('status', 'Paid', 'rxId', op.rx_id);
+  elsif v_state in ('FAILED', 'CANCELLED', 'CANCELED', 'EXPIRED', 'DECLINED', 'VOIDED', 'REJECTED') then
+    update app_private.online_payments set status = 'Failed', genie_state = v_state where id = op.id;
+    return jsonb_build_object('status', 'Failed', 'rxId', op.rx_id);
+  end if;
+
+  update app_private.online_payments set genie_state = v_state where id = op.id;
+  return jsonb_build_object('status', 'Pending', 'rxId', op.rx_id);
+end $$;
+
+do $$
+declare f record;
+begin
+  for f in
+    select p.oid::regprocedure as sig
+    from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname in ('payment_attach', 'payment_lookup', 'payment_settle')
+  loop
+    execute format('revoke all on function %s from public', f.sig);
+    if exists (select 1 from pg_roles where rolname = 'anon') then
+      execute format('revoke all on function %s from anon, authenticated', f.sig);
+    end if;
+    if exists (select 1 from pg_roles where rolname = 'service_role') then
+      execute format('grant execute on function %s to service_role', f.sig);
+    end if;
+  end loop;
+end $$;
+
+-- --------------------------------------------------------------------
 -- 10. Lock the tables: nothing is readable or writable directly
 -- --------------------------------------------------------------------
 
@@ -2836,7 +3036,7 @@ declare
                         'delete_customer','save_staff','staff_set_password','submit_prescription',
                         'review_prescription','pos_checkout','save_doctor','delete_doctor',
                         'save_batch','adjust_batch','delete_batch','process_return','set_purchase_order_status',
-                        'save_supplier_price'];
+                        'save_supplier_price','payment_start'];
 begin
   for f in
     select p.oid::regprocedure as sig, p.proname
