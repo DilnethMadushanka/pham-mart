@@ -5,7 +5,7 @@ import { Phone, Upload, ShieldCheck, Truck, CalendarCheck } from 'lucide-react';
 // promises that matter before someone orders.
 export default function AskPharmacistBanner({ onUploadRx }) {
   return (
-    <section aria-labelledby="ask-title" className="relative rounded-[28px] overflow-hidden bg-[#0B2545] text-white">
+    <section aria-labelledby="ask-title" className="grain relative rounded-[28px] overflow-hidden bg-[#0B2545] text-white">
       <img
         src="/images/female_pharmacist.png"
         alt=""

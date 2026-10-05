@@ -369,7 +369,7 @@ export default function App() {
         </main>
       ) : (
         /* INTERNAL PHARMACY ENTERPRISE MANAGEMENT CONSOLE */
-        <div className="flex-1 flex w-full">
+        <div className="console-shell flex-1 flex w-full">
 
           <Sidebar
             activeTab={tab}

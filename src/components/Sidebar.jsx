@@ -24,7 +24,7 @@ export const CONSOLE_PAGES = [
 
 function BrandMark() {
   return (
-    <span className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center text-white shadow-md shadow-black/20 relative shrink-0" aria-hidden>
+    <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] ring-1 ring-white/15 flex items-center justify-center text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_8px_18px_-8px_rgb(37_99_235/0.8)] relative shrink-0" aria-hidden>
       <span className="absolute w-4 h-1.5 bg-white rounded-full"></span>
       <span className="absolute h-4 w-1.5 bg-white rounded-full"></span>
     </span>
@@ -53,7 +53,7 @@ export default function Sidebar({
     <>
     <aside
       aria-label="Console navigation"
-      className={`hidden md:flex flex-col shrink-0 sticky top-0 h-[100dvh] bg-[#0B2545] bg-[radial-gradient(120%_60%_at_0%_100%,rgb(37_99_235/0.28),transparent_60%)] text-white transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${collapsed ? "w-[76px]" : "w-60 lg:w-64"}`}
+      className={`grain hidden md:flex flex-col shrink-0 sticky top-0 h-[100dvh] bg-[#0B2545] bg-[radial-gradient(120%_60%_at_0%_100%,rgb(37_99_235/0.32),transparent_60%),radial-gradient(90%_30%_at_100%_0%,rgb(37_99_235/0.16),transparent_70%)] text-white border-r border-white/[0.04] transition-[width] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${collapsed ? "w-[76px]" : "w-60 lg:w-64"}`}
     >
       <div className={`h-16 flex items-center gap-2.5 border-b border-white/[0.06] ${collapsed ? "justify-center px-0" : "px-5"}`}>
         <BrandMark />
@@ -83,11 +83,12 @@ export default function Sidebar({
                     title={collapsed ? item.label : item.sublabel}
                     aria-current={isActive ? "page" : undefined}
                     className={`relative w-full flex items-center rounded-xl text-sm group ${collapsed ? "justify-center h-11" : "justify-between px-3 py-2.5"} ${isActive
-                      ? "bg-[#2563EB] text-white shadow-lg shadow-[#2563EB]/30"
+                      ? "bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_10px_24px_-12px_rgb(37_99_235/0.9)]"
                       : "text-slate-300 hover:text-white hover:bg-white/[0.06]"
                       }`}
                   >
-                    <span className={`flex items-center gap-3 min-w-0`}>
+                    {isActive && !collapsed && <span aria-hidden className="absolute -left-3 top-2 bottom-2 w-1 rounded-r-full bg-[#93C5FD] shadow-[0_0_12px_rgb(147_197_253/0.9)]" />}
+                    <span className={`flex items-center gap-3 min-w-0 transition-transform duration-200 ${isActive || collapsed ? "" : "group-hover:translate-x-0.5"}`}>
                       <Icon
                         className={`w-[18px] h-[18px] shrink-0 ${isActive ? "text-white" : "text-[#93C5FD]/70 group-hover:text-[#93C5FD]"}`}
                         strokeWidth={1.75}

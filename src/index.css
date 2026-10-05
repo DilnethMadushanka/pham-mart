@@ -341,3 +341,121 @@
   60% { opacity: 1; }
   100% { opacity: 1; transform: translateX(0) scale(1); }
 }
+
+/* ------------------------------------------------------------------
+   Premium layer (presentation only). Brand palette unchanged:
+   navy #0B2545, blue #2563EB / #1D4ED8, slate, status set.
+   ------------------------------------------------------------------ */
+
+/* Console canvas: a soft blue wash at the top and a faint dot grid, so
+   white panels sit on a surface with some depth instead of flat grey. */
+.console-shell {
+  background-color: #F5F7FB;
+  background-image:
+    radial-gradient(90% 420px at 70% -120px, rgb(37 99 235 / 0.10), transparent 70%),
+    radial-gradient(rgb(11 37 69 / 0.045) 1px, transparent 1px);
+  background-size: auto, 22px 22px;
+  background-attachment: fixed, fixed;
+}
+
+/* Fine grain over dark brand surfaces breaks up flat navy. */
+.grain { isolation: isolate; } /* the element must already be positioned (relative or sticky) */
+.grain::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1; opacity: 0.18; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+}
+
+@layer components {
+  /* Page sections arrive one after another instead of all at once. */
+  @media (prefers-reduced-motion: no-preference) {
+    .console-main > *:not(.fixed) { animation: rise 0.6s var(--ease-out-expo) backwards; }
+    .console-main > *:nth-child(2) { animation-delay: 60ms; }
+    .console-main > *:nth-child(3) { animation-delay: 120ms; }
+    .console-main > *:nth-child(4) { animation-delay: 180ms; }
+    .console-main > *:nth-child(5) { animation-delay: 240ms; }
+    .console-main > *:nth-child(n+6) { animation-delay: 300ms; }
+    .console-main > div > *:not(.fixed) { animation: rise 0.6s var(--ease-out-expo) backwards; }
+    .console-main > div > *:nth-child(2) { animation-delay: 70ms; }
+    .console-main > div > *:nth-child(3) { animation-delay: 140ms; }
+    .console-main > div > *:nth-child(4) { animation-delay: 210ms; }
+    .console-main > div > *:nth-child(5) { animation-delay: 280ms; }
+    .console-main > div > *:nth-child(n+6) { animation-delay: 340ms; }
+  }
+
+  /* Banner: a slow light sweep once on arrival, and a soft top highlight. */
+  .console-banner { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 24px 48px -28px rgb(11 37 69 / 0.7); }
+  .console-banner-sheen { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: inherit; }
+  .console-banner-sheen::before {
+    content: ""; position: absolute; top: -50%; bottom: -50%; width: 30%; left: -40%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.09), transparent);
+    transform: skewX(-18deg);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .console-banner-sheen::before { animation: sheen 1.6s var(--ease-out-expo) 0.35s both; }
+  }
+
+  /* Panels lift a little under the pointer. */
+  .console-main section.rounded-3xl,
+  .console-main .rounded-3xl.bg-white,
+  .console-main .rounded-2xl.bg-white.border {
+    transition: box-shadow 260ms var(--ease-out-expo), transform 260ms var(--ease-out-expo), border-color 260ms var(--ease-out-expo);
+  }
+  .console-main section.rounded-3xl:hover { box-shadow: 0 18px 40px -24px rgb(11 37 69 / 0.28), 0 0 0 1px rgb(37 99 235 / 0.08); }
+
+  /* Metric tiles: a light that follows the pointer across the tile. */
+  .metric-spot { position: relative; }
+  .metric-spot::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 300ms ease;
+    background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgb(37 99 235 / 0.09), transparent 60%);
+  }
+  .metric-spot:hover::before { opacity: 1; }
+  .metric-icon { box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.28), 0 6px 14px -6px var(--tile-glow, rgb(37 99 235 / 0.6)); }
+
+  /* Primary blue buttons: a brand blue gradient with a lit top edge. */
+  button.bg-\[\#2563EB\]:not(:disabled), a.bg-\[\#2563EB\],
+  button.bg-blue-600:not(:disabled), a.bg-blue-600 {
+    background-image: linear-gradient(180deg, #2563EB 0%, #1D4ED8 100%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2), 0 8px 18px -10px rgb(37 99 235 / 0.75);
+  }
+  button.bg-\[\#2563EB\]:not(:disabled):hover, a.bg-\[\#2563EB\]:hover,
+  button.bg-blue-600:not(:disabled):hover, a.bg-blue-600:hover {
+    filter: brightness(1.07);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.24), 0 12px 24px -12px rgb(37 99 235 / 0.85);
+  }
+  button.bg-\[\#0B2545\]:not(:disabled), button.bg-slate-900:not(:disabled) {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.1), 0 8px 18px -10px rgb(11 37 69 / 0.7);
+  }
+
+  /* Tables: the hovered row gets a brand-blue edge. */
+  .console-main table tbody tr { position: relative; }
+  .console-main table tbody tr:hover > td:first-child { box-shadow: inset 3px 0 0 #2563EB; }
+
+  /* Dialogs: the panel settles in with a small scale instead of popping. */
+  @media (prefers-reduced-motion: no-preference) {
+    .fixed.inset-0.z-50 > div:not(.fixed):first-child,
+    .fixed.inset-0.z-\[60\] > div:first-child,
+    .fixed.inset-0.z-\[90\] > div:first-child {
+      animation: dialogIn 0.38s var(--ease-out-expo) backwards;
+    }
+  }
+
+  /* Text inputs: a calm hover before focus. */
+  .console-main input:not([type=checkbox]):not([type=radio]):hover:not(:focus),
+  .console-main select:hover:not(:focus) { border-color: #CBD5E1; }
+}
+
+@keyframes sheen { from { left: -40%; } to { left: 130%; } }
+@keyframes dialogIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.975); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@layer components {
+  /* Clickable cards rise slightly and pick up a blue edge under the pointer. */
+  .console-main button.bg-white.rounded-2xl:not(:disabled):hover,
+  .console-main button.bg-white.rounded-3xl:not(:disabled):hover,
+  .console-main div[role="button"].bg-white:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 32px -20px rgb(11 37 69 / 0.35), 0 0 0 1px rgb(37 99 235 / 0.22);
+  }
+}
