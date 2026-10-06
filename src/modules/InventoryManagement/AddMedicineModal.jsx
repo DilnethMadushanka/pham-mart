@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Package, ShieldAlert, DollarSign } from 'lucide-react';
 import { notify } from '../../lib/notify';
+import { checkNewExpiry, minNewExpiry, MIN_EXPIRY_DAYS } from '../../lib/expiry';
 
 const DEFAULT_CATEGORIES = ["Antibiotics", "Analgesics", "Cardiovascular", "Diabetes", "Respiratory", "Controlled Drugs", "Supplements"];
 
@@ -66,6 +67,13 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
     if (!String(formData.category || "").trim()) {
       notify("Details needed", "Choose or type a category.", "error");
       return;
+    }
+    if (!medicineToEdit) {
+      const expiryError = checkNewExpiry(formData.expiryDate);
+      if (expiryError) {
+        notify("Check the expiry date", expiryError, "error");
+        return;
+      }
     }
     setIsSaving(true);
     await onSave(formData);
@@ -223,10 +231,12 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               <input 
                 type="date"
                 required
+                min={minNewExpiry()}
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({...formData, expiryDate: e.target.value})}
                 className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden"
               />
+              <p className="mt-1 text-xs text-slate-500">Must be more than {MIN_EXPIRY_DAYS} days from today.</p>
             </div>
           </div>
           </>)}

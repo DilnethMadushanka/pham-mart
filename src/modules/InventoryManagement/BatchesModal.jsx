@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { X, Layers, Plus, ClipboardCheck, Pencil, Trash2, History } from 'lucide-react';
 import { saveBatch, adjustBatch, deleteBatch } from '../../services/supabaseService';
 import { notify, notifyError, confirmDialog } from '../../lib/notify';
-import { expiryStatus, EXPIRY_LABEL, localToday } from '../../lib/expiry';
+import { expiryStatus, EXPIRY_LABEL, localToday, checkNewExpiry, minNewExpiry } from '../../lib/expiry';
 
 const inputClass = "w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden";
 
@@ -55,6 +55,13 @@ export default function BatchesModal({ medicine, batches, stockMovements = [], c
   const submit = async (e) => {
     e.preventDefault();
     if (busy) return;
+    if (mode.kind === "add") {
+      const expiryError = checkNewExpiry(form.expiryDate);
+      if (expiryError) {
+        notify("Check the expiry date", expiryError, "error");
+        return;
+      }
+    }
     setBusy(true);
     let res;
     if (mode.kind === "add") {
@@ -130,7 +137,7 @@ export default function BatchesModal({ medicine, batches, stockMovements = [], c
                     <input required value={form.batchNo} onChange={set("batchNo")} className={`${inputClass} font-mono uppercase`} placeholder="e.g. PCM-2026-07" />
                   </Field>
                   <Field label="Expiry date">
-                    <input required type="date" min={mode.kind === "add" ? today : undefined} value={form.expiryDate} onChange={set("expiryDate")} className={inputClass} />
+                    <input required type="date" min={mode.kind === "add" ? minNewExpiry() : undefined} value={form.expiryDate} onChange={set("expiryDate")} className={inputClass} />
                   </Field>
                   {mode.kind === "add" && (
                     <Field label="Units received">

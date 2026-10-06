@@ -1,5 +1,7 @@
 // Expiry tracking by batch.
 
+import { colomboToday, shiftDate } from "./rxDate";
+
 const DAY_MS = 86400000;
 
 // Today's date as YYYY-MM-DD in the device's time zone.
@@ -35,4 +37,18 @@ export function expiryAlerts(batches = [], medicines = [], today = localToday())
     .map(b => ({ ...b, medicine: byId[b.medicineId], status: expiryStatus(b.expiryDate, today), days: daysUntil(b.expiryDate, today) }))
     .filter(b => b.status !== "ok")
     .sort((a, b) => (a.days ?? 1e9) - (b.days ?? 1e9));
+}
+
+// New stock must expire more than 7 days from today. The server enforces the same rule.
+export const MIN_EXPIRY_DAYS = 7;
+
+// The earliest expiry date allowed for new stock (today + 8 days, Sri Lanka time).
+export const minNewExpiry = (today = colomboToday()) => shiftDate(today, MIN_EXPIRY_DAYS + 1);
+
+// Returns an error message, or null when the date is fine.
+export function checkNewExpiry(isoDate, today = colomboToday()) {
+  if (!isoDate) return "Enter the expiry date.";
+  if (isoDate < today) return `The expiry date ${isoDate} is in the past. Enter a date more than ${MIN_EXPIRY_DAYS} days from today.`;
+  if (isoDate < minNewExpiry(today)) return `The expiry date ${isoDate} is too close. It must be more than ${MIN_EXPIRY_DAYS} days from today (${minNewExpiry(today)} or later).`;
+  return null;
 }

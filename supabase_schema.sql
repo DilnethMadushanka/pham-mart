@@ -464,6 +464,23 @@ as $$
   select (now() at time zone 'Asia/Colombo')::date
 $$;
 
+-- New stock must expire more than 7 days from today (Sri Lanka time).
+-- Anything sooner is too close to expiry to sell, and a past date is a typing mistake.
+create or replace function app_private.check_new_expiry(p_expiry date, p_label text default null)
+returns void
+language plpgsql
+stable
+as $$
+begin
+  if p_expiry is not null and p_expiry <= app_private.today() + 7 then
+    if p_expiry < app_private.today() then
+      raise exception '%The expiry date % is in the past. Enter a date more than 7 days from today.', coalesce(p_label || ': ', ''), p_expiry;
+    end if;
+    raise exception '%The expiry date % is too close. It must be more than 7 days from today (% or later).', coalesce(p_label || ': ', ''), p_expiry, app_private.today() + 8;
+  end if;
+end;
+$$;
+
 create or replace function app_private.hash_token(p_token text)
 returns text
 language sql
@@ -1402,6 +1419,7 @@ begin
     if exists (select 1 from public.medicines where upper(code) = v_code) then
       raise exception 'Another medicine already uses the code %.', v_code;
     end if;
+    perform app_private.check_new_expiry(nullif(p_medicine ->> 'expiryDate', '')::date);
     insert into public.medicines (id, code, name, category, dosage, generic_name, price, stock, reorder_level,
                                   is_prescription, is_controlled, expiry_date, batch_no, supplier_id, supplier_name, barcode)
     values (app_private.new_id('MED'), v_code, v_name,
@@ -1521,9 +1539,7 @@ begin
     if v_qty <= 0 then
       raise exception 'Enter how many units were received.';
     end if;
-    if v_expiry < app_private.today() then
-      raise exception 'This batch expired on %. Expired stock can''t be added.', v_expiry;
-    end if;
+    perform app_private.check_new_expiry(v_expiry);
     b := app_private.add_batch_stock(m.id, v_no, v_expiry, v_qty, 'Received without order');
     v_move := app_private.log_movement(s.principal_id, s.display_name, b, v_qty, 'Stock received', v_note);
     perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Stock Received',
@@ -1896,9 +1912,7 @@ begin
     if v_expiry is null then
       raise exception 'Enter the expiry date for %.', v_line ->> 'name';
     end if;
-    if v_expiry < app_private.today() then
-      raise exception '% batch % expired on %. Don''t accept expired stock.', v_line ->> 'name', v_item ->> 'batchNo', v_expiry;
-    end if;
+    perform app_private.check_new_expiry(v_expiry, (v_line ->> 'name') || ' batch ' || (v_item ->> 'batchNo'));
 
     perform 1 from public.medicines where id = v_item ->> 'medicineId' for update;
     if not found then

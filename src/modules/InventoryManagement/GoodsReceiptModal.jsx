@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, PackageCheck, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { localToday } from '../../lib/expiry';
+import { checkNewExpiry, minNewExpiry, MIN_EXPIRY_DAYS } from '../../lib/expiry';
 
 const inputClass = "w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden";
 
@@ -19,11 +19,12 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
   const short = rows.reduce((sum, r) => sum + Math.max(0, r.outstanding - r.delivered), 0);
   const over = rows.some(r => r.delivered > r.outstanding);
   const missing = rows.some(r => r.delivered > 0 && (!r.batchNo.trim() || !r.expiryDate));
+  const badExpiry = rows.some(r => r.delivered > 0 && r.expiryDate && checkNewExpiry(r.expiryDate));
   const nothing = rows.every(r => r.delivered <= 0) && !closeShort;
 
   const submit = async (e) => {
     e.preventDefault();
-    if (busy || over || missing || nothing) return;
+    if (busy || over || missing || badExpiry || nothing) return;
     setBusy(true);
     await onConfirm(po.id, rows.filter(r => r.delivered > 0).map(r => ({
       medicineId: r.medicineId, quantity: r.delivered, batchNo: r.batchNo.trim(), expiryDate: r.expiryDate
@@ -68,7 +69,7 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
                 </label>
                 <label className="space-y-1 col-span-2 sm:col-span-1">
                   <span className="block text-[11px] text-slate-500">Expiry date</span>
-                  <input type="date" min={localToday()} value={r.expiryDate} onChange={(e) => update(idx, { expiryDate: e.target.value })} aria-label={`Expiry date of ${r.name}`} className={inputClass} />
+                  <input type="date" min={minNewExpiry()} value={r.expiryDate} onChange={(e) => update(idx, { expiryDate: e.target.value })} aria-label={`Expiry date of ${r.name}`} className={inputClass} />
                 </label>
               </div>
               {r.delivered > r.outstanding && <p className="text-xs text-rose-700">More than is outstanding on the order.</p>}
@@ -89,10 +90,11 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
           </div>
         ) : null}
         {missing && <p className="text-xs text-rose-700">Enter the batch number and expiry date for every delivered item.</p>}
+        {badExpiry && <p className="text-xs text-rose-700">Expiry dates must be more than {MIN_EXPIRY_DAYS} days from today ({minNewExpiry()} or later).</p>}
 
         <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <button type="button" onClick={onClose} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl">Cancel</button>
-          <button type="submit" disabled={busy || over || missing || nothing} className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20">
+          <button type="submit" disabled={busy || over || missing || badExpiry || nothing} className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20">
             {busy ? "Saving..." : "Record delivery"}
           </button>
         </div>
