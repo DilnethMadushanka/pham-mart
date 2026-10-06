@@ -2526,6 +2526,10 @@ declare
   v_expired int;
   v_used jsonb;
   v_final jsonb := '[]'::jsonb;
+  v_doctor public.doctors;
+  v_walk_name text;
+  v_walk_date date;
+  v_walk_id text;
   t public.transactions;
 begin
   select * into s from app_private.require_staff(p_token);
@@ -2583,10 +2587,56 @@ begin
     raise exception 'The cart is empty.';
   end if;
 
-  if v_needs_rx then
-    if v_customer.id is null then
-      raise exception 'Prescription medicines need a registered patient. Select the customer first.';
+  -- Walk-in customer: a pharmacist (or the owner) checks the paper prescription
+  -- at the counter and approves it there. It is saved as an approved prescription
+  -- and dispensed on this sale, so the check below applies to it as well.
+  if v_needs_rx and v_customer.id is null then
+    if s.role not in ('Owner/Admin', 'Pharmacist') then
+      raise exception 'Prescription medicines for a walk-in customer need a pharmacist''s approval. Ask a pharmacist to sign in, or select a registered patient.';
     end if;
+    v_walk_name := app_private.clean_text(p_sale -> 'walkInRx' ->> 'patientName', 160);
+    if v_walk_name is null then
+      raise exception 'Enter the patient''s name from the prescription.';
+    end if;
+    select * into v_doctor from public.doctors where id = p_sale -> 'walkInRx' ->> 'doctorId';
+    if not found then
+      raise exception 'Pick the prescribing doctor from the doctor database. If the doctor is missing, ask the owner to add them.';
+    end if;
+    if v_doctor.status <> 'Active' then
+      raise exception '% is marked Inactive in the doctor database. Prescriptions from this doctor can''t be approved.', v_doctor.name;
+    end if;
+    begin
+      v_walk_date := nullif(btrim(p_sale -> 'walkInRx' ->> 'prescriptionDate'), '')::date;
+    exception when others then
+      raise exception 'Enter the prescription date as a valid date.';
+    end;
+    if v_walk_date is null then
+      raise exception 'Enter the date written on the prescription.';
+    end if;
+    if v_walk_date > app_private.today() then
+      raise exception 'The prescription date can''t be in the future.';
+    end if;
+    if v_walk_date < app_private.today() - 7 then
+      raise exception 'Invalid prescription. It was written more than 7 days ago, and prescriptions are only valid for 7 days. Please get a new prescription from your doctor.';
+    end if;
+    v_walk_id := 'RX-' || to_char(now(), 'YYYY') || '-' || upper(substr(md5(random()::text || clock_timestamp()::text), 1, 6));
+    insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,
+                                      medications, notes, order_type, pharmacist_notes, verified_by, verified_at,
+                                      is_controlled, expiry_date, has_attachment, prescription_date)
+    values (v_walk_id, v_walk_id, null, v_walk_name, v_doctor.id, v_doctor.name, v_doctor.slmc_no, 'Approved',
+            (select jsonb_agg(jsonb_build_object('medicineId', l ->> 'medicineId', 'name', l ->> 'name', 'quantity', (l ->> 'qty')::int))
+             from jsonb_array_elements(v_lines) l where (l ->> 'needsRx')::boolean),
+            app_private.clean_text(p_sale -> 'walkInRx' ->> 'notes', 1000),
+            'Walk-in at counter', 'Checked the paper prescription at the counter', s.display_name, now(),
+            exists (select 1 from jsonb_array_elements(v_lines) l join public.medicines m on m.id = l ->> 'medicineId'
+                    where coalesce(m.is_controlled, false)),
+            v_walk_date + 7, false, v_walk_date);
+    perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Walk-in Prescription Approved',
+      'Prescription ' || v_walk_id || ' for walk-in patient ' || v_walk_name || ' (Dr. ' || v_doctor.name || ', dated ' || v_walk_date || ')', 'warning');
+    p_sale := p_sale || jsonb_build_object('prescriptionId', v_walk_id);
+  end if;
+
+  if v_needs_rx then
     select * into v_rx from public.prescriptions where id = p_sale ->> 'prescriptionId' for update;
     if not found then
       raise exception 'Prescription medicines need an approved prescription for this customer.';
