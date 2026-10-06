@@ -3075,4 +3075,169 @@ select app_private.new_id('BAT'), m.id, upper(coalesce(nullif(trim(m.batch_no), 
 from public.medicines m
 where m.stock > 0 and not exists (select 1 from public.medicine_batches b where b.medicine_id = m.id);
 
+-- --------------------------------------------------------------------
+-- 13. Reorder suggestions and purchase order lines, kept as real tables
+--     so they can be seen in the Supabase Table Editor.
+--     reorder_suggestions mirrors src/lib/reorder.js and is rebuilt
+--     whenever medicines, sales, suppliers or purchase orders change.
+--     purchase_order_items is one row per line of public.purchase_orders.
+--     Both are read-only copies: the app keeps writing through the API.
+-- --------------------------------------------------------------------
+
+create table if not exists public.reorder_suggestions (
+  medicine_id text primary key references public.medicines (id) on delete cascade,
+  medicine_name text not null,
+  supplier_id text,
+  supplier_name text,
+  stock int not null,
+  reorder_level int not null,
+  sold_last_30_days int not null default 0,
+  days_left int,
+  lead_days int not null,
+  suggested_qty int not null,
+  unit_cost numeric(10,2),
+  estimated_cost numeric(12,2),
+  urgency text not null check (urgency in ('out', 'critical', 'low')),
+  reason text,
+  on_order_qty int not null default 0,
+  open_purchase_orders text[] default '{}',
+  updated_at timestamptz default now()
+);
+
+create table if not exists public.purchase_order_items (
+  purchase_order_id text not null references public.purchase_orders (id) on delete cascade,
+  line_no int not null,
+  medicine_id text,
+  medicine_name text,
+  quantity int not null default 0,
+  received_qty int not null default 0,
+  unit_cost numeric(10,2),
+  line_total numeric(12,2),
+  primary key (purchase_order_id, line_no)
+);
+
+create or replace function app_private.refresh_reorder_suggestions()
+returns void
+language plpgsql
+security definer
+set search_path = public, app_private
+as $$
+begin
+  delete from public.reorder_suggestions where true;
+
+  insert into public.reorder_suggestions (medicine_id, medicine_name, supplier_id, supplier_name, stock, reorder_level,
+                                          sold_last_30_days, days_left, lead_days, suggested_qty, unit_cost, estimated_cost,
+                                          urgency, reason, on_order_qty, open_purchase_orders, updated_at)
+  with sold as (
+    select i ->> 'medicineId' as medicine_id,
+           sum(coalesce((i ->> 'qty')::numeric, (i ->> 'quantity')::numeric, 0)) as qty
+    from public.transactions t, jsonb_array_elements(app_private.as_array(t.items)) i
+    where t.created_at >= now() - interval '30 days'
+    group by 1
+  ), on_order as (
+    select o ->> 'medicineId' as medicine_id,
+           sum(coalesce((o ->> 'quantity')::int, 0) - coalesce((o ->> 'receivedQty')::int, 0)) as qty,
+           array_agg(distinct po.id) as po_ids
+    from public.purchase_orders po, jsonb_array_elements(app_private.as_array(po.items)) o
+    where coalesce(po.status, 'Pending') not in ('Received', 'Goods Received', 'Cancelled')
+      and coalesce((o ->> 'quantity')::int, 0) > coalesce((o ->> 'receivedQty')::int, 0)
+    group by 1
+  ), calc as (
+    select m.id, m.name, m.supplier_id, coalesce(s.name, m.supplier_name) as supplier_name,
+           greatest(0, coalesce(m.stock, 0)) as stock,
+           greatest(0, coalesce(m.reorder_level, 0)) as reorder_level,
+           coalesce(sold.qty, 0) as sold,
+           coalesce(sold.qty, 0) / 30.0 as daily_use,
+           coalesce(s.lead_days, 3) as lead_days,
+           coalesce(sp.unit_cost, round(m.price * 0.7, 2)) as unit_cost,
+           coalesce(oo.qty, 0) as on_order, coalesce(oo.po_ids, '{}') as po_ids
+    from public.medicines m
+    left join public.suppliers s on s.id = m.supplier_id
+    left join public.supplier_prices sp on sp.supplier_id = m.supplier_id and sp.medicine_id = m.id
+    left join sold on sold.medicine_id = m.id
+    left join on_order oo on oo.medicine_id = m.id
+    where coalesce(m.stock, 0) <= coalesce(m.reorder_level, 0)
+  ), qty as (
+    select c.*,
+           greatest(10, ceil((greatest(c.reorder_level * 2, ceil(c.daily_use * (c.lead_days + 14)), 10) - c.stock) / 10.0) * 10)::int as suggested,
+           case when c.daily_use > 0 then floor(c.stock / c.daily_use)::int end as days_left
+    from calc c
+  )
+  select q.id, q.name, q.supplier_id, q.supplier_name, q.stock, q.reorder_level, q.sold::int, q.days_left, q.lead_days,
+         q.suggested, q.unit_cost, q.unit_cost * q.suggested,
+         case when q.stock = 0 then 'out'
+              when q.days_left is not null and q.days_left < q.lead_days then 'critical'
+              else 'low' end,
+         case when q.stock = 0 then 'Out of stock.'
+              when q.days_left is not null and q.days_left < q.lead_days then
+                'About ' || q.days_left || ' day(s) of stock left, but delivery takes ' || q.lead_days || ' day(s).'
+              else 'Stock ' || q.stock || ' is at or below the reorder level of ' || q.reorder_level || '.' end,
+         q.on_order, q.po_ids, now()
+  from qty q;
+end $$;
+
+create or replace function app_private.sync_reorder_suggestions()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, app_private
+as $$
+begin
+  perform app_private.refresh_reorder_suggestions();
+  return null;
+end $$;
+
+create or replace function app_private.sync_purchase_order_items()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, app_private
+as $$
+begin
+  if tg_op in ('UPDATE', 'DELETE') then
+    delete from public.purchase_order_items where purchase_order_id = old.id;
+  end if;
+  if tg_op in ('INSERT', 'UPDATE') then
+    insert into public.purchase_order_items (purchase_order_id, line_no, medicine_id, medicine_name, quantity,
+                                             received_qty, unit_cost, line_total)
+    select new.id, x.n::int, x.o ->> 'medicineId', x.o ->> 'name', coalesce((x.o ->> 'quantity')::int, 0),
+           coalesce((x.o ->> 'receivedQty')::int, 0), (x.o ->> 'unitCost')::numeric,
+           coalesce((x.o ->> 'total')::numeric, (x.o ->> 'unitCost')::numeric * (x.o ->> 'quantity')::int)
+    from jsonb_array_elements(app_private.as_array(new.items)) with ordinality as x(o, n);
+  end if;
+  return null;
+end $$;
+
+drop trigger if exists sync_purchase_order_items on public.purchase_orders;
+create trigger sync_purchase_order_items after insert or update or delete on public.purchase_orders
+  for each row execute function app_private.sync_purchase_order_items();
+
+do $$
+declare t text;
+begin
+  foreach t in array array['medicines','transactions','suppliers','supplier_prices','purchase_orders'] loop
+    execute format('drop trigger if exists sync_reorder_suggestions on public.%I', t);
+    execute format('create trigger sync_reorder_suggestions after insert or update or delete on public.%I
+                    for each statement execute function app_private.sync_reorder_suggestions()', t);
+  end loop;
+
+  foreach t in array array['reorder_suggestions','purchase_order_items'] loop
+    execute format('alter table public.%I enable row level security', t);
+    if exists (select 1 from pg_roles where rolname = 'anon') then
+      execute format('revoke all on table public.%I from anon, authenticated', t);
+    end if;
+  end loop;
+end $$;
+
+-- Fill both tables from what is already in the database.
+select app_private.refresh_reorder_suggestions();
+
+delete from public.purchase_order_items where true;
+insert into public.purchase_order_items (purchase_order_id, line_no, medicine_id, medicine_name, quantity,
+                                         received_qty, unit_cost, line_total)
+select po.id, x.n::int, x.o ->> 'medicineId', x.o ->> 'name', coalesce((x.o ->> 'quantity')::int, 0),
+       coalesce((x.o ->> 'receivedQty')::int, 0), (x.o ->> 'unitCost')::numeric,
+       coalesce((x.o ->> 'total')::numeric, (x.o ->> 'unitCost')::numeric * (x.o ->> 'quantity')::int)
+from public.purchase_orders po, jsonb_array_elements(app_private.as_array(po.items)) with ordinality as x(o, n);
+
 commit;
