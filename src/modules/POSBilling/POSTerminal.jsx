@@ -31,6 +31,7 @@ import PhoneHint from '../../components/PhoneHint';
 import { checkPhone } from '../../lib/phone';
 import { newlyLowStock } from '../../lib/reorder';
 import PageHeader from '../../components/PageHeader';
+import { checkRxDate, colomboToday, shiftDate, RX_VALID_DAYS } from '../../lib/rxDate';
 
 const needsPrescription = (med) => Boolean(med.prescriptionRequired || med.controlledDrug);
 const localToday = () => new Date().toLocaleDateString("en-CA");
@@ -72,12 +73,17 @@ export default function POSTerminal({
   salesReturns = [],
   setSalesReturns,
   canProcessReturns = false,
+  canApproveRx = false,
+  doctors = [],
   addAuditLog 
 }) {
   const [isReturnsOpen, setIsReturnsOpen] = useState(false);
   const [cart, setCart] = useState([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [selectedRxId, setSelectedRxId] = useState("");
+  // A pharmacist can approve a walk-in customer's paper prescription at the counter.
+  const emptyWalkInRx = () => ({ patientName: "", doctorId: "", prescriptionDate: colomboToday(), checked: false });
+  const [walkInRx, setWalkInRx] = useState(emptyWalkInRx);
   const [discountPct, setDiscountPct] = useState(0);
   const [taxPct, setTaxPct] = useState(0);
 
@@ -105,6 +111,8 @@ export default function POSTerminal({
     (!p.expiryDate || p.expiryDate >= today)
   );
   const linkedRx = usablePrescriptions.find(p => p.id === selectedRxId) || null;
+  const walkInRxNeeded = !selectedCustomerId && canApproveRx && cart.some(needsPrescription);
+  const activeDoctors = doctors.filter(d => d.status !== "Inactive");
 
   useEffect(() => {
     if (isViewHistoryOpen && activeCustomer) {
@@ -177,6 +185,7 @@ export default function POSTerminal({
   const maxQtyFor = (med, rx = linkedRx) => {
     const stockCap = sellable(med);
     if (!needsPrescription(med)) return stockCap;
+    if (!selectedCustomerId && canApproveRx) return stockCap;
     return rx ? Math.min(stockCap, prescribedQty(rx, med)) : 0;
   };
 
@@ -202,11 +211,11 @@ export default function POSTerminal({
     let rx = linkedRx;
     if (needsPrescription(med)) {
       const label = med.controlledDrug ? "Controlled drug" : "Prescription medicine";
-      if (!selectedCustomerId) {
-        notify(`${label} needs a patient`, `Select the patient before adding ${med.name}.`, "error");
+      if (!selectedCustomerId && !canApproveRx) {
+        notify(`${label} needs a patient`, `Select the patient before adding ${med.name}, or ask a pharmacist to approve this walk-in sale.`, "error");
         return;
       }
-      if (!rx || prescribedQty(rx, med) === 0) {
+      if (selectedCustomerId && (!rx || prescribedQty(rx, med) === 0)) {
         const match = usablePrescriptions.find(p => prescribedQty(p, med) > 0 &&
           cart.filter(needsPrescription).every(item => prescribedQty(p, item) >= item.qty));
         if (!match) {
@@ -283,12 +292,32 @@ export default function POSTerminal({
       notify("Not enough cash", `Tendered cash must be at least Rs. ${grandTotal.toFixed(2)}.`, "error");
       return;
     }
+    if (walkInRxNeeded) {
+      const rxDate = checkRxDate(walkInRx.prescriptionDate);
+      if (!walkInRx.patientName.trim() || !walkInRx.doctorId) {
+        notify("Prescription details needed", "Enter the patient's name and pick the doctor from the prescription.", "error");
+        return;
+      }
+      if (!rxDate.ok) {
+        notify("Check the prescription date", rxDate.message, "error");
+        return;
+      }
+      if (!walkInRx.checked) {
+        notify("Pharmacist check needed", "Tick the box to confirm you checked the original prescription.", "error");
+        return;
+      }
+    }
 
     setIsCheckingOut(true);
     const { data, error } = await posCheckout({
       items: cart.map(item => ({ medicineId: item.id, qty: item.qty })),
       customerId: selectedCustomerId || null,
       prescriptionId: cart.some(needsPrescription) ? selectedRxId || null : null,
+      walkInRx: walkInRxNeeded ? {
+        patientName: walkInRx.patientName.trim(),
+        doctorId: walkInRx.doctorId,
+        prescriptionDate: walkInRx.prescriptionDate
+      } : null,
       discountPct,
       taxPct,
       paymentMethod,
@@ -318,8 +347,11 @@ export default function POSTerminal({
       addAuditLog?.("Reorder Suggested", `Low stock after sale ${transaction.id}: ${names}`, "warning");
     }
     if (prescription && setPrescriptions) {
-      setPrescriptions(prev => prev.map(p => p.id === prescription.id ? prescription : p));
+      setPrescriptions(prev => prev.some(p => p.id === prescription.id)
+        ? prev.map(p => p.id === prescription.id ? prescription : p)
+        : [prescription, ...prev]);
     }
+    if (walkInRxNeeded) setWalkInRx(emptyWalkInRx());
 
     try {
       confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
@@ -551,6 +583,51 @@ export default function POSTerminal({
               ))
             )}
           </div>
+
+          {walkInRxNeeded && (
+            <div className="mb-2 p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+              <div className="font-semibold flex items-center gap-1.5">
+                <ShieldAlert className="w-4 h-4" /> Pharmacist approval for a walk-in customer
+              </div>
+              <p className="text-[11px]">Check the original prescription, then fill in its details. It is saved as an approved prescription and marked as used on this sale.</p>
+              <input
+                value={walkInRx.patientName}
+                onChange={(e) => setWalkInRx(prev => ({ ...prev, patientName: e.target.value }))}
+                placeholder="Patient name on the prescription"
+                aria-label="Patient name on the prescription"
+                className="w-full px-2.5 py-2 bg-white border border-amber-200 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-amber-300"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <select
+                  value={walkInRx.doctorId}
+                  onChange={(e) => setWalkInRx(prev => ({ ...prev, doctorId: e.target.value }))}
+                  aria-label="Prescribing doctor"
+                  className="w-full px-2.5 py-2 bg-white border border-amber-200 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-amber-300"
+                >
+                  <option value="">Prescribing doctor...</option>
+                  {activeDoctors.map(d => <option key={d.id} value={d.id}>{d.name} ({d.slmcNo})</option>)}
+                </select>
+                <input
+                  type="date"
+                  value={walkInRx.prescriptionDate}
+                  min={shiftDate(colomboToday(), -RX_VALID_DAYS)}
+                  max={colomboToday()}
+                  onChange={(e) => setWalkInRx(prev => ({ ...prev, prescriptionDate: e.target.value }))}
+                  aria-label="Date written on the prescription"
+                  className="w-full px-2.5 py-2 bg-white border border-amber-200 rounded-lg text-xs outline-hidden focus:ring-2 focus:ring-amber-300"
+                />
+              </div>
+              <label className="flex items-start gap-2 text-[11px] font-medium">
+                <input
+                  type="checkbox"
+                  checked={walkInRx.checked}
+                  onChange={(e) => setWalkInRx(prev => ({ ...prev, checked: e.target.checked }))}
+                  className="mt-0.5"
+                />
+                I checked the original prescription and approve these medicines.
+              </label>
+            </div>
+          )}
 
           {linkedRx && cart.some(needsPrescription) && (
             <div className="mb-2 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[11px] text-emerald-900 font-medium">

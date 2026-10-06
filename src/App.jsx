@@ -430,6 +430,8 @@ export default function App() {
                 salesReturns={salesReturns}
                 setSalesReturns={setSalesReturns}
                 canProcessReturns={can(role, "returns_process")}
+                canApproveRx={can(role, "prescription_approve")}
+                doctors={doctors}
                 addAuditLog={addAuditLog}
               />
             )}
