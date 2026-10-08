@@ -1303,7 +1303,9 @@ begin
     v_out := v_out || jsonb_build_object('stock_movements', case
       when v_can_stock then
         (select coalesce(jsonb_agg(app_private.movement_json(v) order by v.created_at desc), '[]'::jsonb)
-         from (select * from public.stock_movements order by created_at desc limit 500) v)
+         -- About 13 months, so the monthly inventory report can show last year's months.
+         from (select * from public.stock_movements where created_at > now() - interval '13 months'
+               order by created_at desc limit 5000) v)
       else '[]'::jsonb end);
   end if;
 
