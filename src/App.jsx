@@ -491,6 +491,7 @@ export default function App() {
                 setStaffList={setStaffList}
                 currentUser={sessionUser}
                 addAuditLog={addAuditLog}
+                onDataChanged={refresh}
               />
             )}
             </>}

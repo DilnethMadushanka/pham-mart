@@ -82,6 +82,9 @@ VITE_GOOGLE_CLIENT_ID=<optional, for Google sign-in>
    **Re-run it after pulling changes that touch the schema**, or new screens will
    report errors.
 3. Optional: run `supabase/demo_catalogue.sql` for more demo medicines and suppliers.
+4. For a demo, sign in as the Owner and press **Settings > Load demo data**. It adds
+   demo medicines, customers, prescriptions and two weeks of past sales, and
+   never changes existing records (`load_demo_data` in the schema).
 
 On a brand-new project the schema creates four starter staff accounts (one
 Owner/Admin, two Pharmacists, one Cashier). Their emails and starter passwords
