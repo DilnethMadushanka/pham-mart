@@ -409,6 +409,7 @@ export default function App() {
                 salesReturns={salesReturns}
                 batches={batches}
                 purchaseOrders={purchaseOrders}
+                stockMovements={stockMovements}
                 onNavigate={(target) => {
                   const [tabId, section] = target.split(":");
                   goToTab(tabId);
