@@ -10,16 +10,18 @@ import {
   Edit,
   Mail,
   Phone,
-  UserCheck
+  UserCheck,
+  Database
 } from 'lucide-react';
 import AddStaffModal from './AddStaffModal';
-import { saveStaff, setStaffPassword } from '../../services/supabaseService';
+import { saveStaff, setStaffPassword, loadDemoData } from '../../services/supabaseService';
 import { confirmDialog, promptDialog, notify, notifyError } from '../../lib/notify';
 import PageHeader from '../../components/PageHeader';
 import MetricCard from '../../components/MetricCard';
 
-export default function StaffList({ staffList, setStaffList, currentUser, addAuditLog }) {
+export default function StaffList({ staffList, setStaffList, currentUser, addAuditLog, onDataChanged }) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
@@ -77,6 +79,29 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
     addAuditLog("Password Reset", `Owner set a new password for ${staff.username}`, "info");
   };
 
+  // Adds a ready-made data set for the final demo. Existing records are never changed.
+  const handleLoadDemoData = async () => {
+    const confirmed = await confirmDialog({
+      title: "Load demo data?",
+      message: "Adds demo medicines (one low on stock, one close to expiry, Rx-only and controlled), two customers, a doctor, an approved and a pending prescription, and two weeks of past sales. Nothing you already have is changed.",
+      confirmLabel: "Load demo data"
+    });
+    if (!confirmed) return;
+    setIsLoadingDemo(true);
+    const { data, error } = await loadDemoData();
+    setIsLoadingDemo(false);
+    if (error) {
+      notifyError(error, "Demo data not loaded");
+      return;
+    }
+    await onDataChanged?.();
+    if (data.medicines === 0 && data.sales === 0) {
+      notify("Demo data already loaded", "Everything from the demo set is already in the system.", "info");
+    } else {
+      notify("Demo data loaded", `Added ${data.medicines} medicines and ${data.sales} past sales. Customer Nimal Perera has an approved prescription ready for the POS.`);
+    }
+  };
+
   // Returns true when saved, so the form keeps the user's input on failure.
   const handleSaveStaff = async (staffData) => {
     const { password, ...fields } = staffData;
@@ -105,6 +130,14 @@ export default function StaffList({ staffList, setStaffList, currentUser, addAud
         title="Staff and access"
         description="Roles, account status and permissions for everyone who uses the console."
       >
+        <button
+          onClick={handleLoadDemoData}
+          disabled={isLoadingDemo}
+          className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 disabled:opacity-60 text-slate-700 border border-slate-300 rounded-xl font-medium text-sm shrink-0"
+        >
+          <Database className="w-4 h-4" />
+          <span>{isLoadingDemo ? "Loading demo data" : "Load demo data"}</span>
+        </button>
         <button
           onClick={() => { setEditingStaff(null); setIsAddModalOpen(true); }}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl font-medium text-sm shadow-md shadow-[#2563EB]/20 shrink-0"

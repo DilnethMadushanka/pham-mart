@@ -7,8 +7,7 @@ browser windows: a normal one for staff and a private one for the customer.
 
 - [ ] Latest `supabase_schema.sql` has been run on the live Supabase project.
 - [ ] Sign in once as each role (Owner, Pharmacist, Cashier) and open every screen; nothing shows an error.
-- [ ] One medicine is close to its reorder level and one batch expires within 90 days, so alerts show.
-- [ ] One Rx-only medicine (for example Amoxicillin) has stock.
+- [ ] Sign in as the Owner, open **Settings** and press **Load demo data**. It adds a low-stock item (Cetirizine), a batch expiring within 90 days (Vitamin C), Rx-only Amoxicillin and Metformin, controlled Diazepam, a doctor, customers Nimal Perera and Sanduni Silva, and two weeks of past sales. Pressing it again adds nothing new.
 - [ ] A customer account exists for the private window (or register one live in step 1).
 - [ ] Genie keys are set in Vercel, or plan to show the payment step with a small real amount.
 - [ ] Phone hotspot ready in case the venue Wi-Fi fails.
@@ -25,7 +24,7 @@ Say: uploads need sign-in, so every order belongs to a real customer record.
 ## 2. Pharmacist reviews it (Epic 3)
 
 1. Staff window: sign in as the **Pharmacist**. Show that the sidebar has no Settings (role-based access).
-2. **Prescriptions**: open the new order, check the photo, add the catalogue items and quantities to dispense, approve.
+2. **Prescriptions**: open the new order (or Sanduni Silva's demo order RX-DEMO-PENDING), check the photo, add the catalogue items and quantities to dispense, approve.
 3. Show **Reject with a reason** on another one if there is time.
 
 Say: only the listed items and quantities can be sold against this prescription, and it can be used once.
@@ -41,7 +40,7 @@ Say: the browser never sees the Genie key. A Vercel function creates the checkou
 
 1. Sign in as the **Cashier**. Open **Sales & Billing**.
 2. Search by name and by barcode, add two OTC items, apply a discount, pick **Cash**, enter tendered cash, show the change.
-3. Try to add the **Rx-only** medicine with a walk-in customer: it is blocked. Pick the registered customer with an approved prescription and it goes through.
+3. Try to add **Amoxicillin** (Rx-only) with a walk-in customer: it is blocked. Pick **Nimal Perera**, link his approved prescription (RX-DEMO-APPROVED, up to 2 packs) and it goes through.
 4. Checkout, show and print the **receipt**.
 5. Show that the Cashier can view **Returns** but not process them. Sign in as the Pharmacist, return one item, and show that stock goes back.
 

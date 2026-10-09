@@ -150,6 +150,7 @@ export const setStaffPassword = (staffId, password) =>
   call('staff_set_password', { p_staff_id: staffId, p_password: password });
 
 export const saveDoctor = (doctor) => call('save_doctor', { p_doctor: doctor });
+export const loadDemoData = () => call('load_demo_data');
 export const deleteDoctor = (id) => call('delete_doctor', { p_id: id });
 
 export async function submitPrescription(rx, file = null) {

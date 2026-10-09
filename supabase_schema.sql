@@ -3068,6 +3068,126 @@ end $$;
 
 create policy "Anyone can read change counters" on public.data_versions for select using (true);
 
+-- --------------------------------------------------------------------
+-- Demo data for the final demo (Owner only, from Settings).
+-- Adds a small, believable data set so every screen has something to show:
+-- a low-stock item, a batch close to expiry, an Rx-only and a controlled
+-- medicine, a customer with an approved prescription ready for the POS, a
+-- pending online order for the pharmacist, and two weeks of past sales for
+-- the reports. Safe to press more than once: rows that already exist are
+-- skipped, and nothing existing is changed or deleted.
+-- --------------------------------------------------------------------
+
+create or replace function public.load_demo_data(p_token text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  v_today date := app_private.today();
+  v_med record;
+  v_added int := 0;
+  v_sales int := 0;
+  v_day int;
+  v_items jsonb;
+  v_sub numeric;
+  b public.medicine_batches;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin']);
+
+  insert into public.suppliers (id, name, contact_person, email, phone, address, lead_days) values
+    ('SUP-DEMO-1', 'Lanka Medical Distributors', 'Kasun Jayasinghe', 'orders@lankamed.lk', '+94 11 250 1234', 'Borella, Colombo 08', 2),
+    ('SUP-DEMO-2', 'Ceylon Pharma Supplies', 'Dilani Fernando', 'sales@ceylonpharma.lk', '+94 11 288 7788', 'Nugegoda', 4)
+  on conflict do nothing;
+
+  insert into public.doctors (id, name, slmc_no, specialty, phone, hospital, status) values
+    ('DOC-DEMO-1', 'Dr. Nimali Wickramasinghe', 'SLMC-DEMO-24518', 'General Practitioner', '+94 77 456 1122', 'Asiri Hospital, Colombo', 'Active')
+  on conflict do nothing;
+
+  -- Medicines: (id, code, name, generic, category, dosage, price, reorder, rx, controlled, supplier, batch, expiry, qty)
+  for v_med in
+    select * from (values
+      ('DEMO-MED-01', 'DEMO-PAN500', 'Panadol 500mg 12s', 'Paracetamol', 'Pain Relief', '1-2 tablets every 6 hours', 60::numeric, 40, false, false, 'SUP-DEMO-1', 'DPAN-2601', v_today + 400, 320),
+      ('DEMO-MED-02', 'DEMO-CET10', 'Cetirizine 10mg 10s', 'Cetirizine Hydrochloride', 'Allergy', '1 tablet daily', 95::numeric, 30, false, false, 'SUP-DEMO-1', 'DCET-2602', v_today + 300, 8),
+      ('DEMO-MED-03', 'DEMO-VTC1000', 'Vitamin C 1000mg 20s', 'Ascorbic Acid', 'Supplements & Vitamins', '1 tablet daily', 85::numeric, 25, false, false, 'SUP-DEMO-2', 'DVTC-2603', v_today + 45, 60),
+      ('DEMO-MED-04', 'DEMO-AMX500', 'Amoxicillin 500mg 21s', 'Amoxicillin', 'Antibiotics', '1 capsule three times a day', 420::numeric, 20, true, false, 'SUP-DEMO-2', 'DAMX-2604', v_today + 500, 90),
+      ('DEMO-MED-05', 'DEMO-MET500', 'Metformin 500mg 30s', 'Metformin Hydrochloride', 'Diabetes', '1 tablet twice a day', 180::numeric, 25, true, false, 'SUP-DEMO-1', 'DMET-2605', v_today + 600, 140),
+      ('DEMO-MED-06', 'DEMO-DZP5', 'Diazepam 5mg 10s', 'Diazepam', 'Controlled', 'As prescribed', 250::numeric, 10, true, true, 'SUP-DEMO-2', 'DDZP-2606', v_today + 350, 30)
+    ) as t(id, code, name, generic_name, category, dosage, price, reorder_level, is_rx, is_controlled, supplier_id, batch_no, expiry, qty)
+  loop
+    continue when exists (select 1 from public.medicines where id = v_med.id or code = v_med.code);
+    insert into public.medicines (id, code, name, generic_name, category, dosage, price, stock, reorder_level,
+                                  is_prescription, is_controlled, supplier_id, supplier_name)
+    values (v_med.id, v_med.code, v_med.name, v_med.generic_name, v_med.category, v_med.dosage, v_med.price, 0,
+            v_med.reorder_level, v_med.is_rx, v_med.is_controlled, v_med.supplier_id,
+            (select name from public.suppliers where id = v_med.supplier_id));
+    b := app_private.add_batch_stock(v_med.id, v_med.batch_no, v_med.expiry, v_med.qty, 'Demo data');
+    perform app_private.log_movement(s.principal_id, s.display_name, b, v_med.qty, 'Opening stock', 'Demo data');
+    perform app_private.sync_medicine_stock(v_med.id);
+    insert into public.supplier_prices (supplier_id, medicine_id, unit_cost, min_order_qty)
+    values (v_med.supplier_id, v_med.id, round(v_med.price * 0.7, 2), 10)
+    on conflict do nothing;
+    v_added := v_added + 1;
+  end loop;
+
+  insert into public.customers (id, name, nic, email, phone, address) values
+    ('CUST-DEMO-1', 'Nimal Perera', '198512345678', 'nimal.demo@example.com', '+94 77 123 4501', '12 Galle Road, Dehiwala'),
+    ('CUST-DEMO-2', 'Sanduni Silva', '199623456789', 'sanduni.demo@example.com', '+94 71 234 5602', '45 High Level Road, Maharagama')
+  on conflict do nothing;
+
+  -- Approved prescription for Nimal: sell Amoxicillin to him at the POS.
+  insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,
+                                    medications, notes, order_type, pharmacist_notes, verified_by, verified_at,
+                                    is_controlled, expiry_date, has_attachment, prescription_date)
+  values ('RX-DEMO-APPROVED', 'RX-DEMO-APPROVED', 'CUST-DEMO-1', 'Nimal Perera', 'DOC-DEMO-1', 'Dr. Nimali Wickramasinghe', 'SLMC-DEMO-24518',
+          'Approved', jsonb_build_array(jsonb_build_object('medicineId', 'DEMO-MED-04', 'name', 'Amoxicillin 500mg 21s',
+                                                           'dosage', '1 capsule three times a day', 'quantity', 2, 'durationDays', 7)),
+          'Demo prescription', 'Registered at counter', 'Checked against the doctor database', s.display_name, now(),
+          false, v_today + 7, false, v_today)
+  on conflict do nothing;
+
+  -- Pending online order from Sanduni: approve or reject it in Prescriptions.
+  insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,
+                                    medications, notes, contact_phone, delivery_address, order_type,
+                                    is_controlled, expiry_date, has_attachment, prescription_date)
+  values ('RX-DEMO-PENDING', 'RX-DEMO-PENDING', 'CUST-DEMO-2', 'Sanduni Silva', 'DOC-DEMO-1', 'Dr. Nimali Wickramasinghe', 'SLMC-DEMO-24518',
+          'Pending', jsonb_build_array(jsonb_build_object('medicineId', 'DEMO-MED-05', 'name', 'Metformin 500mg 30s',
+                                                          'dosage', '1 tablet twice a day', 'quantity', 2, 'durationDays', 30)),
+          'Monthly refill, please deliver', '+94 71 234 5602', '45 High Level Road, Maharagama', 'Typed medicine order',
+          false, v_today + 7, false, v_today)
+  on conflict do nothing;
+
+  -- Past sales over the last 14 days, so Home and the reports have history.
+  -- They are history only: today's stock above is already net of them.
+  for v_day in 1..14 loop
+    continue when exists (select 1 from public.transactions where id = 'INV-DEMO-' || lpad(v_day::text, 2, '0'));
+    select jsonb_agg(jsonb_build_object('medicineId', m.id, 'name', m.name, 'qty', q.qty, 'price', m.price, 'total', m.price * q.qty)),
+           sum(m.price * q.qty)
+      into v_items, v_sub
+    from (values ('DEMO-MED-01', 1 + v_day % 3), ('DEMO-MED-03', 1 + v_day % 2), ('DEMO-MED-02', v_day % 2)) as q(id, qty)
+    join public.medicines m on m.id = q.id
+    where q.qty > 0;
+    continue when v_items is null;
+    insert into public.transactions (id, invoice_no, customer_id, customer_name, cashier_id, cashier_name, items,
+                                     subtotal, discount, discount_pct, tax, tax_pct, total, payment_method,
+                                     paid_amount, change_amount, created_at)
+    values ('INV-DEMO-' || lpad(v_day::text, 2, '0'), 'INV-DEMO-' || lpad(v_day::text, 2, '0'),
+            case when v_day % 2 = 0 then 'CUST-DEMO-1' end,
+            case when v_day % 2 = 0 then 'Nimal Perera' else 'Walk-in Customer' end,
+            s.principal_id, s.display_name, v_items, v_sub, 0, 0, 0, 0, v_sub,
+            (array['Cash', 'Card', 'Digital Wallet'])[1 + v_day % 3], v_sub, 0,
+            (v_today - v_day)::timestamp + interval '10 hours' + (v_day * interval '23 minutes') - interval '5 hours 30 minutes');
+    v_sales := v_sales + 1;
+  end loop;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Demo Data Loaded',
+    'Added ' || v_added || ' demo medicines and ' || v_sales || ' past demo sales', 'info');
+
+  return jsonb_build_object('medicines', v_added, 'sales', v_sales);
+end $$;
+
 -- Only the API functions are callable from the browser.
 do $$
 declare
@@ -3078,7 +3198,7 @@ declare
                         'delete_customer','save_staff','staff_set_password','submit_prescription',
                         'review_prescription','pos_checkout','save_doctor','delete_doctor',
                         'save_batch','adjust_batch','delete_batch','process_return','set_purchase_order_status',
-                        'save_supplier_price','payment_start'];
+                        'save_supplier_price','payment_start','load_demo_data'];
 begin
   for f in
     select p.oid::regprocedure as sig, p.proname
