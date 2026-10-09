@@ -2,13 +2,9 @@ import React, { useState } from 'react';
 import { 
   GitBranch, 
   Users, 
-  FileText, 
-  CheckCircle2, 
-  ShieldCheck, 
   AlertTriangle, 
   BookOpen, 
   Award,
-  ArrowRight
 } from 'lucide-react';
 import { REPORT_INFO, REPORT_SECTIONS } from '../../data/reportData';
 

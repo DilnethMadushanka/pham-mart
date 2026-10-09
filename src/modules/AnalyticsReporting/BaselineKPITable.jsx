@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, CheckCircle2, ShieldCheck, Filter, ArrowUpRight, Search } from 'lucide-react';
+import { CheckCircle2, Filter, Search } from 'lucide-react';
 import { REPORT_BASELINE_KPIS } from '../../data/initialData';
 
 export default function BaselineKPITable() {

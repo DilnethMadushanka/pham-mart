@@ -4,7 +4,7 @@ import MetricCard from '../../components/MetricCard';
 import { adjustBatch } from '../../services/supabaseService';
 import { notify, notifyError, confirmDialog } from '../../lib/notify';
 import { expiryAlerts, EXPIRY_LABEL } from '../../lib/expiry';
-import { applyBatchResult } from './BatchesModal';
+import { applyBatchResult } from '../../lib/batches';
 
 const money = (n) => `Rs. ${Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 

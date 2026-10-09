@@ -5,11 +5,7 @@ import {
   Plus, 
   Minus, 
   Trash2, 
-  CreditCard, 
-  DollarSign, 
-  QrCode, 
   ShieldAlert, 
-  CheckCircle2, 
   Receipt,
   UserCheck,
   UserPlus,
@@ -17,8 +13,6 @@ import {
   AlertCircle,
   FileText,
   X,
-  Percent,
-  RefreshCw,
   Undo2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -114,17 +108,13 @@ export default function POSTerminal({
   const walkInRxNeeded = !selectedCustomerId && canApproveRx && cart.some(needsPrescription);
   const activeDoctors = doctors.filter(d => d.status !== "Inactive");
 
-  useEffect(() => {
-    if (isViewHistoryOpen && activeCustomer) {
-      const custTxns = filterCustomerRecords(transactions, activeCustomer);
-      const custRxs = filterCustomerRecords(prescriptions, activeCustomer);
-      if (custTxns.length === 0 && custRxs.length > 0) {
-        setHistoryTab("prescriptions");
-      } else {
-        setHistoryTab("purchases");
-      }
-    }
-  }, [isViewHistoryOpen, selectedCustomerId, transactions, prescriptions]);
+  // Open history on prescriptions when the customer has only prescriptions.
+  const openHistory = () => {
+    const hasTxns = filterCustomerRecords(transactions, activeCustomer).length > 0;
+    const hasRxs = filterCustomerRecords(prescriptions, activeCustomer).length > 0;
+    setHistoryTab(!hasTxns && hasRxs ? "prescriptions" : "purchases");
+    setIsViewHistoryOpen(true);
+  };
 
   // Prescription items belong to one patient, so switching patient takes them out of the cart.
   const handleCustomerChange = (nextId) => {
@@ -416,7 +406,7 @@ export default function POSTerminal({
 
           {activeCustomer.id && (
             <button
-              onClick={() => { setIsViewHistoryOpen(true); setHistoryTab("purchases"); }}
+              onClick={openHistory}
               title="View customer purchase & prescription history"
               className="flex items-center space-x-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 font-medium text-sm rounded-xl transition-all cursor-pointer"
             >

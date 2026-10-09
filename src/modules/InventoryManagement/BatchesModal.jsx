@@ -2,11 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { X, Layers, Plus, ClipboardCheck, Pencil, Trash2, History } from 'lucide-react';
 import { saveBatch, adjustBatch, deleteBatch } from '../../services/supabaseService';
 import { notify, notifyError, confirmDialog } from '../../lib/notify';
+import { applyBatchResult } from '../../lib/batches';
 import { expiryStatus, EXPIRY_LABEL, localToday, checkNewExpiry, minNewExpiry } from '../../lib/expiry';
 
 const inputClass = "w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden";
 
-export const ADJUST_REASONS = ["Stock count", "Damaged", "Expired write-off", "Returned to supplier", "Correction"];
+const ADJUST_REASONS = ["Stock count", "Damaged", "Expired write-off", "Returned to supplier", "Correction"];
 
 function Field({ label, children }) {
   return (
@@ -15,17 +16,6 @@ function Field({ label, children }) {
       {children}
     </label>
   );
-}
-
-// Upserts the saved batch and medicine into app state after a batch change.
-export function applyBatchResult(data, { setMedicines, setBatches, setStockMovements }) {
-  if (data.medicine) setMedicines(prev => prev.map(m => (m.id === data.medicine.id ? data.medicine : m)));
-  if (data.batch) {
-    setBatches(prev => (prev.some(b => b.id === data.batch.id)
-      ? prev.map(b => (b.id === data.batch.id ? data.batch : b))
-      : [...prev, data.batch]));
-  }
-  if (data.movement && setStockMovements) setStockMovements(prev => [data.movement, ...prev]);
 }
 
 // One medicine's stock, batch by batch: receive stock, count or write off a

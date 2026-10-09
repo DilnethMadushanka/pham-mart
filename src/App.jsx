@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from './components/Navbar';
-import Sidebar, { CONSOLE_PAGES } from './components/Sidebar';
+import Sidebar from './components/Sidebar';
+import { CONSOLE_PAGES } from './lib/consolePages';
 import ConsoleTopbar from './components/ConsoleTopbar';
 import CommandPalette from './components/CommandPalette';
 import NotificationDrawer from './components/NotificationDrawer';

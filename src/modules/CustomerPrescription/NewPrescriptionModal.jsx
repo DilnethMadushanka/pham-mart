@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, FileText, Plus, User, Stethoscope } from 'lucide-react';
+import { X, FileText } from 'lucide-react';
 import { notify } from '../../lib/notify';
 import { checkRxDate, colomboToday, shiftDate, RX_VALID_DAYS } from '../../lib/rxDate';
 

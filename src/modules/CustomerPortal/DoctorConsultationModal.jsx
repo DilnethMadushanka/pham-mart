@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Stethoscope, Phone, Calendar, Clock, CheckCircle2, User, MessageSquare } from 'lucide-react';
+import { X, Stethoscope, Clock, User } from 'lucide-react';
 import { notify } from '../../lib/notify';
 import PhoneHint from '../../components/PhoneHint';
 import { checkPhone } from '../../lib/phone';

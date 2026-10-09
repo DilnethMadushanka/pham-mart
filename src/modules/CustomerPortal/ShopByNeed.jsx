@@ -1,6 +1,17 @@
 import React, { useMemo } from 'react';
 import { ArrowUpRight } from 'lucide-react';
-import { artForCategory } from './illustrations';
+import { PillsArt, SyrupArt, HeartArt, GlucoseArt, CapsuleArt, VitaminsArt } from './illustrations';
+
+// Pick an illustration for a catalogue category by what it sounds like.
+function artForCategory(category = "") {
+  const c = category.toLowerCase();
+  if (/cough|cold|syrup|flu/.test(c)) return SyrupArt;
+  if (/cardio|heart|pressure/.test(c)) return HeartArt;
+  if (/diabet|sugar|gluc/.test(c)) return GlucoseArt;
+  if (/antibiot|infect/.test(c)) return CapsuleArt;
+  if (/vitamin|supplement|nutri/.test(c)) return VitaminsArt;
+  return PillsArt;
+}
 
 // Plain-language line under each shelf, keyed by what the category name sounds like.
 function blurb(category) {
