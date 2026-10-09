@@ -3,13 +3,8 @@ import {
   FileText, 
   CheckCircle2, 
   XCircle, 
-  AlertTriangle, 
   ShieldAlert, 
-  Search, 
   User, 
-  Clock, 
-  FileCheck,
-  Bell,
   Stethoscope,
   Plus,
   BadgeCheck

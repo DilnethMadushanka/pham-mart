@@ -131,14 +131,3 @@ export function ClockArt({ className }) {
     </Svg>
   );
 }
-
-// Pick an illustration for a catalogue category by what it sounds like.
-export function artForCategory(category = "") {
-  const c = category.toLowerCase();
-  if (/cough|cold|syrup|flu/.test(c)) return SyrupArt;
-  if (/cardio|heart|pressure/.test(c)) return HeartArt;
-  if (/diabet|sugar|gluc/.test(c)) return GlucoseArt;
-  if (/antibiot|infect/.test(c)) return CapsuleArt;
-  if (/vitamin|supplement|nutri/.test(c)) return VitaminsArt;
-  return PillsArt;
-}

@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  User, 
   Phone, 
   Mail, 
   MapPin, 
@@ -10,11 +9,8 @@ import {
   Search, 
   History, 
   Receipt, 
-  Clock, 
   X, 
   CheckCircle2, 
-  ShieldAlert, 
-  Pill,
   UserCheck,
   Edit,
   Trash2
@@ -49,17 +45,13 @@ export default function CustomerList({
       : Boolean(name) && String(r.customerName || "").trim().toLowerCase() === name);
   };
 
-  useEffect(() => {
-    if (selectedHistoryCustomer) {
-      const custTxns = filterCustomerRecords(transactions, selectedHistoryCustomer);
-      const custRxs = filterCustomerRecords(prescriptions, selectedHistoryCustomer);
-      if (custTxns.length === 0 && custRxs.length > 0) {
-        setHistoryTab("prescriptions");
-      } else {
-        setHistoryTab("purchases");
-      }
-    }
-  }, [selectedHistoryCustomer, transactions, prescriptions]);
+  // Open history on prescriptions when the customer has only prescriptions.
+  const openHistory = (cust) => {
+    const hasTxns = filterCustomerRecords(transactions, cust).length > 0;
+    const hasRxs = filterCustomerRecords(prescriptions, cust).length > 0;
+    setHistoryTab(!hasTxns && hasRxs ? "prescriptions" : "purchases");
+    setSelectedHistoryCustomer(cust);
+  };
 
   const [newCust, setNewCust] = useState({ 
     name: '', 
@@ -271,7 +263,7 @@ export default function CustomerList({
                 </div>
 
                 <button
-                  onClick={() => { setSelectedHistoryCustomer(cust); setHistoryTab("purchases"); }}
+                  onClick={() => openHistory(cust)}
                   className="w-full py-2.5 bg-slate-100 hover:bg-blue-50 hover:text-blue-800 text-slate-700 font-bold text-xs rounded-2xl flex items-center justify-center space-x-2 transition-all cursor-pointer border border-slate-200/60"
                 >
                   <History className="w-4 h-4 text-blue-600" />

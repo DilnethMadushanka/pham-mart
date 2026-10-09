@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, History, Info, AlertTriangle, CheckCircle, ShieldAlert } from 'lucide-react';
+import { X, History, Info, CheckCircle, ShieldAlert } from 'lucide-react';
 
 export default function AuditLogModal({ isOpen, onClose, logs }) {
   if (!isOpen) return null;

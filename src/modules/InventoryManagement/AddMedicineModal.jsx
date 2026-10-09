@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Package, ShieldAlert, DollarSign } from 'lucide-react';
+import { X, Package } from 'lucide-react';
 import { notify } from '../../lib/notify';
 import { checkNewExpiry, minNewExpiry, MIN_EXPIRY_DAYS } from '../../lib/expiry';
 

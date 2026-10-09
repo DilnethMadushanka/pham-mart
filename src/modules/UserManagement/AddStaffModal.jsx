@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, ShieldCheck, Mail, Phone, Lock } from 'lucide-react';
+import { X, User, Lock } from 'lucide-react';
 import { notify } from '../../lib/notify';
 import PhoneHint from '../../components/PhoneHint';
 import { checkPhone } from '../../lib/phone';

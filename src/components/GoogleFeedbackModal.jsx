@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Star, CheckCircle2, MessageSquare, Send, Sparkles, User, Mail, ShieldCheck, HeartHandshake } from 'lucide-react';
+import { X, Star, CheckCircle2, MessageSquare, Send, User, Mail, ShieldCheck } from 'lucide-react';
 import { notify } from '../lib/notify';
 
 export default function GoogleFeedbackModal({ 

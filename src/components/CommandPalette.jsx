@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, CornerDownLeft, Package, UserCheck, Receipt, ArrowRight } from 'lucide-react';
-import { CONSOLE_PAGES } from './Sidebar';
+import { CONSOLE_PAGES } from '../lib/consolePages';
 import { canAccessTab } from '../lib/permissions';
 
 const money = (n) => `Rs. ${Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -50,8 +50,6 @@ export default function CommandPalette({ open, onClose, role, onNavigate, medici
     return [...pages, ...meds, ...people, ...invoices];
   }, [query, role, medicines, customers, transactions, onNavigate]);
 
-  useEffect(() => { setActive(0); }, [query]);
-
   useEffect(() => {
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active]);
@@ -82,7 +80,7 @@ export default function CommandPalette({ open, onClose, role, onNavigate, medici
           <input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setActive(0); }}
             onKeyDown={onKeyDown}
             placeholder="Search medicines, customers, invoices or pages"
             aria-label="Search"
