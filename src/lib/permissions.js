@@ -8,8 +8,8 @@ const ROLE_LEVEL = { "Owner/Admin": 3, "Pharmacist": 2, "Cashier": 1 };
 
 const ROLE_TABS = {
   "Owner/Admin": ["analytics", "pos", "inventory", "prescriptions", "customers", "staff"],
-  "Pharmacist": ["pos", "inventory", "prescriptions", "customers"],
-  "Cashier": ["pos", "inventory", "customers"]
+  "Pharmacist": ["analytics", "pos", "inventory", "prescriptions", "customers"],
+  "Cashier": ["pos", "prescriptions", "inventory", "customers"]
 };
 
 const ROLE_ACTIONS = {

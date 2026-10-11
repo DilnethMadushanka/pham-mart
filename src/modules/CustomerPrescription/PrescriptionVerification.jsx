@@ -154,9 +154,11 @@ export default function PrescriptionVerification({
     <div className="space-y-6 animate-fade-in">
       
       <PageHeader
-        kicker="Pharmacist console"
-        title="Prescription verification"
-        description="Check interactions and dosage, link the prescribing doctor's SLMC record, and clear controlled drugs."
+        kicker={canApprove ? "Pharmacist console" : "Prescriptions"}
+        title={canApprove ? "Prescription verification" : "Customer prescriptions"}
+        description={canApprove
+          ? "Check interactions and dosage, link the prescribing doctor's SLMC record, and clear controlled drugs."
+          : "Register a customer's prescription and view its status. A pharmacist approves it before it can be dispensed."}
       >
         <button
           onClick={() => setIsNewRxModalOpen(true)}

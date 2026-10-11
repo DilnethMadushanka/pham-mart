@@ -9,7 +9,8 @@ import {
   Printer,
   BarChart3,
   Wallet,
-  Undo2
+  Undo2,
+  Package
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -26,6 +27,7 @@ import MetricCard from '../../components/MetricCard';
 import PageHeader from '../../components/PageHeader';
 import DailySalesReportModal from './DailySalesReportModal';
 import MonthlyRevenueReportModal from './MonthlyRevenueReportModal';
+import InventoryReportModal from './InventoryReportModal';
 import { dailySeries, monthlySeries, summarize, inDay, inMonth, todayKey, monthKey, dayKey, growth, money } from '../../lib/salesStats';
 import { expiryAlerts } from '../../lib/expiry';
 import { CLOSED_PO_STATUSES } from '../../lib/reorder';
@@ -78,9 +80,10 @@ function EmptyChart({ title, detail }) {
   );
 }
 
-export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [], salesReturns = [], batches = [], purchaseOrders = [], onNavigate }) {
+export default function AnalyticsDashboard({ medicines = [], transactions = [], prescriptions = [], salesReturns = [], batches = [], purchaseOrders = [], stockMovements = [], onNavigate }) {
   const [isDailyOpen, setIsDailyOpen] = useState(false);
   const [isMonthlyOpen, setIsMonthlyOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [range, setRange] = useState(30);
 
   const today = todayKey();
@@ -135,6 +138,13 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         >
           <BarChart3 className="w-4 h-4" />
           <span>Monthly revenue report</span>
+        </button>
+        <button
+          onClick={() => setIsInventoryOpen(true)}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-medium text-sm rounded-xl"
+        >
+          <Package className="w-4 h-4" />
+          <span>Inventory report</span>
         </button>
       </PageHeader>
 
@@ -312,6 +322,14 @@ export default function AnalyticsDashboard({ medicines = [], transactions = [], 
         onClose={() => setIsMonthlyOpen(false)}
         transactions={transactions}
         salesReturns={salesReturns}
+      />
+      <InventoryReportModal
+        isOpen={isInventoryOpen}
+        onClose={() => setIsInventoryOpen(false)}
+        medicines={medicines}
+        batches={batches}
+        stockMovements={stockMovements}
+        transactions={transactions}
       />
     </div>
   );
