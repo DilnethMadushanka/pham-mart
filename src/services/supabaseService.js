@@ -124,8 +124,11 @@ export const deleteSupplier = (id) => call('delete_supplier', { p_id: id });
 export const createPurchaseOrder = (order) => call('create_purchase_order', { p_order: order });
 export const setPurchaseOrderStatus = (poId, status, note = null) =>
   call('set_purchase_order_status', { p_po_id: poId, p_status: status, p_note: note });
-export const receivePurchaseOrder = (poId, items, close = false) =>
-  call('receive_purchase_order', { p_po_id: poId, p_items: items, p_close: close });
+// Deliveries are counted first, then checked and approved before the stock goes in.
+export const recordDelivery = (poId, receipt) =>
+  call('record_delivery', { p_po_id: poId, p_receipt: receipt });
+export const reviewDelivery = (receiptId, decision, note = null) =>
+  call('review_delivery', { p_receipt_id: receiptId, p_decision: decision, p_note: note });
 export const saveSupplierPrice = (supplierId, medicineId, unitCost, minQty = 1) =>
   call('save_supplier_price', { p_supplier_id: supplierId, p_medicine_id: medicineId, p_unit_cost: unitCost, p_min_qty: minQty });
 

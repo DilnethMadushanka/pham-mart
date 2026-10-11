@@ -46,6 +46,9 @@ export default function MedicineList({
   setStockMovements,
   priceHistory = [],
   setPriceHistory,
+  goodsReceipts = [],
+  setGoodsReceipts,
+  currentUserId,
   canApproveOrders = false,
   transactions = [],
   focusSection = null,
@@ -308,6 +311,9 @@ export default function MedicineList({
           setMedicines={setMedicines}
           setBatches={setBatches}
           setStockMovements={setStockMovements}
+          goodsReceipts={goodsReceipts}
+          setGoodsReceipts={setGoodsReceipts}
+          currentUserId={currentUserId}
           suppliers={suppliers}
           transactions={transactions}
           canApprove={canApproveOrders}

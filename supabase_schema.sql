@@ -204,6 +204,28 @@ create table if not exists public.sales_returns (
   created_at timestamptz default current_timestamp
 );
 
+-- A delivery from a supplier, counted when it arrives and checked before the
+-- stock goes in. Only an approved receipt adds stock to the order's medicines.
+create table if not exists public.goods_receipts (
+  id text primary key,
+  po_id text not null,
+  supplier_id text,
+  supplier_name text,
+  items jsonb not null,
+  checks jsonb default '{}'::jsonb,
+  invoice_no text,
+  notes text,
+  close_short boolean not null default false,
+  status text not null default 'Awaiting check' check (status in ('Awaiting check', 'Approved', 'Rejected')),
+  recorded_by_id text,
+  recorded_by text,
+  recorded_at timestamptz default current_timestamp,
+  checked_by_id text,
+  checked_by text,
+  checked_at timestamptz,
+  check_note text
+);
+
 -- Every change to a medicine's selling price: old and new price, who and when.
 -- Filled by a trigger on medicines, so no price change is missed.
 create table if not exists public.price_history (
@@ -286,6 +308,8 @@ create unique index if not exists medicine_batches_no_idx on public.medicine_bat
 create index if not exists medicine_batches_expiry_idx on public.medicine_batches (medicine_id, expiry_date);
 create index if not exists stock_movements_medicine_idx on public.stock_movements (medicine_id, created_at desc);
 create index if not exists sales_returns_txn_idx on public.sales_returns (transaction_id);
+create index if not exists goods_receipts_po_idx on public.goods_receipts (po_id, recorded_at desc);
+create unique index if not exists goods_receipts_one_open_idx on public.goods_receipts (po_id) where status = 'Awaiting check';
 create index if not exists price_history_medicine_idx on public.price_history (medicine_id, created_at desc);
 create index if not exists price_history_created_idx on public.price_history (created_at desc);
 create unique index if not exists medicines_barcode_idx on public.medicines (barcode) where barcode is not null;
@@ -445,7 +469,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history'] loop
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history','goods_receipts'] loop
     execute format('drop trigger if exists bump_data_version on public.%I', t);
     execute format('create trigger bump_data_version after insert or update or delete on public.%I
                     for each statement execute function app_private.bump_data_version()', t);
@@ -954,7 +978,33 @@ as $$
     'deliveries', coalesce(po.deliveries, '[]'::jsonb),
     'notes', coalesce(po.notes, ''),
     'items', app_private.as_array(po.items),
-    'totalAmount', po.total_amount
+    'totalAmount', po.total_amount,
+    'receiptToCheck', (select g.id from public.goods_receipts g where g.po_id = po.id and g.status = 'Awaiting check' limit 1)
+  )
+$$;
+
+create or replace function app_private.receipt_json(g public.goods_receipts)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', g.id,
+    'poId', g.po_id,
+    'supplierId', g.supplier_id,
+    'supplierName', coalesce(g.supplier_name, ''),
+    'items', app_private.as_array(g.items),
+    'checks', coalesce(g.checks, '{}'::jsonb),
+    'invoiceNo', coalesce(g.invoice_no, ''),
+    'notes', coalesce(g.notes, ''),
+    'closeShort', g.close_short,
+    'status', g.status,
+    'recordedById', g.recorded_by_id,
+    'recordedBy', coalesce(g.recorded_by, ''),
+    'recordedAt', g.recorded_at,
+    'checkedBy', coalesce(g.checked_by, ''),
+    'checkedAt', g.checked_at,
+    'checkNote', coalesce(g.check_note, '')
   )
 $$;
 
@@ -1300,7 +1350,7 @@ as $$
 declare
   p record;
   v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                         'medicine_batches','stock_movements','sales_returns','price_history'];
+                         'medicine_batches','stock_movements','sales_returns','price_history','goods_receipts'];
   v_want text[] := coalesce(p_tables, v_all);
   v_is_staff boolean;
   v_can_stock boolean;
@@ -1384,6 +1434,14 @@ begin
       when v_can_stock then
         (select coalesce(jsonb_agg(app_private.movement_json(v) order by v.created_at desc), '[]'::jsonb)
          from (select * from public.stock_movements order by created_at desc limit 500) v)
+      else '[]'::jsonb end);
+  end if;
+
+  if 'goods_receipts' = any (v_want) then
+    v_out := v_out || jsonb_build_object('goods_receipts', case
+      when v_can_stock then
+        (select coalesce(jsonb_agg(app_private.receipt_json(g) order by g.recorded_at desc), '[]'::jsonb)
+         from (select * from public.goods_receipts order by recorded_at desc limit 300) g)
       else '[]'::jsonb end);
   end if;
 
@@ -1937,18 +1995,21 @@ begin
 end $$;
 
 drop function if exists public.receive_purchase_order(text, text, jsonb);
--- Records a delivery against an approved order. Each line is matched to the
--- order: it can't bring in more than is still outstanding, and needs a batch
--- number and expiry date. Short deliveries leave the order partly received
--- unless p_close is true.
-create or replace function public.receive_purchase_order(p_token text, p_po_id text, p_items jsonb, p_close boolean default false)
+-- Deliveries are now counted first (record_delivery) and checked before the
+-- stock goes in (review_delivery), so stock can no longer be received directly.
+drop function if exists public.receive_purchase_order(text, text, jsonb, boolean);
+
+-- Puts a checked delivery into stock. Each line is matched to the order: it
+-- can't bring in more than is still outstanding, and needs a batch number and
+-- expiry date. Short deliveries leave the order partly received unless p_close
+-- is true. Only review_delivery calls this.
+create or replace function app_private.receive_into_stock(p_user_id text, p_user text, p_role text, p_po_id text,
+                                                          p_items jsonb, p_close boolean, p_delivery jsonb default '{}'::jsonb)
 returns jsonb
 language plpgsql
-security definer
 set search_path = public, extensions, app_private
 as $$
 declare
-  s record;
   v_po public.purchase_orders;
   v_item jsonb;
   v_line jsonb;
@@ -1962,8 +2023,6 @@ declare
   v_count int := 0;
   b public.medicine_batches;
 begin
-  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
-
   select * into v_po from public.purchase_orders where id = p_po_id for update;
   if not found then
     raise exception 'This purchase order no longer exists.';
@@ -2008,7 +2067,7 @@ begin
       raise exception '% is no longer in the catalogue.', v_line ->> 'name';
     end if;
     b := app_private.add_batch_stock(v_item ->> 'medicineId', v_item ->> 'batchNo', v_expiry, v_qty, 'PO ' || v_po.id);
-    perform app_private.log_movement(s.principal_id, s.display_name, b, v_qty, 'Goods received', 'Order ' || v_po.id);
+    perform app_private.log_movement(p_user_id, p_user, b, v_qty, 'Goods received', 'Order ' || v_po.id);
     perform app_private.sync_medicine_stock(v_item ->> 'medicineId');
     v_ids := v_ids || (v_item ->> 'medicineId');
     v_got := v_got || jsonb_build_object('medicineId', v_item ->> 'medicineId', 'name', v_line ->> 'name',
@@ -2033,17 +2092,17 @@ begin
   update public.purchase_orders set
     items = v_items,
     deliveries = coalesce(deliveries, '[]'::jsonb) || case when v_count > 0 then jsonb_build_array(jsonb_build_object(
-      'date', app_private.today(), 'receivedBy', s.display_name, 'items', v_got)) else '[]'::jsonb end,
+      'date', app_private.today(), 'receivedBy', p_user, 'items', v_got) || coalesce(p_delivery, '{}'::jsonb)) else '[]'::jsonb end,
     status = case when v_complete or p_close then 'Received' else 'Partly received' end,
     received_date = case when v_complete or p_close then app_private.today() else received_date end,
-    received_by = s.display_name,
+    received_by = coalesce(p_delivery ->> 'receivedBy', p_user),
     notes = case when p_close and not v_complete
-                 then concat_ws(E'\n', nullif(notes, ''), 'Closed short by ' || s.display_name || ' on ' || app_private.today())
+                 then concat_ws(E'\n', nullif(notes, ''), 'Closed short by ' || p_user || ' on ' || app_private.today())
                  else notes end
   where id = v_po.id
   returning * into v_po;
 
-  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Goods Received',
+  perform app_private.write_audit(p_user_id, p_user, p_role, 'Goods Received',
     'Delivery for ' || v_po.id || ' recorded: ' || coalesce((select string_agg((g ->> 'name') || ' x ' || (g ->> 'quantity') || ' (batch ' || (g ->> 'batchNo') || ')', ', ')
                                                            from jsonb_array_elements(v_got) g), 'nothing')
       || '. Order is now ' || lower(v_po.status) || '.', 'success');
@@ -2054,6 +2113,183 @@ begin
                   from public.medicines m where m.id = any (v_ids)),
     'batches', (select coalesce(jsonb_agg(app_private.batch_json(x)), '[]'::jsonb)
                 from public.medicine_batches x where x.medicine_id = any (v_ids)));
+end $$;
+
+-- Step 1: the person who unpacks a delivery counts it. Nothing goes into stock
+-- yet; the receipt waits for someone to check and approve it.
+create or replace function public.record_delivery(p_token text, p_po_id text, p_receipt jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  v_po public.purchase_orders;
+  v_item jsonb;
+  v_line jsonb;
+  v_delivered int;
+  v_damaged int;
+  v_outstanding int;
+  v_expiry date;
+  v_items jsonb := '[]'::jsonb;
+  v_close boolean := coalesce((p_receipt ->> 'closeShort')::boolean, false);
+  v_any boolean := false;
+  g public.goods_receipts;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+
+  select * into v_po from public.purchase_orders where id = p_po_id for update;
+  if not found then
+    raise exception 'This purchase order no longer exists.';
+  end if;
+  if v_po.status in ('Received', 'Goods Received') then
+    raise exception 'This order was already received on %.', coalesce(v_po.received_date::text, 'an earlier day');
+  end if;
+  if v_po.status = 'Pending' then
+    raise exception 'This order is waiting for the owner''s approval. Approve it before recording the delivery.';
+  end if;
+  if v_po.status = 'Cancelled' then
+    raise exception 'This order was cancelled.';
+  end if;
+  if exists (select 1 from public.goods_receipts where po_id = v_po.id and status = 'Awaiting check') then
+    raise exception 'A delivery for % is already waiting to be checked. Check it before recording another one.', v_po.id;
+  end if;
+
+  for v_item in select * from jsonb_array_elements(app_private.as_array(p_receipt -> 'items')) loop
+    v_delivered := greatest(0, coalesce((v_item ->> 'delivered')::int, 0));
+    v_damaged := greatest(0, coalesce((v_item ->> 'damaged')::int, 0));
+    continue when v_delivered = 0;
+    v_line := null;
+    select o into v_line from jsonb_array_elements(app_private.as_array(v_po.items)) o
+    where o ->> 'medicineId' = v_item ->> 'medicineId' limit 1;
+    if v_line is null then
+      raise exception 'A delivered item is not on order %.', v_po.id;
+    end if;
+    if exists (select 1 from jsonb_array_elements(v_items) x where x ->> 'medicineId' = v_item ->> 'medicineId') then
+      raise exception '% is listed twice.', v_line ->> 'name';
+    end if;
+    v_outstanding := (v_line ->> 'quantity')::int - coalesce((v_line ->> 'receivedQty')::int, 0);
+    if v_delivered > v_outstanding then
+      raise exception '% units of % were delivered, but only % are still outstanding on this order.',
+        v_delivered, v_line ->> 'name', v_outstanding;
+    end if;
+    if v_damaged > v_delivered then
+      raise exception 'More units of % are marked damaged than were delivered.', v_line ->> 'name';
+    end if;
+    v_expiry := nullif(v_item ->> 'expiryDate', '')::date;
+    if v_delivered > v_damaged then
+      if app_private.clean_text(v_item ->> 'batchNo', 60) is null then
+        raise exception 'Enter the batch number for %.', v_line ->> 'name';
+      end if;
+      if v_expiry is null then
+        raise exception 'Enter the expiry date for %.', v_line ->> 'name';
+      end if;
+      perform app_private.check_new_expiry(v_expiry, (v_line ->> 'name') || ' batch ' || (v_item ->> 'batchNo'));
+    end if;
+    v_items := v_items || jsonb_build_object(
+      'medicineId', v_line ->> 'medicineId', 'name', v_line ->> 'name',
+      'ordered', (v_line ->> 'quantity')::int, 'outstanding', v_outstanding,
+      'delivered', v_delivered, 'damaged', v_damaged,
+      'batchNo', upper(app_private.clean_text(v_item ->> 'batchNo', 60)), 'expiryDate', v_expiry);
+    v_any := true;
+  end loop;
+
+  if not v_any and not v_close then
+    raise exception 'Enter the quantity delivered for at least one item.';
+  end if;
+
+  insert into public.goods_receipts (id, po_id, supplier_id, supplier_name, items, checks, invoice_no, notes, close_short,
+                                     recorded_by_id, recorded_by)
+  values (app_private.new_id('GRN'), v_po.id, v_po.supplier_id, v_po.supplier_name, v_items,
+          jsonb_build_object(
+            'packaging', coalesce((p_receipt -> 'checks' ->> 'packaging')::boolean, false),
+            'invoice', coalesce((p_receipt -> 'checks' ->> 'invoice')::boolean, false),
+            'coldChain', coalesce((p_receipt -> 'checks' ->> 'coldChain')::boolean, false)),
+          app_private.clean_text(p_receipt ->> 'invoiceNo', 60),
+          app_private.clean_text(p_receipt ->> 'notes', 1000),
+          v_close, s.principal_id, s.display_name)
+  returning * into g;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Delivery Recorded',
+    'Delivery ' || g.id || ' for ' || v_po.id || ' counted and waiting to be checked', 'info');
+
+  return jsonb_build_object('purchaseOrder', app_private.purchase_order_json(v_po), 'receipt', app_private.receipt_json(g));
+end $$;
+
+-- Step 2: someone else checks the counted delivery against the order and
+-- approves it (the good units go into stock) or rejects it (nothing goes in
+-- and the items stay outstanding). The owner can check any delivery; a
+-- pharmacist can check deliveries that someone else counted.
+create or replace function public.review_delivery(p_token text, p_receipt_id text, p_decision text, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, app_private
+as $$
+declare
+  s record;
+  g public.goods_receipts;
+  v_po public.purchase_orders;
+  v_note text := app_private.clean_text(p_note, 1000);
+  v_stock jsonb;
+  v_result jsonb := '{}'::jsonb;
+  v_damaged jsonb;
+begin
+  select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+
+  select * into g from public.goods_receipts where id = p_receipt_id for update;
+  if not found then
+    raise exception 'This delivery no longer exists.';
+  end if;
+  if g.status <> 'Awaiting check' then
+    raise exception 'This delivery was already % by %.', lower(g.status), coalesce(g.checked_by, 'someone');
+  end if;
+  if s.role <> 'Owner/Admin' and g.recorded_by_id = s.principal_id then
+    raise exception 'You counted this delivery, so someone else needs to check it. Ask the owner or another pharmacist.' using errcode = '42501';
+  end if;
+
+  if p_decision = 'Approved' then
+    -- Good units (delivered minus damaged) go into stock.
+    select coalesce(jsonb_agg(jsonb_build_object('medicineId', x ->> 'medicineId',
+             'quantity', (x ->> 'delivered')::int - coalesce((x ->> 'damaged')::int, 0),
+             'batchNo', x ->> 'batchNo', 'expiryDate', x ->> 'expiryDate')), '[]'::jsonb)
+    into v_stock
+    from jsonb_array_elements(app_private.as_array(g.items)) x
+    where (x ->> 'delivered')::int - coalesce((x ->> 'damaged')::int, 0) > 0;
+
+    select coalesce(jsonb_agg(jsonb_build_object('name', x ->> 'name', 'quantity', (x ->> 'damaged')::int)), '[]'::jsonb)
+    into v_damaged
+    from jsonb_array_elements(app_private.as_array(g.items)) x
+    where coalesce((x ->> 'damaged')::int, 0) > 0;
+
+    if jsonb_array_length(v_stock) > 0 or g.close_short then
+      v_result := app_private.receive_into_stock(s.principal_id, s.display_name, s.role, g.po_id, v_stock, g.close_short,
+        jsonb_build_object('receiptId', g.id, 'receivedBy', g.recorded_by, 'checkedBy', s.display_name,
+                           'invoiceNo', g.invoice_no, 'damaged', v_damaged));
+    end if;
+  elsif p_decision = 'Rejected' then
+    if v_note is null then
+      raise exception 'Say why the delivery is rejected, so the supplier can be told.';
+    end if;
+  else
+    raise exception 'Unknown decision %.', p_decision;
+  end if;
+
+  update public.goods_receipts set status = p_decision, checked_by_id = s.principal_id, checked_by = s.display_name,
+    checked_at = now(), check_note = v_note
+  where id = g.id returning * into g;
+
+  perform app_private.write_audit(s.principal_id, s.display_name, s.role, 'Delivery ' || p_decision,
+    'Delivery ' || g.id || ' for ' || g.po_id || ' ' || lower(p_decision) || coalesce(': ' || v_note, ''),
+    case when p_decision = 'Approved' then 'success' else 'warning' end);
+
+  select * into v_po from public.purchase_orders where id = g.po_id;
+  return jsonb_build_object(
+    'purchaseOrder', app_private.purchase_order_json(v_po),
+    'receipt', app_private.receipt_json(g),
+    'medicines', coalesce(v_result -> 'medicines', '[]'::jsonb),
+    'batches', coalesce(v_result -> 'batches', '[]'::jsonb));
 end $$;
 
 create or replace function public.save_customer(p_token text, p_customer jsonb)
@@ -3138,7 +3374,7 @@ declare
   pol record;
 begin
   foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history','data_versions'] loop
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history','goods_receipts','data_versions'] loop
     execute format('alter table public.%I enable row level security', t);
     -- Remove any older "allow everything" policies.
     for pol in select policyname from pg_policies where schemaname = 'public' and tablename = t loop
@@ -3307,7 +3543,7 @@ declare
   f record;
   v_api text[] := array['app_login','customer_register','google_login','session_user_info','app_logout','load_data',
                         'get_prescription_file','add_audit_log','save_medicine','delete_medicine','save_supplier',
-                        'delete_supplier','create_purchase_order','receive_purchase_order','save_customer',
+                        'delete_supplier','create_purchase_order','record_delivery','review_delivery','save_customer',
                         'delete_customer','save_staff','staff_set_password','submit_prescription',
                         'review_prescription','pos_checkout','save_doctor','delete_doctor',
                         'save_batch','adjust_batch','delete_batch','process_return','set_purchase_order_status',

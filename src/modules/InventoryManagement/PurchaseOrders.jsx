@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { Truck, Plus, CheckCircle2, Clock, PackageCheck, XCircle, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
+import { Truck, Plus, CheckCircle2, Clock, PackageCheck, XCircle, ChevronDown, ChevronUp, ClipboardList, ClipboardCheck } from 'lucide-react';
 import GoodsReceiptModal from './GoodsReceiptModal';
+import OrderTracker from './OrderTracker';
+import DeliveryCheckModal from './DeliveryCheckModal';
 import CreatePurchaseOrderModal from './CreatePurchaseOrderModal';
 import MetricCard from '../../components/MetricCard';
-import { createPurchaseOrder, receivePurchaseOrder, setPurchaseOrderStatus, loadData } from '../../services/supabaseService';
+import { createPurchaseOrder, recordDelivery, reviewDelivery, setPurchaseOrderStatus, loadData } from '../../services/supabaseService';
 import { notify, notifyError, confirmDialog } from '../../lib/notify';
 
 const money = (n) => `Rs. ${Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // Pending (waiting for the owner) -> Approved (sent to the supplier) ->
 // Partly received -> Received. Pending or approved orders can be cancelled.
+// Each delivery is counted, then checked by someone else before the stock goes in.
 const STATUS = {
   Pending: { chip: "status-chip-amber", hint: "Waiting for the owner's approval" },
   Approved: { chip: "status-chip-blue", hint: "Approved and sent to the supplier" },
@@ -18,7 +21,7 @@ const STATUS = {
   "Goods Received": { chip: "status-chip-green", hint: "Delivered and in stock" },
   Cancelled: { chip: "status-chip-gray", hint: "Cancelled" }
 };
-const FILTERS = ["All", "Pending", "Approved", "Partly received", "Received", "Cancelled"];
+const FILTERS = ["All", "To check", "Pending", "Approved", "Partly received", "Received", "Cancelled"];
 
 export default function PurchaseOrders({
   purchaseOrders,
@@ -27,19 +30,34 @@ export default function PurchaseOrders({
   setMedicines,
   setBatches,
   setStockMovements,
+  goodsReceipts = [],
+  setGoodsReceipts,
+  currentUserId,
   suppliers,
   transactions = [],
   canApprove = false
 }) {
   const [receiving, setReceiving] = useState(null);
+  const [checkingId, setCheckingId] = useState(null);
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState("All");
+  const [supplierFilter, setSupplierFilter] = useState("ALL");
   const [expanded, setExpanded] = useState(null);
   const [busyId, setBusyId] = useState(null);
 
   const statusOf = (po) => (po.status === "Goods Received" ? "Received" : po.status);
-  const count = (st) => purchaseOrders.filter(po => statusOf(po) === st).length;
-  const shown = filter === "All" ? purchaseOrders : purchaseOrders.filter(po => statusOf(po) === filter);
+  // Status counts follow the supplier filter, so each chip shows what clicking it will list.
+  const forSupplier = supplierFilter === "ALL" ? purchaseOrders : purchaseOrders.filter(po => po.supplierId === supplierFilter);
+  const matches = (po, f) => (f === "To check" ? Boolean(po.receiptToCheck) : statusOf(po) === f);
+  const count = (f) => forSupplier.filter(po => matches(po, f)).length;
+  const shown = filter === "All" ? forSupplier : forSupplier.filter(po => matches(po, filter));
+  const toCheck = goodsReceipts.filter(g => g.status === "Awaiting check");
+  const checking = goodsReceipts.find(g => g.id === checkingId);
+  // The owner checks any delivery; a pharmacist checks deliveries someone else counted.
+  const canCheck = (g) => canApprove || g.recordedById !== currentUserId;
+  const orderSuppliers = Array.from(new Map(purchaseOrders.map(po => [po.supplierId, po.supplierName])))
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""));
   const openValue = purchaseOrders
     .filter(po => ["Pending", "Approved", "Partly received"].includes(statusOf(po)))
     .reduce((sum, po) => sum + Number(po.totalAmount || 0), 0);
@@ -74,24 +92,45 @@ export default function PurchaseOrders({
       status === "Approved" ? `${data.poNumber} can now be sent to ${data.supplierName}. Expected by ${data.expectedDelivery}.` : `${data.poNumber} was cancelled.`);
   };
 
-  const handleReceive = async (poId, items, close) => {
-    const { data, error } = await receivePurchaseOrder(poId, items, close);
+  const replaceReceipt = (g) => setGoodsReceipts?.(prev => [g, ...prev.filter(x => x.id !== g.id)]);
+
+  const handleReceive = async (poId, receipt) => {
+    const { data, error } = await recordDelivery(poId, receipt);
     if (error) {
       notifyError(error, "Delivery not recorded");
       return;
     }
-    replacePO(data.purchaseOrder);
-    setMedicines(prev => prev.map(m => data.medicines.find(u => u.id === m.id) || m));
-    if (setBatches && data.batches) {
-      const ids = new Set(data.medicines.map(m => m.id));
-      setBatches(prev => [...prev.filter(b => !ids.has(b.medicineId)), ...data.batches]);
-    }
-    notify(data.purchaseOrder.status === "Received" ? "Order received" : "Delivery recorded",
-      data.purchaseOrder.status === "Received"
-        ? `${data.purchaseOrder.poNumber} is complete and the stock is in.`
-        : `${data.purchaseOrder.poNumber} is partly received. The rest stays outstanding.`);
+    replacePO({ ...data.purchaseOrder, receiptToCheck: data.receipt.id });
+    replaceReceipt(data.receipt);
+    notify("Delivery sent for checking", `${data.purchaseOrder.poNumber} is counted. Someone else checks it before the stock goes in.`);
     setReceiving(null);
-    if (setStockMovements) {
+  };
+
+  const handleDecision = async (receiptId, decision, note) => {
+    const { data, error } = await reviewDelivery(receiptId, decision, note || null);
+    if (error) {
+      notifyError(error, decision === "Approved" ? "Delivery not approved" : "Delivery not rejected");
+      return;
+    }
+    replacePO(data.purchaseOrder);
+    replaceReceipt(data.receipt);
+    if (data.medicines.length) {
+      setMedicines(prev => prev.map(m => data.medicines.find(u => u.id === m.id) || m));
+      if (setBatches) {
+        const ids = new Set(data.medicines.map(m => m.id));
+        setBatches(prev => [...prev.filter(b => !ids.has(b.medicineId)), ...data.batches]);
+      }
+    }
+    const po = data.purchaseOrder;
+    notify(decision === "Rejected" ? "Delivery rejected" : po.status === "Received" ? "Order received" : "Delivery approved",
+      decision === "Rejected"
+        ? `Nothing from this delivery went into stock. ${po.poNumber} is still waiting for the items.`
+        : po.status === "Received"
+          ? `${po.poNumber} is complete and the stock is in.`
+          : `The good units are in stock. The rest of ${po.poNumber} stays outstanding.`,
+      decision === "Rejected" ? "info" : "success");
+    setCheckingId(null);
+    if (decision === "Approved" && setStockMovements) {
       const fresh = await loadData(['stock_movements']);
       if (fresh.data?.stock_movements) setStockMovements(fresh.data.stock_movements);
     }
@@ -102,9 +141,37 @@ export default function PurchaseOrders({
       <div className="metric-grid grid grid-cols-2 lg:grid-cols-4">
         <MetricCard title="Waiting for approval" value={count("Pending")} subtitle={canApprove ? "Approve to send" : "The owner approves orders"} icon={Clock} colorScheme="amber" />
         <MetricCard title="With the supplier" value={count("Approved") + count("Partly received")} subtitle="Approved, not fully received" icon={Truck} />
-        <MetricCard title="Received" value={count("Received")} subtitle="Delivered and in stock" icon={PackageCheck} />
+        <MetricCard title="Deliveries to check" value={toCheck.length} subtitle="Counted, not yet in stock" icon={ClipboardCheck} colorScheme={toCheck.length ? "amber" : "sky"} />
         <MetricCard title="Open order value" value={money(openValue)} subtitle="Pending and approved" icon={ClipboardList} />
       </div>
+
+      {toCheck.length > 0 && (
+        <section aria-label="Deliveries to check" className="rounded-3xl border border-amber-200 bg-amber-50/70 overflow-hidden">
+          <header className="px-4 sm:px-5 py-3 border-b border-amber-200/70">
+            <h3 className="font-semibold text-amber-900 flex items-center gap-2"><ClipboardCheck className="w-4 h-4" /> Deliveries to check <span className="font-mono text-sm">{toCheck.length}</span></h3>
+            <p className="text-xs text-amber-800">Counted when they arrived. Check each one against the order before the stock goes in.</p>
+          </header>
+          <ul className="divide-y divide-amber-200/60">
+            {toCheck.map(g => {
+              const units = (g.items || []).reduce((sum, l) => sum + (Number(l.delivered) || 0), 0);
+              const damaged = (g.items || []).reduce((sum, l) => sum + (Number(l.damaged) || 0), 0);
+              return (
+                <li key={g.id} className="px-4 sm:px-5 py-3 flex flex-wrap items-center gap-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <div className="text-sm font-semibold text-slate-900"><span className="font-mono">{g.poId}</span> · {g.supplierName}</div>
+                    <div className="text-[11px] text-slate-600">
+                      {units} units counted by {g.recordedBy}{damaged > 0 ? ` · ${damaged} damaged` : ""}{g.invoiceNo ? ` · invoice ${g.invoiceNo}` : ""}
+                    </div>
+                  </div>
+                  <button onClick={() => setCheckingId(g.id)} className="flex items-center gap-1.5 px-3.5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-medium">
+                    <ClipboardCheck className="w-4 h-4" /> {canCheck(g) ? "Check delivery" : "View"}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex gap-1.5 overflow-x-auto pb-1" role="tablist" aria-label="Filter orders by status">
@@ -115,15 +182,28 @@ export default function PurchaseOrders({
             </button>
           ))}
         </div>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+        {orderSuppliers.length > 1 && (
+          <select
+            aria-label="Filter orders by supplier"
+            value={supplierFilter}
+            onChange={(e) => setSupplierFilter(e.target.value)}
+            className="px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:bg-white focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden transition-all"
+          >
+            <option value="ALL">All suppliers</option>
+            {orderSuppliers.map(s => <option key={s.id || s.name} value={s.id}>{s.name}</option>)}
+          </select>
+        )}
         <button onClick={() => setCreating(true)} disabled={suppliers.length === 0}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white rounded-xl font-medium text-sm shadow-md shadow-[#2563EB]/20 shrink-0">
           <Plus className="w-4 h-4" /> New purchase order
         </button>
+        </div>
       </div>
 
       {shown.length === 0 && (
         <div className="bg-white p-10 rounded-3xl border border-slate-200/80 text-center text-sm text-slate-500">
-          {purchaseOrders.length === 0 ? "No purchase orders yet." : `No ${filter.toLowerCase()} orders.`}
+          {purchaseOrders.length === 0 ? "No purchase orders yet." : filter === "All" ? "No orders from this supplier." : `No ${filter.toLowerCase()} orders.`}
         </div>
       )}
 
@@ -141,7 +221,8 @@ export default function PurchaseOrders({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-mono font-semibold text-[#0B2545]">{po.poNumber}</span>
                     <span className={`status-chip ${meta.chip}`}>{st}</span>
-                    <span className="text-xs text-slate-500">{meta.hint}</span>
+                    {po.receiptToCheck && <span className="status-chip status-chip-amber">Delivery to check</span>}
+                    <span className="text-xs text-slate-500">{po.receiptToCheck ? "A delivery is counted and waiting to be checked" : meta.hint}</span>
                   </div>
                   <div className="text-sm text-slate-700"><strong className="font-semibold">{po.supplierName}</strong></div>
                   <div className="text-xs text-slate-500">
@@ -163,7 +244,12 @@ export default function PurchaseOrders({
                       <CheckCircle2 className="w-4 h-4" /> Approve
                     </button>
                   )}
-                  {(st === "Approved" || st === "Partly received") && (
+                  {po.receiptToCheck && (
+                    <button onClick={() => setCheckingId(po.receiptToCheck)} className="flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-medium">
+                      <ClipboardCheck className="w-4 h-4" /> Check delivery
+                    </button>
+                  )}
+                  {(st === "Approved" || st === "Partly received") && !po.receiptToCheck && (
                     <button onClick={() => setReceiving(po)} className="flex items-center gap-1.5 px-3.5 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white rounded-xl text-sm font-medium">
                       <PackageCheck className="w-4 h-4" /> Record delivery
                     </button>
@@ -176,6 +262,12 @@ export default function PurchaseOrders({
                   <button onClick={() => setExpanded(isOpen ? null : po.id)} aria-expanded={isOpen} aria-label={isOpen ? "Hide details" : "Show details"} className="p-2 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50">
                     {isOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
+                </div>
+              </div>
+
+              <div className="px-4 sm:px-5 pb-4 sm:pb-5">
+                <div className="max-w-xl">
+                  <OrderTracker po={po} />
                 </div>
               </div>
 
@@ -211,6 +303,22 @@ export default function PurchaseOrders({
                       ))}
                     </div>
                   )}
+                  {goodsReceipts.some(g => g.poId === po.id) && (
+                    <div className="space-y-1.5">
+                      <div className="font-semibold text-slate-600">Delivery checks</div>
+                      {goodsReceipts.filter(g => g.poId === po.id).map(g => (
+                        <div key={g.id} className="flex flex-wrap items-center gap-2 text-slate-600">
+                          <span className={`status-chip ${g.status === "Approved" ? "status-chip-green" : g.status === "Rejected" ? "status-chip-red" : "status-chip-amber"}`}>{g.status}</span>
+                          <span>
+                            Counted by {g.recordedBy}
+                            {g.checkedBy ? `, ${g.status.toLowerCase()} by ${g.checkedBy}` : ""}
+                            {g.checkNote ? `: ${g.checkNote}` : ""}
+                            {(g.items || []).some(l => Number(l.damaged) > 0) ? ` · damaged: ${(g.items || []).filter(l => Number(l.damaged) > 0).map(l => `${l.name} x ${l.damaged}`).join(", ")}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   {po.notes && <p className="text-slate-600 whitespace-pre-line">Notes: {po.notes}</p>}
                 </div>
               )}
@@ -227,6 +335,17 @@ export default function PurchaseOrders({
           transactions={transactions}
           onClose={() => setCreating(false)}
           onCreate={handleCreate}
+        />
+      )}
+
+      {checking && (
+        <DeliveryCheckModal
+          receipt={checking}
+          po={purchaseOrders.find(p => p.id === checking.poId)}
+          canCheck={checking.status === "Awaiting check" && canCheck(checking)}
+          blockedReason={checking.status !== "Awaiting check" ? `This delivery was already ${checking.status.toLowerCase()}.` : "You counted this delivery, so the owner or another pharmacist needs to check it."}
+          onClose={() => setCheckingId(null)}
+          onDecide={handleDecision}
         />
       )}
 

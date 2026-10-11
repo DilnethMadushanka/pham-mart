@@ -53,7 +53,10 @@ Say: `pos_checkout` re-checks prices, stock, expiry and the prescription on the 
 3. **Expiry tracking**: items expiring within 90 days, write one off.
 4. Open the **notification bell**: low-stock and expiry alerts.
 5. **Reorder suggestions**: create a purchase order from them.
-6. **Purchase orders**: approve it as Owner, then **receive** it (show a partial delivery if there is time). Stock goes up and a new batch appears.
+6. **Purchase orders**: approve it as Owner. Each order shows its tracker (Ordered, Approved, Delivered, Checked).
+7. **Record delivery** (as a pharmacist): count the units, mark a couple as damaged, tick the delivery checks. Stock does not change yet; the order shows **Delivery to check**.
+8. **Check delivery** (as the Owner): the screen compares the count with the order and flags damaged, short or soon-expiring lines. Approve it: the good units go into stock and a new batch appears. The person who counted a delivery can't approve it themselves.
+9. **Price history**: change a medicine's price in its edit form, then show the change (old price, new price, who, when).
 
 ## 6. Reports and admin (Epic 4 and security)
 
