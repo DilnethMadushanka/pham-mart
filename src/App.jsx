@@ -74,6 +74,7 @@ export default function App() {
   const [batches, setBatches] = useState([]);
   const [stockMovements, setStockMovements] = useState([]);
   const [salesReturns, setSalesReturns] = useState([]);
+  const [priceHistory, setPriceHistory] = useState([]);
   const [inventoryFocus, setInventoryFocus] = useState(null);
   const clearInventoryFocus = useCallback(() => setInventoryFocus(null), []);
   const [dataError, setDataError] = useState(null);
@@ -113,6 +114,7 @@ export default function App() {
     if (data.medicine_batches) setBatches(data.medicine_batches);
     if (data.stock_movements) setStockMovements(data.stock_movements);
     if (data.sales_returns) setSalesReturns(data.sales_returns);
+    if (data.price_history) setPriceHistory(data.price_history);
   }, []);
 
   const refresh = useCallback(async (tables = null) => {
@@ -138,6 +140,7 @@ export default function App() {
     setBatches([]);
     setStockMovements([]);
     setSalesReturns([]);
+    setPriceHistory([]);
   }, []);
 
   const endSession = useCallback((message) => {
@@ -449,6 +452,8 @@ export default function App() {
                 setBatches={setBatches}
                 stockMovements={stockMovements}
                 setStockMovements={setStockMovements}
+                priceHistory={priceHistory}
+                setPriceHistory={setPriceHistory}
                 canApproveOrders={can(role, "po_approve")}
                 transactions={transactions}
                 focusSection={inventoryFocus}

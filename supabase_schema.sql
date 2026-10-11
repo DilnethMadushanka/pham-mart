@@ -204,6 +204,22 @@ create table if not exists public.sales_returns (
   created_at timestamptz default current_timestamp
 );
 
+-- Every change to a medicine's selling price: old and new price, who and when.
+-- Filled by a trigger on medicines, so no price change is missed.
+create table if not exists public.price_history (
+  id text primary key,
+  medicine_id text,
+  medicine_name text,
+  medicine_code text,
+  old_price numeric(10,2),
+  new_price numeric(10,2) not null,
+  reason text not null,
+  note text,
+  user_id text,
+  user_name text,
+  created_at timestamptz default current_timestamp
+);
+
 -- --------------------------------------------------------------------
 -- 2. Columns the app needs but the old schema did not store
 -- --------------------------------------------------------------------
@@ -270,6 +286,8 @@ create unique index if not exists medicine_batches_no_idx on public.medicine_bat
 create index if not exists medicine_batches_expiry_idx on public.medicine_batches (medicine_id, expiry_date);
 create index if not exists stock_movements_medicine_idx on public.stock_movements (medicine_id, created_at desc);
 create index if not exists sales_returns_txn_idx on public.sales_returns (transaction_id);
+create index if not exists price_history_medicine_idx on public.price_history (medicine_id, created_at desc);
+create index if not exists price_history_created_idx on public.price_history (created_at desc);
 create unique index if not exists medicines_barcode_idx on public.medicines (barcode) where barcode is not null;
 
 -- Stock can never go negative (NOT VALID keeps any odd historic rows untouched).
@@ -427,7 +445,7 @@ do $$
 declare t text;
 begin
   foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                           'medicine_batches','stock_movements','supplier_prices','sales_returns'] loop
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history'] loop
     execute format('drop trigger if exists bump_data_version on public.%I', t);
     execute format('create trigger bump_data_version after insert or update or delete on public.%I
                     for each statement execute function app_private.bump_data_version()', t);
@@ -788,6 +806,68 @@ begin
   returning * into r;
   return app_private.movement_json(r);
 end $$;
+
+create or replace function app_private.price_json(h public.price_history)
+returns jsonb
+language sql
+stable
+as $$
+  select jsonb_build_object(
+    'id', h.id,
+    'medicineId', h.medicine_id,
+    'medicineName', coalesce(h.medicine_name, ''),
+    'medicineCode', coalesce(h.medicine_code, ''),
+    'oldPrice', h.old_price,
+    'newPrice', h.new_price,
+    'reason', h.reason,
+    'note', coalesce(h.note, ''),
+    'user', coalesce(h.user_name, ''),
+    'createdAt', h.created_at
+  )
+$$;
+
+-- Who is making the change, for the price history trigger. Set only for the
+-- current transaction, so it never leaks into another request.
+create or replace function app_private.set_actor(p_user_id text, p_user text, p_price_note text default null)
+returns void
+language sql
+as $$
+  select set_config('pharmart.user_id', coalesce(p_user_id, ''), true),
+         set_config('pharmart.user_name', coalesce(p_user, ''), true),
+         set_config('pharmart.price_note', coalesce(p_price_note, ''), true);
+$$;
+
+create or replace function app_private.log_price_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, app_private
+as $$
+begin
+  if tg_op = 'UPDATE' and new.price is not distinct from old.price then
+    return null;
+  end if;
+  insert into public.price_history (id, medicine_id, medicine_name, medicine_code, old_price, new_price, reason, note, user_id, user_name)
+  values (app_private.new_id('PRC'), new.id, new.name, new.code,
+          case when tg_op = 'UPDATE' then old.price end, new.price,
+          case when tg_op = 'INSERT' then 'First price'
+               when new.price > old.price then 'Price increase'
+               else 'Price decrease' end,
+          nullif(current_setting('pharmart.price_note', true), ''),
+          nullif(current_setting('pharmart.user_id', true), ''),
+          coalesce(nullif(current_setting('pharmart.user_name', true), ''), 'System'));
+  return null;
+end $$;
+
+drop trigger if exists log_price_change on public.medicines;
+create trigger log_price_change after insert or update of price on public.medicines
+  for each row execute function app_private.log_price_change();
+
+-- Medicines that existed before price history was kept start with their current price.
+insert into public.price_history (id, medicine_id, medicine_name, medicine_code, old_price, new_price, reason, user_name, created_at)
+select app_private.new_id('PRC'), m.id, m.name, m.code, null, m.price, 'Price on record', 'System', coalesce(m.created_at, now())
+from public.medicines m
+where not exists (select 1 from public.price_history h where h.medicine_id = m.id);
 
 create or replace function app_private.staff_json(s public.staff)
 returns jsonb
@@ -1220,7 +1300,7 @@ as $$
 declare
   p record;
   v_all text[] := array['medicines','staff','customers','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                         'medicine_batches','stock_movements','sales_returns'];
+                         'medicine_batches','stock_movements','sales_returns','price_history'];
   v_want text[] := coalesce(p_tables, v_all);
   v_is_staff boolean;
   v_can_stock boolean;
@@ -1307,6 +1387,14 @@ begin
       else '[]'::jsonb end);
   end if;
 
+  if 'price_history' = any (v_want) then
+    v_out := v_out || jsonb_build_object('price_history', case
+      when v_can_stock then
+        (select coalesce(jsonb_agg(app_private.price_json(h) order by h.created_at desc), '[]'::jsonb)
+         from (select * from public.price_history order by created_at desc limit 1000) h)
+      else '[]'::jsonb end);
+  end if;
+
   if 'sales_returns' = any (v_want) then
     v_out := v_out || jsonb_build_object('sales_returns', case
       when v_is_staff then
@@ -1390,6 +1478,7 @@ declare
   r public.medicines;
 begin
   select * into s from app_private.require_staff(p_token, array['Owner/Admin', 'Pharmacist']);
+  perform app_private.set_actor(s.principal_id, s.display_name, app_private.clean_text(p_medicine ->> 'priceNote', 200));
 
   if v_name is null then
     raise exception 'Medicine name is required.';
@@ -3049,7 +3138,7 @@ declare
   pol record;
 begin
   foreach t in array array['staff','customers','medicines','suppliers','purchase_orders','prescriptions','transactions','audit_logs','doctors',
-                           'medicine_batches','stock_movements','supplier_prices','sales_returns','data_versions'] loop
+                           'medicine_batches','stock_movements','supplier_prices','sales_returns','price_history','data_versions'] loop
     execute format('alter table public.%I enable row level security', t);
     -- Remove any older "allow everything" policies.
     for pol in select policyname from pg_policies where schemaname = 'public' and tablename = t loop
@@ -3096,6 +3185,7 @@ declare
   b public.medicine_batches;
 begin
   select * into s from app_private.require_staff(p_token, array['Owner/Admin']);
+  perform app_private.set_actor(s.principal_id, s.display_name, 'Demo data');
 
   insert into public.suppliers (id, name, contact_person, email, phone, address, lead_days) values
     ('SUP-DEMO-1', 'Lanka Medical Distributors', 'Kasun Jayasinghe', 'orders@lankamed.lk', '+94 11 250 1234', 'Borella, Colombo 08', 2),
@@ -3136,6 +3226,29 @@ begin
     ('CUST-DEMO-1', 'Nimal Perera', '198512345678', 'nimal.demo@example.com', '+94 77 123 4501', '12 Galle Road, Dehiwala'),
     ('CUST-DEMO-2', 'Sanduni Silva', '199623456789', 'sanduni.demo@example.com', '+94 71 234 5602', '45 High Level Road, Maharagama')
   on conflict do nothing;
+
+  -- Past price changes for three demo medicines, so Price history has something to show.
+  -- Only for medicines added just now (their one history row is today's first price).
+  for v_med in
+    select * from (values
+      ('DEMO-MED-01', 50::numeric, 55::numeric, 60::numeric, 'Supplier raised the cost'),
+      ('DEMO-MED-03', 95::numeric, 90::numeric, 85::numeric, 'Matching the price at nearby pharmacies'),
+      ('DEMO-MED-04', 380::numeric, 400::numeric, 420::numeric, 'New supplier price list')
+    ) as t(id, first_price, mid_price, now_price, note)
+  loop
+    continue when not exists (select 1 from public.price_history h where h.medicine_id = v_med.id
+                              and h.reason = 'First price' and h.created_at = now())
+               or (select count(*) from public.price_history h where h.medicine_id = v_med.id) <> 1;
+    delete from public.price_history where medicine_id = v_med.id;
+    insert into public.price_history (id, medicine_id, medicine_name, medicine_code, old_price, new_price, reason, note, user_id, user_name, created_at)
+    select app_private.new_id('PRC'), m.id, m.name, m.code, x.old_price, x.new_price, x.reason, x.note, s.principal_id, s.display_name, x.at
+    from public.medicines m,
+         (values (null::numeric, v_med.first_price, 'First price', 'Demo data', now() - interval '120 days'),
+                 (v_med.first_price, v_med.mid_price, case when v_med.mid_price > v_med.first_price then 'Price increase' else 'Price decrease' end, v_med.note, now() - interval '60 days'),
+                 (v_med.mid_price, v_med.now_price, case when v_med.now_price > v_med.mid_price then 'Price increase' else 'Price decrease' end, v_med.note, now() - interval '9 days')
+         ) as x(old_price, new_price, reason, note, at)
+    where m.id = v_med.id;
+  end loop;
 
   -- Approved prescription for Nimal: sell Amoxicillin to him at the POS.
   insert into public.prescriptions (id, rx_number, patient_id, patient_name, doctor_id, doctor_name, doctor_reg, status,

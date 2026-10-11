@@ -14,7 +14,8 @@ import {
   ArrowRight,
   Layers,
   CalendarX,
-  ScanBarcode
+  ScanBarcode,
+  History
 } from 'lucide-react';
 import AddMedicineModal from './AddMedicineModal';
 import PurchaseOrders from './PurchaseOrders';
@@ -22,6 +23,7 @@ import SupplierList from './SupplierList';
 import ReorderSuggestions from './ReorderSuggestions';
 import ExpiryTracking from './ExpiryTracking';
 import BatchesModal from './BatchesModal';
+import PriceHistory from './PriceHistory';
 import { expiryAlerts, expiryStatus, EXPIRY_LABEL } from '../../lib/expiry';
 import { buildReorderSuggestions } from '../../lib/reorder';
 import { saveMedicine, deleteMedicine, loadData } from '../../services/supabaseService';
@@ -42,6 +44,8 @@ export default function MedicineList({
   setBatches,
   stockMovements = [],
   setStockMovements,
+  priceHistory = [],
+  setPriceHistory,
   canApproveOrders = false,
   transactions = [],
   focusSection = null,
@@ -64,7 +68,12 @@ export default function MedicineList({
   );
   const toReorder = reorderSuggestions.filter(s => s.openOrders.length === 0).length;
   // Read-only roles only see the catalogue; procurement screens need edit rights.
-  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "expiry" | "purchase_orders" | "suppliers"
+  const activeSubTab = canEdit ? selectedSubTab : "catalogue"; // "catalogue" | "reorder" | "expiry" | "purchase_orders" | "suppliers" | "prices"
+  const [priceMedicineId, setPriceMedicineId] = useState("ALL");
+  const openPriceHistory = (med) => {
+    setPriceMedicineId(med.id);
+    setActiveSubTab("prices");
+  };
   const alerts = useMemo(() => expiryAlerts(batches, medicines), [batches, medicines]);
   const [batchesFor, setBatchesFor] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -126,10 +135,11 @@ export default function MedicineList({
     setIsAddMedicineOpen(false);
     setEditingMedicine(null);
     // Opening stock and stock corrections are booked into batches on the server.
-    const fresh = await loadData(['medicine_batches', 'stock_movements']);
+    const fresh = await loadData(['medicine_batches', 'stock_movements', 'price_history']);
     if (fresh.data) {
       setBatches?.(fresh.data.medicine_batches || []);
       setStockMovements?.(fresh.data.stock_movements || []);
+      setPriceHistory?.(fresh.data.price_history || []);
     }
     return true;
   };
@@ -240,10 +250,29 @@ export default function MedicineList({
             <span>Suppliers</span>
             <span className="text-xs font-mono text-slate-400">{suppliers.length}</span>
           </button>
+          <button
+            onClick={() => { setPriceMedicineId("ALL"); setActiveSubTab("prices"); }}
+            aria-current={activeSubTab === "prices" ? "page" : undefined}
+            className={`flex items-center gap-2 px-1 py-3 text-sm font-medium border-b-2 -mb-px whitespace-nowrap ${
+              activeSubTab === "prices"
+                ? "border-[#2563EB] text-[#0B2545]"
+                : "border-transparent text-slate-500 hover:text-[#0B2545]"
+            }`}
+          >
+            <History className="w-4 h-4" />
+            <span>Price history</span>
+          </button>
       </nav>
       )}
 
-      {activeSubTab === "expiry" ? (
+      {activeSubTab === "prices" ? (
+        <PriceHistory
+          priceHistory={priceHistory}
+          medicines={medicines}
+          medicineId={priceMedicineId}
+          onMedicineChange={setPriceMedicineId}
+        />
+      ) : activeSubTab === "expiry" ? (
         <ExpiryTracking
           medicines={medicines}
           batches={batches}
@@ -491,6 +520,14 @@ export default function MedicineList({
                               <Layers className="w-4 h-4" />
                             </button>
                             {canEdit && (<>
+                            <button
+                              onClick={() => openPriceHistory(med)}
+                              title="Price history"
+                              aria-label={`Price history of ${med.name}`}
+                              className="p-1.5 rounded-lg text-slate-500 hover:text-blue-700 hover:bg-blue-50 transition-colors cursor-pointer"
+                            >
+                              <History className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => { setEditingMedicine(med); setIsAddMedicineOpen(true); }}
                               title="Edit Medicine Record"
