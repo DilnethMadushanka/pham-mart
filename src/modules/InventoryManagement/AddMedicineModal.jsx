@@ -26,7 +26,7 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
 
   useEffect(() => {
     if (medicineToEdit) {
-      setFormData({ ...medicineToEdit, barcode: medicineToEdit.barcode || '' });
+      setFormData({ ...medicineToEdit, barcode: medicineToEdit.barcode || '', priceNote: '' });
     } else {
       setFormData({
         name: '',
@@ -47,6 +47,8 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
   }, [medicineToEdit, isOpen, suppliers]);
 
   if (!isOpen) return null;
+
+  const priceChanged = Boolean(medicineToEdit) && Number(formData.unitPrice) !== Number(medicineToEdit.unitPrice);
 
   const handleSupplierChange = (e) => {
     const selectedSup = suppliers.find(s => s.id === e.target.value);
@@ -158,6 +160,24 @@ export default function AddMedicineModal({ isOpen, onClose, onSave, medicineToEd
               />
             </div>
           </div>
+
+          {priceChanged && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-1.5">
+              <label htmlFor="price-note" className="block font-bold text-amber-900">
+                Price changes from Rs. {Number(medicineToEdit.unitPrice).toFixed(2)} to Rs. {Number(formData.unitPrice || 0).toFixed(2)}. Reason (optional)
+              </label>
+              <input
+                id="price-note"
+                type="text"
+                maxLength={200}
+                placeholder="For example: supplier raised the cost"
+                value={formData.priceNote || ''}
+                onChange={(e) => setFormData({ ...formData, priceNote: e.target.value })}
+                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-xl focus:ring-4 focus:ring-amber-500/15 outline-hidden"
+              />
+              <p className="text-[11px] text-amber-800">The change is saved in Price history with your name.</p>
+            </div>
+          )}
 
           <div>
             <label className="block font-bold text-slate-700 mb-1">Barcode</label>

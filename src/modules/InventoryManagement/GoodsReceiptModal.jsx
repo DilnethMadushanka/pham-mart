@@ -4,31 +4,51 @@ import { checkNewExpiry, minNewExpiry, MIN_EXPIRY_DAYS } from '../../lib/expiry'
 
 const inputClass = "w-full px-2.5 py-2 bg-white border border-slate-300 rounded-xl text-sm focus:ring-4 focus:ring-[#2563EB]/15 focus:border-[#2563EB]/50 outline-hidden";
 
-// Record what arrived against an approved order. Each line is checked against
-// what is still outstanding; every delivered line needs its batch number and
-// expiry date so the stock goes into the right batch.
+// Count what arrived against an approved order. Each line is checked against
+// what is still outstanding; every line with good units needs its batch number
+// and expiry date. Nothing goes into stock here: the delivery waits for
+// someone to check and approve it.
+const CHECKS = [
+  { key: "packaging", label: "Packs are sealed and undamaged" },
+  { key: "invoice", label: "Items and quantities match the supplier's invoice" },
+  { key: "coldChain", label: "Fridge items arrived cold (or none were ordered)" }
+];
+
 export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
   const outstandingOf = (item) => Math.max(0, (Number(item.quantity) || 0) - (Number(item.receivedQty) || 0));
   const [rows, setRows] = useState(() => po.items
     .filter(item => outstandingOf(item) > 0)
-    .map(item => ({ ...item, outstanding: outstandingOf(item), delivered: outstandingOf(item), batchNo: "", expiryDate: "" })));
+    .map(item => ({ ...item, outstanding: outstandingOf(item), delivered: outstandingOf(item), damaged: 0, batchNo: "", expiryDate: "" })));
   const [closeShort, setCloseShort] = useState(false);
+  const [checks, setChecks] = useState({ packaging: false, invoice: false, coldChain: false });
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
   const update = (idx, patch) => setRows(prev => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   const short = rows.reduce((sum, r) => sum + Math.max(0, r.outstanding - r.delivered), 0);
   const over = rows.some(r => r.delivered > r.outstanding);
-  const missing = rows.some(r => r.delivered > 0 && (!r.batchNo.trim() || !r.expiryDate));
-  const badExpiry = rows.some(r => r.delivered > 0 && r.expiryDate && checkNewExpiry(r.expiryDate));
+  const good = (r) => Math.max(0, r.delivered - r.damaged);
+  const tooDamaged = rows.some(r => r.damaged > r.delivered);
+  const damagedTotal = rows.reduce((sum, r) => sum + Math.min(r.damaged, r.delivered), 0);
+  const missing = rows.some(r => good(r) > 0 && (!r.batchNo.trim() || !r.expiryDate));
+  const badExpiry = rows.some(r => good(r) > 0 && r.expiryDate && checkNewExpiry(r.expiryDate));
   const nothing = rows.every(r => r.delivered <= 0) && !closeShort;
 
   const submit = async (e) => {
     e.preventDefault();
-    if (busy || over || missing || badExpiry || nothing) return;
+    if (busy || over || tooDamaged || missing || badExpiry || nothing) return;
     setBusy(true);
-    await onConfirm(po.id, rows.filter(r => r.delivered > 0).map(r => ({
-      medicineId: r.medicineId, quantity: r.delivered, batchNo: r.batchNo.trim(), expiryDate: r.expiryDate
-    })), closeShort);
+    await onConfirm(po.id, {
+      items: rows.filter(r => r.delivered > 0).map(r => ({
+        medicineId: r.medicineId, delivered: r.delivered, damaged: Math.min(r.damaged, r.delivered),
+        batchNo: r.batchNo.trim(), expiryDate: r.expiryDate
+      })),
+      checks,
+      invoiceNo: invoiceNo.trim(),
+      notes: notes.trim(),
+      closeShort
+    });
     setBusy(false);
   };
 
@@ -40,7 +60,7 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
             <span className="w-10 h-10 rounded-2xl bg-[#EFF6FF] text-[#2563EB] flex items-center justify-center shrink-0"><PackageCheck className="w-5 h-5" /></span>
             <div>
               <h3 id="grn-title" className="text-base font-semibold text-[#0B2545]">Record delivery for {po.poNumber}</h3>
-              <p className="text-xs text-slate-500">{po.supplierName} · ordered {po.orderDate}</p>
+              <p className="text-xs text-slate-500">{po.supplierName} · ordered {po.orderDate} · checked by someone else before the stock goes in</p>
             </div>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"><X className="w-5 h-5" /></button>
@@ -55,12 +75,18 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
                   Ordered {r.quantity}{Number(r.receivedQty) > 0 ? ` · already received ${r.receivedQty}` : ""} · outstanding <strong className="text-slate-700">{r.outstanding}</strong>
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <label className="space-y-1">
                   <span className="block text-[11px] text-slate-500">Units delivered</span>
                   <input type="number" min="0" max={r.outstanding} value={r.delivered} aria-label={`Units of ${r.name} delivered`}
                     onChange={(e) => update(idx, { delivered: Math.max(0, parseInt(e.target.value, 10) || 0) })}
                     className={`${inputClass} ${r.delivered > r.outstanding ? "border-rose-400" : ""}`} />
+                </label>
+                <label className="space-y-1">
+                  <span className="block text-[11px] text-slate-500">Damaged or wrong</span>
+                  <input type="number" min="0" max={r.delivered} value={r.damaged} aria-label={`Units of ${r.name} damaged or wrong`}
+                    onChange={(e) => update(idx, { damaged: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                    className={`${inputClass} ${r.damaged > r.delivered ? "border-rose-400" : ""}`} />
                 </label>
                 <label className="space-y-1">
                   <span className="block text-[11px] text-slate-500">Batch number</span>
@@ -74,13 +100,15 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
               </div>
               {r.delivered > r.outstanding && <p className="text-xs text-rose-700">More than is outstanding on the order.</p>}
               {r.delivered > 0 && r.delivered < r.outstanding && <p className="text-xs text-amber-700">{r.outstanding - r.delivered} units short.</p>}
+              {r.damaged > r.delivered && <p className="text-xs text-rose-700">More units damaged than delivered.</p>}
+              {r.damaged > 0 && r.damaged <= r.delivered && <p className="text-xs text-amber-700">{r.damaged} damaged units won't go into stock and stay outstanding.</p>}
             </div>
           ))}
         </div>
 
-        {short === 0 && !over ? (
+        {short === 0 && !over && damagedTotal === 0 ? (
           <p className="flex items-center gap-2 text-xs font-medium text-emerald-700"><CheckCircle2 className="w-4 h-4" /> The delivery matches the order.</p>
-        ) : short > 0 ? (
+        ) : short > 0 && !over ? (
           <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
             <p className="flex items-center gap-2 text-xs font-medium text-amber-900"><AlertTriangle className="w-4 h-4" /> {short} units short of the order. The rest stays outstanding for a later delivery.</p>
             <label className="flex items-center gap-2 text-xs text-amber-900">
@@ -89,13 +117,33 @@ export default function GoodsReceiptModal({ po, onClose, onConfirm }) {
             </label>
           </div>
         ) : null}
-        {missing && <p className="text-xs text-rose-700">Enter the batch number and expiry date for every delivered item.</p>}
+        <fieldset className="p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+          <legend className="px-1 text-xs font-semibold text-slate-700">Delivery checks</legend>
+          {CHECKS.map(c => (
+            <label key={c.key} className="flex items-center gap-2 text-sm text-slate-700">
+              <input type="checkbox" checked={checks[c.key]} onChange={(e) => setChecks(prev => ({ ...prev, [c.key]: e.target.checked }))} className="w-4 h-4 accent-[#2563EB]" />
+              {c.label}
+            </label>
+          ))}
+          <div className="grid sm:grid-cols-2 gap-2 pt-1">
+            <label className="space-y-1">
+              <span className="block text-[11px] text-slate-500">Supplier invoice number</span>
+              <input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} maxLength={60} className={`${inputClass} font-mono`} placeholder="Optional" />
+            </label>
+            <label className="space-y-1">
+              <span className="block text-[11px] text-slate-500">Notes for the checker</span>
+              <input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={1000} className={inputClass} placeholder="For example: one box was wet" />
+            </label>
+          </div>
+        </fieldset>
+        {damagedTotal > 0 && <p className="text-xs text-amber-700">{damagedTotal} damaged units are recorded. Ask the supplier to replace them.</p>}
+        {missing && <p className="text-xs text-rose-700">Enter the batch number and expiry date for every item with good units.</p>}
         {badExpiry && <p className="text-xs text-rose-700">Expiry dates must be more than {MIN_EXPIRY_DAYS} days from today ({minNewExpiry()} or later).</p>}
 
         <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
           <button type="button" onClick={onClose} className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl">Cancel</button>
-          <button type="submit" disabled={busy || over || missing || badExpiry || nothing} className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20">
-            {busy ? "Saving..." : "Record delivery"}
+          <button type="submit" disabled={busy || over || tooDamaged || missing || badExpiry || nothing} className="px-5 py-2.5 bg-[#2563EB] hover:bg-[#1D4ED8] disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-md shadow-[#2563EB]/20">
+            {busy ? "Saving..." : "Send for checking"}
           </button>
         </div>
       </form>
