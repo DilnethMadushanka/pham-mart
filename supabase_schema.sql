@@ -308,6 +308,8 @@ create unique index if not exists medicine_batches_no_idx on public.medicine_bat
 create index if not exists medicine_batches_expiry_idx on public.medicine_batches (medicine_id, expiry_date);
 create index if not exists stock_movements_medicine_idx on public.stock_movements (medicine_id, created_at desc);
 create index if not exists sales_returns_txn_idx on public.sales_returns (transaction_id);
+create index if not exists transactions_created_idx on public.transactions (created_at desc);
+create index if not exists sales_returns_created_idx on public.sales_returns (created_at desc);
 create index if not exists goods_receipts_po_idx on public.goods_receipts (po_id, recorded_at desc);
 create unique index if not exists goods_receipts_one_open_idx on public.goods_receipts (po_id) where status = 'Awaiting check';
 create index if not exists price_history_medicine_idx on public.price_history (medicine_id, created_at desc);
@@ -1354,6 +1356,9 @@ declare
   v_want text[] := coalesce(p_tables, v_all);
   v_is_staff boolean;
   v_can_stock boolean;
+  -- Sales and refunds since 1 January last year: enough for this year's and
+  -- last year's reports, without sending every sale ever made to the browser.
+  v_sales_since timestamptz := date_trunc('year', now()) - interval '1 year';
   v_out jsonb := '{}'::jsonb;
 begin
   select * into p from app_private.session_principal(p_token);
@@ -1410,7 +1415,8 @@ begin
   if 'transactions' = any (v_want) then
     v_out := v_out || jsonb_build_object('transactions', case
       when v_is_staff then
-        (select coalesce(jsonb_agg(app_private.transaction_json(t) order by t.created_at desc), '[]'::jsonb) from public.transactions t)
+        (select coalesce(jsonb_agg(app_private.transaction_json(t) order by t.created_at desc), '[]'::jsonb)
+         from public.transactions t where t.created_at >= v_sales_since)
       else '[]'::jsonb end);
   end if;
 
@@ -1456,7 +1462,8 @@ begin
   if 'sales_returns' = any (v_want) then
     v_out := v_out || jsonb_build_object('sales_returns', case
       when v_is_staff then
-        (select coalesce(jsonb_agg(app_private.return_json(r) order by r.created_at desc), '[]'::jsonb) from public.sales_returns r)
+        (select coalesce(jsonb_agg(app_private.return_json(r) order by r.created_at desc), '[]'::jsonb)
+         from public.sales_returns r where r.created_at >= v_sales_since)
       else '[]'::jsonb end);
   end if;
 
@@ -3464,7 +3471,8 @@ begin
   on conflict do nothing;
 
   -- Past price changes for three demo medicines, so Price history has something to show.
-  -- Only for medicines added just now (their one history row is today's first price).
+  -- Only for demo medicines whose price has never been changed, so re-running
+  -- this on an older demo catalogue (with a "Price on record" row) also adds them.
   for v_med in
     select * from (values
       ('DEMO-MED-01', 50::numeric, 55::numeric, 60::numeric, 'Supplier raised the cost'),
@@ -3472,9 +3480,8 @@ begin
       ('DEMO-MED-04', 380::numeric, 400::numeric, 420::numeric, 'New supplier price list')
     ) as t(id, first_price, mid_price, now_price, note)
   loop
-    continue when not exists (select 1 from public.price_history h where h.medicine_id = v_med.id
-                              and h.reason = 'First price' and h.created_at = now())
-               or (select count(*) from public.price_history h where h.medicine_id = v_med.id) <> 1;
+    continue when not exists (select 1 from public.medicines m where m.id = v_med.id and m.price = v_med.now_price)
+               or exists (select 1 from public.price_history h where h.medicine_id = v_med.id and h.old_price is not null);
     delete from public.price_history where medicine_id = v_med.id;
     insert into public.price_history (id, medicine_id, medicine_name, medicine_code, old_price, new_price, reason, note, user_id, user_name, created_at)
     select app_private.new_id('PRC'), m.id, m.name, m.code, x.old_price, x.new_price, x.reason, x.note, s.principal_id, s.display_name, x.at

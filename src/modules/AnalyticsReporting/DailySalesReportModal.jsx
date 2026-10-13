@@ -12,6 +12,8 @@ export default function DailySalesReportModal({ isOpen, ...props }) {
 // and the best sellers.
 function DailySalesReport({ onClose, transactions = [], salesReturns = [], medicines = [] }) {
   const [day, setDay] = useState(todayKey());
+  // The app only loads sales from 1 January last year (see load_data).
+  const firstDay = `${new Date().getFullYear() - 1}-01-01`;
   const sales = useMemo(() => inDay(transactions, day), [transactions, day]);
   const refunds = useMemo(() => inDay(salesReturns, day), [salesReturns, day]);
   const s = useMemo(() => summarize(sales, refunds, medicines), [sales, refunds, medicines]);
@@ -38,7 +40,7 @@ function DailySalesReport({ onClose, transactions = [], salesReturns = [], medic
       controls={
         <div className="flex flex-wrap items-center gap-2">
           <label className="text-xs font-medium text-slate-600" htmlFor="report-day">Day</label>
-          <input id="report-day" type="date" value={day} max={todayKey()} onChange={(e) => setDay(e.target.value || todayKey())}
+          <input id="report-day" type="date" value={day} min={firstDay} max={todayKey()} onChange={(e) => setDay(e.target.value || todayKey())}
             className="px-3 py-1.5 border border-slate-300 rounded-xl text-sm" />
           {day !== todayKey() && (
             <button onClick={() => setDay(todayKey())} className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs hover:bg-slate-50">Today</button>
