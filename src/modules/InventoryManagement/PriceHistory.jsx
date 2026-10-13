@@ -63,11 +63,8 @@ export default function PriceHistory({ priceHistory = [], medicines = [], medici
     return true;
   });
 
-  // Figures for the last 30 days (or for the chosen medicine, over all time).
-  const recent = priceHistory.filter(h => medicineId === "ALL"
-    ? new Date(h.createdAt).getTime() >= now - 30 * DAY
-    : h.medicineId === medicineId);
-  const changes = recent.filter(h => kindOf(h) !== "first");
+  // The cards summarise the same rows the table shows, so they follow every filter.
+  const changes = rows.filter(h => kindOf(h) !== "first");
   const ups = changes.filter(h => kindOf(h) === "up").length;
   const downs = changes.length - ups;
   const medsChanged = new Set(changes.map(h => h.medicineId)).size;
@@ -81,7 +78,7 @@ export default function PriceHistory({ priceHistory = [], medicines = [], medici
     ? ((currentPrice - Number(firstRow.newPrice)) / Number(firstRow.newPrice)) * 100
     : null;
 
-  const scope = medicineId === "ALL" ? "Last 30 days" : "All time";
+  const scope = PERIODS.find(p => p.key === period)?.label;
 
   return (
     <div className="space-y-5">
