@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import { CONSOLE_PAGES } from './lib/consolePages';
@@ -13,13 +13,14 @@ import DialogHost from './components/DialogHost';
 // Customer Public Portal
 import CustomerStorefront from './modules/CustomerPortal/CustomerStorefront';
 
-// Internal Enterprise Modules
-import StaffList from './modules/UserManagement/StaffList';
-import MedicineList from './modules/InventoryManagement/MedicineList';
-import PrescriptionVerification from './modules/CustomerPrescription/PrescriptionVerification';
-import CustomerList from './modules/CustomerPrescription/CustomerList';
-import POSTerminal from './modules/POSBilling/POSTerminal';
-import AnalyticsDashboard from './modules/AnalyticsReporting/AnalyticsDashboard';
+// Internal Enterprise Modules, loaded only when staff open the console, so
+// storefront visitors don't download them.
+const StaffList = lazy(() => import('./modules/UserManagement/StaffList'));
+const MedicineList = lazy(() => import('./modules/InventoryManagement/MedicineList'));
+const PrescriptionVerification = lazy(() => import('./modules/CustomerPrescription/PrescriptionVerification'));
+const CustomerList = lazy(() => import('./modules/CustomerPrescription/CustomerList'));
+const POSTerminal = lazy(() => import('./modules/POSBilling/POSTerminal'));
+const AnalyticsDashboard = lazy(() => import('./modules/AnalyticsReporting/AnalyticsDashboard'));
 
 import {
   fetchSessionUser,
@@ -408,7 +409,7 @@ export default function App() {
           />
 
           <main id="main" key={tab} className="console-main flex-1 w-full max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-28 md:pb-10 animate-page-in">
-            {!isLoaded ? <ConsoleSkeleton /> : <>
+            {!isLoaded ? <ConsoleSkeleton /> : <Suspense fallback={<ConsoleSkeleton />}>
             {tab === "analytics" && (
               <AnalyticsDashboard
                 medicines={medicines}
@@ -507,7 +508,7 @@ export default function App() {
                 onDataChanged={refresh}
               />
             )}
-            </>}
+            </Suspense>}
           </main>
           </div>
 

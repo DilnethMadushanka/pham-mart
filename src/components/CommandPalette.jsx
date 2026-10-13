@@ -7,19 +7,21 @@ const money = (n) => `Rs. ${Number(n || 0).toLocaleString("en-LK", { minimumFrac
 
 // Ctrl+K / Cmd+K: jump to a page, or look up a medicine, customer or invoice
 // without leaving the screen you are on.
-export default function CommandPalette({ open, onClose, role, onNavigate, medicines = [], customers = [], transactions = [] }) {
+// Mounted fresh on every open, so the search starts empty each time.
+export default function CommandPalette({ open, ...props }) {
+  if (!open) return null;
+  return <Palette {...props} />;
+}
+
+function Palette({ onClose, role, onNavigate, medicines = [], customers = [], transactions = [] }) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef(null);
   const listRef = useRef(null);
 
   useEffect(() => {
-    if (open) {
-      setQuery("");
-      setActive(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [open]);
+    inputRef.current?.focus();
+  }, []);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -53,8 +55,6 @@ export default function CommandPalette({ open, onClose, role, onNavigate, medici
   useEffect(() => {
     listRef.current?.querySelector(`[data-index="${active}"]`)?.scrollIntoView({ block: "nearest" });
   }, [active]);
-
-  if (!open) return null;
 
   const choose = (r) => { if (!r) return; r.go(); onClose(); };
   const onKeyDown = (e) => {
